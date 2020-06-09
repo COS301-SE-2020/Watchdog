@@ -13,15 +13,15 @@ class __MetaDataCompiler:
         if TagList.__contains__(self.tag):
             x = {
 
-                "TimeStamp": str(self.DateTime)[0:20],
-                "IP_Address": self.IP_address,
-                "Hash_ID": hash(str(self.DateTime) + self.IP_address),
+                "timestamp": str(self.DateTime)[0:19],
+                "ip_address": self.IP_address,
+                "hash_id": hash(str(self.DateTime) + self.IP_address),
                 "tag": self.tag
             }
             MetaData = json.dumps(x)
-            print(x)
+            # print(x)
             return MetaData
 
 
 p1 = __MetaDataCompiler("Random", "127.0.0.1")
-p1.BufferIDSystem()
+print(p1.BufferIDSystem())
