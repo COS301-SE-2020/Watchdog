@@ -9,7 +9,7 @@ class __MetaDataCompiler:
         self.IP_address = IP_address
 
     def BufferIDSystem(self):
-        TagList = ["Random", "Movement"]
+        TagList = ["random", "movement"]
         if TagList.__contains__(self.tag):
             x = {
 
@@ -23,5 +23,5 @@ class __MetaDataCompiler:
             return MetaData
 
 
-p1 = __MetaDataCompiler("Random", "127.0.0.1")
+p1 = __MetaDataCompiler("random", "127.0.0.1")
 print(p1.BufferIDSystem())
