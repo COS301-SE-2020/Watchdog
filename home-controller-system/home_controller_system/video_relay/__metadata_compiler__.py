@@ -1,0 +1,27 @@
+from datetime import datetime
+import json
+
+
+class __MetaDataCompiler:
+    def __init__(self, tag, IP_address):
+        self.tag = tag
+        self.DateTime = datetime.now()
+        self.IP_address = IP_address
+
+    def BufferIDSystem(self):
+        TagList = ["Random", "Movement"]
+        if TagList.__contains__(self.tag):
+            x = {
+
+                "TimeStamp": str(self.DateTime)[0:20],
+                "IP_Address": self.IP_address,
+                "Hash_ID": hash(str(self.DateTime) + self.IP_address),
+                "tag": self.tag
+            }
+            MetaData = json.dumps(x)
+            print(x)
+            return MetaData
+
+
+p1 = __MetaDataCompiler("Random", "127.0.0.1")
+p1.BufferIDSystem()
