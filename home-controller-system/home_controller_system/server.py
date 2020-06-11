@@ -9,7 +9,7 @@ class Client:
         self.ip_address = ip_address
         self.port = port
 
-        self.is_running = False
+        self.received_frame = False
         self.current_frame = None
 
         self.is_movement = False
@@ -73,7 +73,7 @@ class Server:
         if self.ip_address is not None:
             if self.clients.__len__() > 0:
                 for c in self.clients:
-                    if self.clients[c] != port:
+                    if self.clients[c].port != port:
                         is_valid = True
             else:
                 is_valid = True
@@ -106,7 +106,10 @@ class Server:
                 cf[temp.__str__()] = temp.current_frame
         return cf
 
-    def run(self):
+    def did_client_send_frame(self, port):
+        return self.clients[f'{self.ip_address}:{port}'].received_frame
+
+    def run(self, display_video=True):
         ports = []
         if self.clients.__len__() > 0:
             for c in self.clients:
@@ -131,21 +134,16 @@ class Server:
                 # get extracted frame's shape
                 if self.is_client_connected(unique_address):
                     current_client = self.clients[f"{self.ip_address}:{unique_address}"]
-                    current_client.is_running = True
+                    current_client.received_frame = True
                     current_client.current_frame = frame
                     if current_client.identify_movement(frame, self.ceil):
                         print("Something is moving!")
 
-                # update the extracted frame in the received frame dictionary
-                frame_dict = self.get_current_client_frames()
-                # build a montage using data dictionary
-                (h, w) = frame.shape[:2]
-                self.build_montage(frame_dict, w, h)
-
-                # check for 'q' key if pressed
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord("q"):
-                    break
+                if display_video:
+                    frame_dict = self.get_current_client_frames()
+                    # build a montage using data dictionary
+                    (h, w) = frame.shape[:2]
+                    self.build_montage(frame_dict, w, h)
 
             except KeyboardInterrupt:
                 break
