@@ -1,2 +1,6 @@
 .idea
 .DS_Store
+home_controller_system.egg-info
+__pycache__
+tests/__pycache__
+home_controller_system/__pycache__

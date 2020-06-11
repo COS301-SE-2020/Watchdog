@@ -4,15 +4,15 @@ import cv2
 import numpy as np
 
 
-class Client:
+class CameraClient:
     def __init__(self, ip_address, port):
         self.ip_address = ip_address
         self.port = port
 
         self.received_frame = False
-        self.current_frame = None
-
         self.is_movement = False
+
+        self.current_frame = None
         self.moving_average = None
         self.difference = None
         self.temp = None
@@ -21,9 +21,10 @@ class Client:
         return f"{self.ip_address}:{self.port}"
 
     def identify_movement(self, cf, ceil):
-        grey = cv2.cvtColor(
+        # convert frame to grey -> 1 vs 3 channel 
+        grey = cv2.cvtColor( 
             cf, cv2.COLOR_BGR2GRAY
-        )  # convert frame to grey -> 1 vs 3 channel
+        )  
         grey = cv2.GaussianBlur(grey, (21, 21), 0)
         grey = np.array(grey, dtype=np.uint8)
 
@@ -31,16 +32,16 @@ class Client:
             self.moving_average = np.array(cf, dtype=float)
 
         if self.difference is None:
-            self.difference = cf
-            self.temp = cf
+            self.temp = self.difference = cf
             cv2.convertScaleAbs(cf, self.moving_average, 1.0, 0.0)
         else:
             cv2.accumulateWeighted(cf, self.moving_average, 0.020, None)
 
         cv2.convertScaleAbs(self.moving_average, self.temp, 1.0, 0.0)
-        self.difference = cv2.absdiff(cf, self.temp)
 
+        self.difference = cv2.absdiff(cf, self.temp)
         self.difference = cv2.cvtColor(self.difference, cv2.COLOR_BGR2GRAY)
+
         threshold = cv2.threshold(self.difference, 70, 255, cv2.THRESH_BINARY)[1]
         threshold = cv2.dilate(threshold, None, iterations=18)  # fill in the holes
         threshold = cv2.erode(threshold, None, iterations=10)
@@ -50,9 +51,11 @@ class Client:
             cv2.RETR_EXTERNAL,  # find the contours
             cv2.CHAIN_APPROX_SIMPLE,
         )
+
         contours = grab_contours(contours)
         back_contours = contours  # Save contours
         current_surface_area = 0
+
         for c in contours:
             current_surface_area += cv2.contourArea(c)
 
@@ -63,8 +66,10 @@ class Client:
 
         if avg > ceil:
             self.is_movement = True
-            return True
-        return False
+        else:
+            self.is_movement = False
+
+        return self.is_movement
 
 
 class Server:
@@ -86,7 +91,7 @@ class Server:
                 is_valid = True
 
         if is_valid:
-            client = Client(self.ip_address, port)
+            client = CameraClient(self.ip_address, port)
             self.clients[client.__str__()] = client
             self.num_of_cameras += 1
             return 200  # successfully added client
@@ -120,7 +125,10 @@ class Server:
     def did_client_send_frame(self, port):
         return self.clients[f"{self.ip_address}:{port}"].received_frame
 
-    def run(self, display_video=True, detect_movement=True):
+    def detect_client_movement(self, port):
+        return self.clients[f"{self.ip_address}:{port}"].is_movement
+
+    def run(self, display_video=True):
         ports = []
         if self.clients.__len__() > 0:
             for c in self.clients:
@@ -154,9 +162,8 @@ class Server:
                     current_client = self.clients[f"{self.ip_address}:{unique_address}"]
                     current_client.received_frame = True
                     current_client.current_frame = frame
-                    if detect_movement:
-                        if current_client.identify_movement(frame, self.ceil):
-                            print("Something is moving!")
+                    if current_client.identify_movement(frame, self.ceil):
+                        print("Something is moving!")
 
                 if display_video:
                     frame_dict = self.get_current_client_frames()
@@ -164,7 +171,7 @@ class Server:
                     (h, w) = frame.shape[:2]
                     self.build_montage(frame_dict, w, h)
 
-                key = cv2.waitKey(1) & 0xFF
+                key  = cv2.waitKey(1) & 0xFF
                 if key == ord("q"):
                     break
             except KeyboardInterrupt:

@@ -6,22 +6,25 @@ from threading import Thread
 from home_controller_system.server import Server
 
 
-def send_frame_to_server(port):
+def send_frame_to_server(port, number_of_frames_to_send):
 
-    stream = cv.VideoCapture("test_video/big_buck_bunny_720p_1mb.mp4")
+    stream = cv.VideoCapture("./test_video/big_buck_bunny_720p_1mb.mp4")
     options = {"multiserver_mode": True}
     server = NetGear(
         address="127.0.0.1", port=port, protocol="tcp", pattern=1, **options
     )
-    try:
-        (grabbed, frame) = stream.read()
-        if not grabbed:
-            raise Exception(
-                "Could not send video frame image. Please check that your video path is correct!"
-            )
-        server.send(frame)
-    except Exception as e:
-        print(e)
+    i = 0
+    while i < number_of_frames_to_send:
+        try:
+            (grabbed, frame) = stream.read()
+            if not grabbed:
+                raise Exception(
+                    "Could not send video frame image. Please check that your video path is correct!"
+                )
+            server.send(frame)
+            i+=1
+        except Exception as e:
+            print(e)
 
     stream.release()
     server.close()
@@ -64,9 +67,39 @@ def test_server_receives_frames():
     p1 = Thread(target=server.run, args=(False, False,))
     p1.start()
     sleep(2)
-    p2 = Thread(target=send_frame_to_server, args=(5566,))
+    p2 = Thread(target=send_frame_to_server, args=(5566,1,))
     p2.start()
     sleep(2)
     response = server.did_client_send_frame(5566)
 
+    assert response is True
+
+
+def test_no_movement_of_frames():
+    server = Server("127.0.0.1")
+    server.add_client(5566)
+
+    p1 = Thread(target=server.run, args=(False, False,))
+    p1.start()
+    sleep(2)
+    p2 = Thread(target=send_frame_to_server, args=(5566,1,))
+    p2.start()
+    sleep(2)
+
+    response = server.detect_client_movement(5566)
+    assert response is False
+
+
+def test_movement_of_frames():
+    server = Server("127.0.0.1")
+    server.add_client(5566)
+
+    p1 = Thread(target=server.run, args=(False, False,))
+    p1.start()
+    sleep(2)
+    p2 = Thread(target=send_frame_to_server, args=(5566,10,))
+    p2.start()
+    sleep(2)
+
+    response = server.detect_client_movement(5566)
     assert response is True
