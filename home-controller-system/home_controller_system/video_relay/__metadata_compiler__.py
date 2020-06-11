@@ -15,7 +15,7 @@ class __MetaDataCompiler:
 
                 "timestamp": str(self.DateTime)[0:19],
                 "ip_address": self.IP_address,
-                "hash_id": hash(str(self.DateTime) + self.IP_address),
+                "hash_id": hash(self.IP_address),
                 "tag": self.tag
             }
             MetaData = json.dumps(x)
