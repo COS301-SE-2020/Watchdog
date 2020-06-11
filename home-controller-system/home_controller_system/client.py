@@ -1,32 +1,55 @@
+from time import sleep
+
 from vidgear.gears import NetGear
+from threading import Thread
 import cv2
 
-# Open suitable video stream (webcam on first index in our case)
-stream = cv2.VideoCapture(0)
 
-# activate multiserver_mode
-# options = {'multiserver_mode': True, 'secure_mode': 1, "overwrite_cert": True}
-options = {'multiserver_mode': True}
-server = NetGear(address='127.0.0.1', port='5566', protocol='tcp', pattern=1, **options)
+class Client:
+    def __init__(self, ip_address, port):
+        self.ip_address = ip_address
+        self.port = port
 
-# loop over until Keyboard Interrupted
-while True:
-    try:
-        # read frames from stream
-        (grabbed, frame) = stream.read()
+    def run(self):
+        # Open suitable video stream (webcam on first index in our case)
+        stream = cv2.VideoCapture(0)
 
-        # check for frame if not grabbed
-        if not grabbed:
-            break
+        # activate multiserver_mode
+        # options = {'multiserver_mode': True, 'secure_mode': 1, "overwrite_cert": True}
+        options = {'multiserver_mode': True}
+        server = NetGear(address=self.ip_address, port=self.port, protocol='tcp', pattern=1, **options)
 
-        # send frame to server
-        server.send(frame)
+        # loop over until Keyboard Interrupted
+        while True:
+            try:
+                # read frames from stream
+                (grabbed, frame) = stream.read()
 
-    except KeyboardInterrupt:
-        break
+                # check for frame if not grabbed
+                if not grabbed:
+                    break
 
-# safely close video stream
-stream.release()
+                # send frame to server
+                server.send(frame)
 
-# safely close server
-server.close()
+            except KeyboardInterrupt:
+                break
+
+        # safely close video stream
+        stream.release()
+
+        # safely close server
+        server.close()
+
+
+if __name__ == "__main__":
+    c1 = Client('127.0.0.1', 5566)
+    c1.run()
+    # c2 = Client('127.0.0.1', 5567)
+    #
+    # t1 = Thread(target=c1.run)
+    # t2 = Thread(target=c2.run)
+    #
+    # t1.start()
+    # sleep(2)
+    # t2.start()
