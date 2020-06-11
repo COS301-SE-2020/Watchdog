@@ -48,8 +48,8 @@ def test_successfully_add_clients():
 def test_server_receives_frames():
     server = Server("127.0.0.1")
     server.add_client(5566)
-
-    p1 = Thread(target=server.run, args=(False,))
+    
+    p1 = Thread(target=server.run, args=(False, False))
     p1.start()
     sleep(2)
     p2 = Thread(target=send_frame_to_server, args=(5566, 2,))
