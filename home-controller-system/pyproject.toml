@@ -9,6 +9,10 @@ python = "^3.7"
 poetrify = "^0.4.1"
 black = "^19.10b0"
 boto3 ="1.14.0"
+vidgear = "^0.1.7"
+imutils = "^0.5.3"
+numpy = "^1.18.5"
+opencv-python = "^4.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
