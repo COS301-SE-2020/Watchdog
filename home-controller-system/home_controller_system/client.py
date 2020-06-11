@@ -16,8 +16,14 @@ class Client:
 
         # activate multiserver_mode
         # options = {'multiserver_mode': True, 'secure_mode': 1, "overwrite_cert": True}
-        options = {'multiserver_mode': True}
-        server = NetGear(address=self.ip_address, port=self.port, protocol='tcp', pattern=1, **options)
+        options = {"multiserver_mode": True}
+        server = NetGear(
+            address=self.ip_address,
+            port=self.port,
+            protocol="tcp",
+            pattern=1,
+            **options
+        )
 
         # loop over until Keyboard Interrupted
         while True:
@@ -43,7 +49,7 @@ class Client:
 
 
 if __name__ == "__main__":
-    c1 = Client('127.0.0.1', 5566)
+    c1 = Client("127.0.0.1", 5566)
     c1.run()
     # c2 = Client('127.0.0.1', 5567)
     #

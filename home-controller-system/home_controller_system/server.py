@@ -21,7 +21,9 @@ class Client:
         return f"{self.ip_address}:{self.port}"
 
     def identify_movement(self, cf, ceil):
-        grey = cv2.cvtColor(cf, cv2.COLOR_BGR2GRAY)  # convert frame to grey -> 1 vs 3 channel
+        grey = cv2.cvtColor(
+            cf, cv2.COLOR_BGR2GRAY
+        )  # convert frame to grey -> 1 vs 3 channel
         grey = cv2.GaussianBlur(grey, (21, 21), 0)
         grey = np.array(grey, dtype=np.uint8)
 
@@ -43,15 +45,20 @@ class Client:
         threshold = cv2.dilate(threshold, None, iterations=18)  # fill in the holes
         threshold = cv2.erode(threshold, None, iterations=10)
 
-        contours = cv2.findContours(threshold.copy(), cv2.RETR_EXTERNAL,  # find the contours
-                                   cv2.CHAIN_APPROX_SIMPLE)
+        contours = cv2.findContours(
+            threshold.copy(),
+            cv2.RETR_EXTERNAL,  # find the contours
+            cv2.CHAIN_APPROX_SIMPLE,
+        )
         contours = grab_contours(contours)
         back_contours = contours  # Save contours
         current_surface_area = 0
         for c in contours:
             current_surface_area += cv2.contourArea(c)
 
-        avg = (current_surface_area * 100)  # calculating the average of contour area on the total size
+        avg = (
+            current_surface_area * 100
+        )  # calculating the average of contour area on the total size
         cv2.drawContours(self.current_frame, back_contours, -1, (0, 255, 0), 1)
 
         if avg > ceil:
@@ -87,13 +94,17 @@ class Server:
             return 501
 
     def build_montage(self, frames, width, height):
-        montages = build_montages(frames.values(), (width, height), (self.num_of_cameras, 1))
+        montages = build_montages(
+            frames.values(), (width, height), (self.num_of_cameras, 1)
+        )
 
         for (i, montage) in enumerate(montages):
             cv2.imshow("Montage Footage {}".format(i), montage)
 
     def is_client_connected(self, port):
-        if f"{self.ip_address}:{port}" in self.clients:  # if client is connected -> client __str__ is in dictionary
+        if (
+            f"{self.ip_address}:{port}" in self.clients
+        ):  # if client is connected -> client __str__ is in dictionary
             # client = self.clients[f"{self.ip_address}:{port}"]
             return True
         return False
@@ -107,7 +118,7 @@ class Server:
         return cf
 
     def did_client_send_frame(self, port):
-        return self.clients[f'{self.ip_address}:{port}'].received_frame
+        return self.clients[f"{self.ip_address}:{port}"].received_frame
 
     def run(self, display_video=True):
         ports = []
@@ -118,9 +129,16 @@ class Server:
             print("There are currently no ip cameras detected!")
             return 500
         # activate multiserver_mode
-        options = {'multiserver_mode': True}
+        options = {"multiserver_mode": True}
 
-        client = NetGear(address=self.ip_address, port=ports, protocol='tcp', pattern=1, receive_mode=True, **options)
+        client = NetGear(
+            address=self.ip_address,
+            port=ports,
+            protocol="tcp",
+            pattern=1,
+            receive_mode=True,
+            **options,
+        )
         while True:
             try:
                 # receive data from network
@@ -155,7 +173,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server('127.0.0.1')
+    server = Server("127.0.0.1")
     server.add_client(5566)
     # server.add_client(5567)
     server.run()
