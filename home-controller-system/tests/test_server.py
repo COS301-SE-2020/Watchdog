@@ -8,7 +8,7 @@ from home_controller_system.server import Server
 
 def send_frame_to_server(port, number_of_frames_to_send):
 
-    stream = cv.VideoCapture("./test_video/big_buck_bunny_720p_1mb.mp4")
+    stream = cv.VideoCapture("test_video/big_buck_bunny_720p_1mb.mp4")
     options = {"multiserver_mode": True}
     server = NetGear(
         address="127.0.0.1", port=port, protocol="tcp", pattern=1, **options
@@ -64,10 +64,10 @@ def test_server_receives_frames():
     server = Server("127.0.0.1")
     server.add_client(5566)
 
-    p1 = Thread(target=server.run, args=(False, False,))
+    p1 = Thread(target=server.run, args=(False,))
     p1.start()
     sleep(2)
-    p2 = Thread(target=send_frame_to_server, args=(5566,1,))
+    p2 = Thread(target=send_frame_to_server, args=(5566, 2,))
     p2.start()
     sleep(2)
     response = server.did_client_send_frame(5566)
@@ -79,7 +79,7 @@ def test_no_movement_of_frames():
     server = Server("127.0.0.1")
     server.add_client(5566)
 
-    p1 = Thread(target=server.run, args=(False, False,))
+    p1 = Thread(target=server.run, args=(False,))
     p1.start()
     sleep(2)
     p2 = Thread(target=send_frame_to_server, args=(5566,1,))
@@ -94,7 +94,7 @@ def test_movement_of_frames():
     server = Server("127.0.0.1")
     server.add_client(5566)
 
-    p1 = Thread(target=server.run, args=(False, False,))
+    p1 = Thread(target=server.run, args=(False,))
     p1.start()
     sleep(2)
     p2 = Thread(target=send_frame_to_server, args=(5566,10,))

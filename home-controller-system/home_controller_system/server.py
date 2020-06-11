@@ -128,7 +128,7 @@ class Server:
     def detect_client_movement(self, port):
         return self.clients[f"{self.ip_address}:{port}"].is_movement
 
-    def run(self, display_video=True):
+    def run(self, display_video=True, detect_movement=True):
         ports = []
         if self.clients.__len__() > 0:
             for c in self.clients:
@@ -162,8 +162,9 @@ class Server:
                     current_client = self.clients[f"{self.ip_address}:{unique_address}"]
                     current_client.received_frame = True
                     current_client.current_frame = frame
-                    if current_client.identify_movement(frame, self.ceil):
-                        print("Something is moving!")
+                    if detect_movement:
+                        if current_client.identify_movement(frame, self.ceil):
+                            print("Something is moving!")
 
                 if display_video:
                     frame_dict = self.get_current_client_frames()
@@ -171,7 +172,7 @@ class Server:
                     (h, w) = frame.shape[:2]
                     self.build_montage(frame_dict, w, h)
 
-                key  = cv2.waitKey(1) & 0xFF
+                key = cv2.waitKey(1) & 0xFF
                 if key == ord("q"):
                     break
             except KeyboardInterrupt:
