@@ -6,28 +6,13 @@ from threading import Thread
 from home_controller_system.server import Server
 
 
-def send_frame_to_server(port, number_of_frames_to_send):
-
-    stream = cv.VideoCapture("test_video/big_buck_bunny_720p_1mb.mp4")
-    options = {"multiserver_mode": True}
-    server = NetGear(
-        address="127.0.0.1", port=port, protocol="tcp", pattern=1, **options
-    )
-    i = 0
-    while i < number_of_frames_to_send:
-        try:
-            (grabbed, frame) = stream.read()
-            if not grabbed:
-                raise Exception(
-                    "Could not send video frame image. Please check that your video path is correct!"
-                )
-            server.send(frame)
-            i+=1
-        except Exception as e:
-            print(e)
-
-    stream.release()
-    server.close()
+# UNIT-TESTS
+#   1 -- test_successfully_add_client
+#   2 -- test_adding_client_with_same_port_number
+#   3 -- test_successfully_add_clients
+#   4 -- test_server_receives_frames
+#   5 -- test_no_movement_of_frames
+#   6 -- test_movement_of_frames
 
 
 def test_successfully_add_client():
@@ -103,3 +88,30 @@ def test_movement_of_frames():
 
     response = server.detect_client_movement(5566)
     assert response is True
+
+
+# UTILITIES
+
+
+def send_frame_to_server(port, number_of_frames_to_send):
+    stream = cv.VideoCapture("test_video/big_buck_bunny_720p_1mb.mp4")
+    options = {"multiserver_mode": True}
+    server = NetGear(
+        address="127.0.0.1", port=port, protocol="tcp", pattern=1, **options
+    )
+    
+    i = 0
+    while i < number_of_frames_to_send:
+        try:
+            (grabbed, frame) = stream.read()
+            if not grabbed:
+                raise Exception(
+                    "Could not send video frame image. Please check that your video path is correct!"
+                )
+            server.send(frame)
+            i+=1
+        except Exception as e:
+            print(e)
+
+    stream.release()
+    server.close()
