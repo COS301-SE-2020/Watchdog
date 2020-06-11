@@ -1,7 +1,4 @@
-from time import sleep
-
 from vidgear.gears import NetGear
-from threading import Thread
 import cv2
 
 
@@ -51,11 +48,3 @@ class Client:
 if __name__ == "__main__":
     c1 = Client("127.0.0.1", 5566)
     c1.run()
-    # c2 = Client('127.0.0.1', 5567)
-    #
-    # t1 = Thread(target=c1.run)
-    # t2 = Thread(target=c2.run)
-    #
-    # t1.start()
-    # sleep(2)
-    # t2.start()

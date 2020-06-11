@@ -163,6 +163,9 @@ class Server:
                     (h, w) = frame.shape[:2]
                     self.build_montage(frame_dict, w, h)
 
+                key  = cv2.waitKey(1) & 0xFF
+                if key == ord("q"):
+                    break
             except KeyboardInterrupt:
                 break
         # close output window
