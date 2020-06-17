@@ -1,191 +1,93 @@
-from vidgear.gears import NetGear
-from imutils import build_montages, grab_contours
 import cv2
-import numpy as np
-
-
-class CameraClient:
-    def __init__(self, ip_address, port):
-        self.ip_address = ip_address
-        self.port = port
-
-        self.received_frame = False
-        self.is_movement = False
-
-        self.current_frame = None
-        self.moving_average = None
-        self.difference = None
-        self.temp = None
-
-    def __str__(self):
-        return f"{self.ip_address}:{self.port}"
-
-    def identify_movement(self, cf, ceil):
-        # convert frame to grey -> 1 vs 3 channel 
-        grey = cv2.cvtColor( 
-            cf, cv2.COLOR_BGR2GRAY
-        )  
-        grey = cv2.GaussianBlur(grey, (21, 21), 0)
-        grey = np.array(grey, dtype=np.uint8)
-
-        if self.moving_average is None:
-            self.moving_average = np.array(cf, dtype=float)
-
-        if self.difference is None:
-            self.temp = self.difference = cf
-            cv2.convertScaleAbs(cf, self.moving_average, 1.0, 0.0)
-        else:
-            cv2.accumulateWeighted(cf, self.moving_average, 0.020, None)
-
-        cv2.convertScaleAbs(self.moving_average, self.temp, 1.0, 0.0)
-
-        self.difference = cv2.absdiff(cf, self.temp)
-        self.difference = cv2.cvtColor(self.difference, cv2.COLOR_BGR2GRAY)
-
-        threshold = cv2.threshold(self.difference, 70, 255, cv2.THRESH_BINARY)[1]
-        threshold = cv2.dilate(threshold, None, iterations=18)  # fill in the holes
-        threshold = cv2.erode(threshold, None, iterations=10)
-
-        contours = cv2.findContours(
-            threshold.copy(),
-            cv2.RETR_EXTERNAL,  # find the contours
-            cv2.CHAIN_APPROX_SIMPLE,
-        )
-
-        contours = grab_contours(contours)
-        back_contours = contours  # Save contours
-        current_surface_area = 0
-
-        for c in contours:
-            current_surface_area += cv2.contourArea(c)
-
-        avg = (
-            current_surface_area * 100
-        )  # calculating the average of contour area on the total size
-        cv2.drawContours(self.current_frame, back_contours, -1, (0, 255, 0), 1)
-
-        if avg > ceil:
-            self.is_movement = True
-        else:
-            self.is_movement = False
-
-        return self.is_movement
-
+from vidgear.gears import NetGear
+from imutils import build_montages
+from home_controller_system.connector import Connector
 
 class Server:
-    def __init__(self, ip_address, ceil=15):
-        self.ip_address = ip_address
-        self.ceil = ceil
-
+    def __init__(self, address, location = 'Home'):
+        self.address = address
+        self.location = location
         self.clients = {}
-        self.num_of_cameras = 0
+        self.cam_count = 0
+        self.live = False
+        self.height = 720
+        self.width = 1080
 
-    def add_client(self, port):
-        is_valid = False
-        if self.ip_address is not None:
-            if self.clients.__len__() > 0:
-                for c in self.clients:
-                    if self.clients[c].port != port:
-                        is_valid = True
+    # adds a ip camera client to an allocated port on the server
+    def add_camera(self, address, location = 'Room', is_IP = True):
+        if not self.check_address(address):
+            print("Adding camera " + address + " - " + location)
+            client = Connector(address, location)
+            if is_IP:
+                protocol = 'rtsp://'
             else:
-                is_valid = True
-
-        if is_valid:
-            client = CameraClient(self.ip_address, port)
-            self.clients[client.__str__()] = client
-            self.num_of_cameras += 1
-            return 200  # successfully added client
-        else:
-            return 501
-
-    def build_montage(self, frames, width, height):
-        montages = build_montages(
-            frames.values(), (width, height), (self.num_of_cameras, 1)
-        )
-
-        for (i, montage) in enumerate(montages):
-            cv2.imshow("Montage Footage {}".format(i), montage)
-
-    def is_client_connected(self, port):
-        if (
-            f"{self.ip_address}:{port}" in self.clients
-        ):  # if client is connected -> client __str__ is in dictionary
-            # client = self.clients[f"{self.ip_address}:{port}"]
-            return True
+                protocol = ''
+            client.connect(protocol)
+            if client.is_connected:
+                self.clients[address] = client
+                self.cam_count += 1
+            return True  # successfully added client
         return False
 
-    def get_current_client_frames(self):
-        cf = {}
-        for c in self.clients:
-            temp = self.clients.get(c)
-            if temp.current_frame is not None:
-                cf[temp.__str__()] = temp.current_frame
-        return cf
+    def check_address(self, address):
+        # quick check
+        if f"{self.address}" in self.clients: 
+            return True
+        # double check
+        # for camera_client in self.clients:
+        for camera_address, camera_client in self.clients.items():
+            if camera_client.address == address:
+                return True
+        return False
 
-    def did_client_send_frame(self, port):
-        return self.clients[f"{self.ip_address}:{port}"].received_frame
+    # starts the server
+    def run(self, display = True):
+        if self.clients.__len__() == 0:
+            print("Error: There are currently no ip cameras detected.")
+        
+        self.live = True
+        client_frames = {}
+        for address, client in self.clients.items():
+            if not display:
+                client.output = False
+            client.frame(self.height / self.cam_count, self.width / self.cam_count)
+            client.start()
 
-    def detect_client_movement(self, port):
-        return self.clients[f"{self.ip_address}:{port}"].is_movement
-
-    def run(self, display_video=True, detect_movement=True):
-        ports = []
-        if self.clients.__len__() > 0:
-            for c in self.clients:
-                ports.append(self.clients[c].port)
-        else:
-            print("There are currently no ip cameras detected!")
-            return 500
-        # activate multiserver_mode
-        options = {"multiserver_mode": True}
-
-        client = NetGear(
-            address=self.ip_address,
-            port=ports,
-            protocol="tcp",
-            pattern=1,
-            receive_mode=True,
-            **options,
-        )
-        while True:
+        while self.live:
             try:
-                # receive data from network
-                data = client.recv()
-                # check if data received isn't None
-                if data is None:
-                    break
-                # extract unique port address and its respective frame
-                unique_address, frame = data
-
-                # get extracted frame's shape
-                if self.is_client_connected(unique_address):
-                    current_client = self.clients[f"{self.ip_address}:{unique_address}"]
-                    current_client.received_frame = True
-                    current_client.current_frame = frame
-                    if detect_movement:
-                        if current_client.identify_movement(frame, self.ceil):
-                            print("Something is moving!")
-
-                if display_video:
-                    frame_dict = self.get_current_client_frames()
-                    # build a montage using data dictionary
-                    (h, w) = frame.shape[:2]
-                    self.build_montage(frame_dict, w, h)
+                if display:
+                    for address, client in self.clients.items():
+                        if client.current_frame is not None:
+                            client_frames[address] = client.current_frame
+                    montages = build_montages(client_frames.values(), (self.width, self.height), (self.cam_count, 1))
+                    for (i, montage) in enumerate(montages):
+                        cv2.imshow("Montage Footage {}".format(i), montage)
 
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord("q"):
                     break
+
             except KeyboardInterrupt:
                 break
+
+        for address, client in self.clients.items():
+            client.stop()
+            client.disconnect()
+        
         # close output window
         cv2.destroyAllWindows()
 
-        # safely close client
-        client.close()
+    def client_stats(self, address):
+        stats = {}
+        stats['is_connected'] = self.clients[address].is_connected
+        stats['is_movement'] = self.clients[address].is_movement
+        stats['is_person'] = self.clients[address].is_person
+        stats['is_frames'] = self.clients[address].current_frame is not None
+        return stats
 
-
-if __name__ == "__main__":
+def main():
     server = Server("127.0.0.1")
-    server.add_client(5566)
-    # server.add_client(5567)
+    # server.add_camera('10.0.0.109:8080/h264_ulaw.sdp', 'Phone Camera')
+    # server.add_camera('10.0.0.110:8080/h264_ulaw.sdp', 'Tablet Camera', True)
+    server.add_camera('tests/test_video/big_chungus.mp4', 'Video', False)
     server.run()

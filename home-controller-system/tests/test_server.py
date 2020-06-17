@@ -7,111 +7,101 @@ from home_controller_system.server import Server
 
 
 # UNIT-TESTS
-#   1 -- test_successfully_add_client
-#   2 -- test_adding_client_with_same_port_number
-#   3 -- test_successfully_add_clients
+#   1 -- test_add_client
+#   2 -- test_test_add_client_same_address
+#   3 -- test_add_clients
 #   4 -- test_server_receives_frames
-#   5 -- test_no_movement_of_frames
-#   6 -- test_movement_of_frames
+#   5 -- test_frames_without_movement
+#   6 -- test_frames_with_movement
 
 
-def test_successfully_add_client():
-    server = Server("127.0.0.1")
-    response = server.add_client(5566)
+def test_add_client():
+    server = Server('127.0.0.1')
+    address = 'tests/test_video/big_chungus.mp4'
+    response = server.add_camera(address, 'Video', False)
+    stats = server.client_stats(address)
 
-    assert server.is_client_connected(5566) is True
-    assert response is 200
-
-
-def test_adding_client_with_same_port_number():
-    server = Server("127.0.0.1")
-    response = server.add_client(5566)
-    response2 = server.add_client(5566)
-
-    assert response == 200
-    assert response2 == 501
+    assert response is True
+    assert stats['is_connected'] is True
 
 
-def test_successfully_add_clients():
-    server = Server("127.0.0.1")
-    response = server.add_client(5566)
-    server.add_client(5567)
-    server.add_client(5568)
+def test_test_add_client_same_address():
+    server = Server('127.0.0.1')
+    address = 'tests/test_video/big_chungus.mp4'
+    response1 = server.add_camera(address, 'Video', False)
+    response2 = server.add_camera(address, 'Video', False)
 
-    assert server.num_of_cameras == 3
-    assert server.is_client_connected(5566) is True
-    assert server.is_client_connected(5567) is True
-    assert server.is_client_connected(5568) is True
-    assert response is 200
+    assert response1 is True
+    assert response2 is False
+
+
+def test_add_clients():
+    server = Server('127.0.0.1')
+
+    address1 = 'tests/test_video/big_chungus.mp4'
+    response1 = server.add_camera(address1, 'Video', False)
+    stats1 = server.client_stats(address1)
+
+    address2 = 'tests/test_video/still_grey.mp4'
+    response2 = server.add_camera(address2, 'Video', False)
+    stats2 = server.client_stats(address2)
+
+    assert response1 is True
+    assert response2 is True
+    assert server.cam_count == 2
+    assert stats1['is_connected'] is True
+    assert stats2['is_connected'] is True
 
 
 def test_server_receives_frames():
-    server = Server("127.0.0.1")
-    server.add_client(5566)
-    
-    p1 = Thread(target=server.run, args=(False, False))
-    p1.start()
-    sleep(2)
-    p2 = Thread(target=send_frame_to_server, args=(5566, 2,))
-    p2.start()
-    sleep(2)
-    response = server.did_client_send_frame(5566)
+    server = Server('127.0.0.1')
+    address = 'tests/test_video/big_chungus.mp4'
+    response = server.add_camera(address, 'Video', False)
+
+    # let server run for 0.5 second then check client stats
+    thread = Thread(target=server.run, args=(False,))
+    thread.start()
+    sleep(0.5)
+    server.live = False
+    thread.join()
+
+    stats = server.client_stats(address)
 
     assert response is True
+    assert stats['is_frames'] is True
 
 
-def test_no_movement_of_frames():
-    server = Server("127.0.0.1")
-    server.add_client(5566)
+def test_frames_without_movement():
+    server = Server('127.0.0.1')
+    address = 'tests/test_video/still_grey.mp4'
+    response = server.add_camera(address, 'Video', False)
 
-    p1 = Thread(target=server.run, args=(False,))
-    p1.start()
-    sleep(2)
-    p2 = Thread(target=send_frame_to_server, args=(5566,1,))
-    p2.start()
-    sleep(2)
+    # let server run for 0.5 second then check client stats
+    thread = Thread(target=server.run, args=(False,))
+    thread.start()
+    sleep(0.5)
+    server.live = False
+    thread.join()
 
-    response = server.detect_client_movement(5566)
-    assert response is False
+    stats = server.client_stats(address)
 
-
-def test_movement_of_frames():
-    server = Server("127.0.0.1")
-    server.add_client(5566)
-
-    p1 = Thread(target=server.run, args=(False,))
-    p1.start()
-    sleep(2)
-    p2 = Thread(target=send_frame_to_server, args=(5566,10,))
-    p2.start()
-    sleep(2)
-
-    response = server.detect_client_movement(5566)
     assert response is True
+    assert stats['is_movement'] is False
 
 
-# UTILITIES
+def test_frames_with_movement():
+    server = Server('127.0.0.1')
+    address = 'tests/test_video/big_chungus.mp4'
+    response = server.add_camera(address, 'Video', False)
 
+    # let server run for 1 second then check client stats
+    thread = Thread(target=server.run, args=(False,))
+    thread.start()
+    sleep(1)
+    server.live = False
+    thread.join()
 
-def send_frame_to_server(port, number_of_frames_to_send):
-    stream = cv.VideoCapture("test_video/big_buck_bunny_720p_1mb.mp4")
-    options = {"multiserver_mode": True}
-    server = NetGear(
-        address="127.0.0.1", port=port, protocol="tcp", pattern=1, **options
-    )
+    stats = server.client_stats(address)
     
-    i = 0
-    while i < number_of_frames_to_send:
-        try:
-            (grabbed, frame) = stream.read()
-            if not grabbed:
-                raise Exception(
-                    "Could not send video frame image. Please check that your video path is correct!"
-                )
-            server.send(frame)
-            i+=1
-        except Exception as e:
-            print(e)
-
-    stream.release()
-    server.close()
+    assert response is True
+    assert stats['is_movement'] is True
