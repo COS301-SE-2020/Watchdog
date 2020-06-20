@@ -8,6 +8,7 @@ authors = ["Jonathen Sundy <jonathensundy@gmail.com>"]
 python = "^3.7"
 poetrify = "^0.4.1"
 black = "^19.10b0"
+boto3 ="1.14.0"
 vidgear = "^0.1.7"
 imutils = "^0.5.3"
 numpy = "^1.18.5"

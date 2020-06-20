@@ -1,12 +1,13 @@
 import cv2
 from vidgear.gears import NetGear
-from imutils import build_montages
+from imutils import build_montages, grab_contours
 from home_controller_system.connector import Connector
 
 class Server:
     def __init__(self, address, location = 'Home'):
         self.address = address
         self.location = location
+
         self.clients = {}
         self.cam_count = 0
         self.live = False
@@ -52,7 +53,6 @@ class Server:
                 client.output = False
             client.frame(self.height / self.cam_count, self.width / self.cam_count)
             client.start()
-
         while self.live:
             try:
                 if display:
@@ -62,18 +62,14 @@ class Server:
                     montages = build_montages(client_frames.values(), (self.width, self.height), (self.cam_count, 1))
                     for (i, montage) in enumerate(montages):
                         cv2.imshow("Montage Footage {}".format(i), montage)
-
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord("q"):
                     break
-
             except KeyboardInterrupt:
                 break
-
         for address, client in self.clients.items():
             client.stop()
             client.disconnect()
-        
         # close output window
         cv2.destroyAllWindows()
 

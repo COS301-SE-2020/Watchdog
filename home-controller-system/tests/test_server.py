@@ -20,7 +20,7 @@ def test_add_client():
     address = 'tests/test_video/big_chungus.mp4'
     response = server.add_camera(address, 'Video', False)
     stats = server.client_stats(address)
-
+    
     assert response is True
     assert stats['is_connected'] is True
 
@@ -37,7 +37,6 @@ def test_test_add_client_same_address():
 
 def test_add_clients():
     server = Server('127.0.0.1')
-
     address1 = 'tests/test_video/big_chungus.mp4'
     response1 = server.add_camera(address1, 'Video', False)
     stats1 = server.client_stats(address1)
@@ -64,27 +63,24 @@ def test_server_receives_frames():
     sleep(0.5)
     server.live = False
     thread.join()
-
     stats = server.client_stats(address)
 
     assert response is True
     assert stats['is_frames'] is True
-
-
+    
+    
 def test_frames_without_movement():
     server = Server('127.0.0.1')
     address = 'tests/test_video/still_grey.mp4'
     response = server.add_camera(address, 'Video', False)
-
     # let server run for 0.5 second then check client stats
     thread = Thread(target=server.run, args=(False,))
     thread.start()
     sleep(0.5)
     server.live = False
     thread.join()
-
     stats = server.client_stats(address)
-
+    
     assert response is True
     assert stats['is_movement'] is False
 
@@ -93,15 +89,14 @@ def test_frames_with_movement():
     server = Server('127.0.0.1')
     address = 'tests/test_video/big_chungus.mp4'
     response = server.add_camera(address, 'Video', False)
-
     # let server run for 1 second then check client stats
     thread = Thread(target=server.run, args=(False,))
     thread.start()
     sleep(1)
     server.live = False
     thread.join()
-
     stats = server.client_stats(address)
     
     assert response is True
     assert stats['is_movement'] is True
+
