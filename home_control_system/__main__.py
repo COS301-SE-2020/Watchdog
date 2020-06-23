@@ -1,19 +1,3 @@
-# from server import (
-#     Server
-# )
-# from service import (
-#     S3Bucket,
-#     SQSQueue
-# )
-
-# def gen_server(address):
-#     return Server(address)
-
-# def __service(service, target):
-#     if service == 'S3Bucket':
-#         return S3Bucket(target)
-#     if service == 'SQSQueue':
-#         return SQSQueue(target)
 from server.server import Server
 
 def main():
