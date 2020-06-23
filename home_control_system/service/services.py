@@ -2,9 +2,11 @@ import boto3
 from abc import ABC
 
 
-class APIConnectionProxy(ABC):
+class ServiceGateway(ABC):
     def __init__(self, service):
-        self.service = boto3.resource(service)
+        print("Initializing new service [" + service + "]")
+        # self.service = boto3.resource(service)
+        # self.service = boto3.client(service, aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
 
     def data_type(self, obj):
         if type(obj) == str:
@@ -13,10 +15,10 @@ class APIConnectionProxy(ABC):
             return 'Number'
 
 
-class SQSQueue(APIConnectionProxy):
+class SQSQueue(ServiceGateway):
     def __init__(self, url):
         super().__init__('sqs')
-        self.queue = self.service.Queue(url)
+        # self.queue = self.service.Queue(url)
 
     def __convert_dictionary__(self, obj):
         return {key: {'DataType': self.data_type(
@@ -51,20 +53,18 @@ class SQSQueue(APIConnectionProxy):
         return message, response, deleteresponse
 
 
-class S3Bucket(APIConnectionProxy):
+class S3Bucket(ServiceGateway):
     def __init__(self, bucket):
         super().__init__('s3')
-        self.bucket = self.service.Bucket(bucket)
+        # self.bucket = self.service.Bucket(bucket)
 
     def upload_file(self, metadata, filename_to_upload, file_object):
         response = None
-
         try:
             response = self.bucket.put_object(
                 Metadata=metadata, Key=filename_to_upload, Body=file_object)
         except Exception as e:
             response = e
-
         return response
 
     def get_bucket_names(self):
@@ -80,5 +80,4 @@ class S3Bucket(APIConnectionProxy):
                 ]
             }
         )
-
         return response
