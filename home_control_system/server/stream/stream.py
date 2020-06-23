@@ -70,16 +70,20 @@ class Stream:
     def __in__(self, frame):
         self.triggers['was_movement'] = self.triggers['is_movement']
         self.triggers['was_person'] = self.triggers['is_person']
+
         if self.detect_movement(frame):
             self.camera.is_movement = self.triggers['is_movement'] = True
         else:
             self.camera.is_movement = self.triggers['is_movement'] = False
-        if self.triggers['is_movement'] | self.triggers['was_movement']:
+            self.feedback['contours'] = None
+            
+        if self.triggers['is_movement']:
             if self.detect_person(frame):
                 self.camera.is_person = self.triggers['is_person'] = True
                 self.collector.collect(frame, self.camera.address)
             else:
                 self.camera.is_person = self.triggers['is_person'] = False
+                self.feedback['rectangles'] = None
         return frame
 
     # 0 : Output Feedback to Frame
@@ -93,7 +97,7 @@ class Stream:
     #   ii : Retrieve Images
     #   iii : Upload images to S3 bucket
     #   iv : Make call to API Gateway to trigger DetectIntruder lambda function on given images
-    def __out__(self, frame):
+    async def __out__(self, frame):
         if self.triggers['is_person']:
             frame = self.feedback_person(frame)
             self.collector.flush()
@@ -108,8 +112,7 @@ class Stream:
             if self.config['stop_time'] < now:
                 self.config['start_time'] = self.config['stop_time'] + self.config['gap_length']
                 self.config['stop_time'] = self.config['start_time'] + self.config['clip_length']
-                asyncio.run(self.export_video())
-
+                await self.export_video()
         return frame
 
     def size(self, width, height):
@@ -147,13 +150,11 @@ class Stream:
         current_surface_area = 0.0
         for contour in self.feedback['contours']:
             current_surface_area += contourArea(contour)
-        
+
         if current_surface_area > self.indicators['ceil']:
-            self.indicators['ceil'] *= 1.1
-            self.indicators['weight'] *= 0.9
+            self.indicators['ceil'] *= 1.05
             return True
-        self.indicators['ceil'] *= 0.9
-        self.indicators['weight'] *= 1.1
+        self.indicators['ceil'] *= 0.95
         return False
 
     # Detects Persons Face in Frame

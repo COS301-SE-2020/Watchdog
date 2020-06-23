@@ -1,4 +1,5 @@
 import cv2
+import asyncio
 import threading
 from .stream.stream import Stream
 from .stream.frame import time_now
@@ -58,7 +59,7 @@ class Camera(threading.Thread):
         # check not already connected
         if not self.is_connected:
             self.connection = cv2.VideoCapture(self.get_url(True))
-            self.connection.set(cv2.CAP_PROP_FPS, 30)
+            self.connection.set(cv2.CAP_PROP_FPS, 1)
             if self.connection.isOpened():
                 print("Connected to IP Camera [" + self.get_url() + "]")
                 self.is_connected = True
@@ -86,7 +87,7 @@ class Camera(threading.Thread):
         if(not self.is_connected):
             self.connect(self.protocol)
 
-        fps = 20
+        fps = 1
         limit = 1000 / (fps)  # milliseconds
         begin = time_now()
 
@@ -101,10 +102,12 @@ class Camera(threading.Thread):
         now = time_now()
         if now < begin + limit:
             # Outputs Feedback to Frame
-            self.stream.__out__(self.current_frame)
+            asyncio.run(self.stream.__out__(self.current_frame))
 
     # Return Camera URL
     def get_url(self, print_protocol=False):
+        if(self.address is int):
+            return self.address
         url = self.address
         if self.port != '':
             url += ":" + self.port

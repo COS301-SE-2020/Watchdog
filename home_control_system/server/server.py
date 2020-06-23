@@ -12,7 +12,7 @@ class Server:
         (self.height, self.width) = (360, 480)  # To be moved
 
     # adds a ip camera client to an allocated port on the server
-    def add_camera(self, address, port, path='', location='Room', protocol='rtsp'):
+    def add_camera(self, address, port='', path='', location='Room', protocol=''):
         if not self.check_address(address):
             print("Adding camera " + address + " - " + location)
             client = Camera(address, port, path, location)
