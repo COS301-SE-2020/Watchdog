@@ -1,6 +1,6 @@
 from time import sleep
 from threading import Thread
-from home_control_system.server.server import Server
+from server.server import Server
 
 # UNIT-TESTS
 #   1 -- test_add_client
@@ -9,6 +9,7 @@ from home_control_system.server.server import Server
 #   4 -- test_serve_receives_frames
 #   5 -- test_frames_without_movement
 #   6 -- test_frames_with_movement
+
 
 def test_add_client():
     serve = Server('127.0.0.1')
