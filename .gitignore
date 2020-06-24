@@ -1,6 +1,18 @@
+# Hidden
 .idea
 .DS_Store
+# Init. VS-Code
+.vscode
+# Init. Python-Module
 home_controller_system.egg-info
-__pycache__
+# Python-Cache
+.pytest_cache
 tests/__pycache__
-home_controller_system/__pycache__
+home_control_system/__pycache__
+home_control_system/server/stream/__pycache__
+home_control_system/service/__pycache__
+home_control_system/server/__pycache__
+home_control_system/app/__pycache__
+# Generated Content
+data/temp/image/*
+data/temp/video/*
