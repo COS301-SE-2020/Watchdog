@@ -2,7 +2,8 @@ import cv2
 import asyncio
 import threading
 from .stream.stream import Stream
-from .stream.frame import time_now
+# from .app.widgets import StreamView
+# from .stream.frame import time_now
 
 PROTOCOLS = ['', 'rstp', 'http', 'https']
 
@@ -13,6 +14,8 @@ class Camera(threading.Thread):
         threading.Thread.__init__(self)
         # Stream Management Object
         self.stream = Stream(self)
+        # Stream View GUI Object
+        self.stream_view = None
         # Camera Physical Location
         self.location = location
         # Camera IP Address
@@ -49,6 +52,7 @@ class Camera(threading.Thread):
     # Stop thread
     def stop(self):
         self.live = False
+        self.disconnect()
 
     # Connect to IP Camera
     def connect(self, protocol=''):
@@ -87,10 +91,6 @@ class Camera(threading.Thread):
         if(not self.is_connected):
             self.connect(self.protocol)
 
-        fps = 1
-        limit = 1000 / (fps)  # milliseconds
-        begin = time_now()
-
         (grabbed, frame) = self.connection.read()
         if grabbed:
             # Adds Frame to Stream
@@ -99,10 +99,7 @@ class Camera(threading.Thread):
         else:
             self.check_connection()
 
-        now = time_now()
-        if now < begin + limit:
-            # Outputs Feedback to Frame
-            asyncio.run(self.stream.__out__(self.current_frame))
+        asyncio.run(self.stream.__out__(self.current_frame))
 
     # Return Camera URL
     def get_url(self, print_protocol=False):
@@ -118,6 +115,21 @@ class Camera(threading.Thread):
                 url = self.protocol + '://' + url
         return url
 
+    def update_stream_view(self):
+        try:
+            self.stream_view.setFrame(self.current_frame)
+        except RuntimeError:
+            return
+
+    def get_stream_view(self):
+        return self.stream_view
+
+    def set_stream_view(self, stream_view):
+        self.stream_view = stream_view
+
     # Set View Frame
-    def set_frame(self, height, width):
+    def set_stream_dimensions(self, height, width):
         self.stream.size(width, height)
+        if self.connection is not None:
+            self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

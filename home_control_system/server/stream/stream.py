@@ -1,5 +1,4 @@
 import copy
-import asyncio
 import cv2 as cv
 from numpy import array
 from imutils import grab_contours
@@ -19,7 +18,6 @@ from cv2 import (
     rectangle,
     absdiff
 )
-# from service.upload import upload_api
 from .frame_collector import FrameCollector
 from .frame import (
     time_now,
@@ -37,12 +35,12 @@ class Stream:
         self.camera = camera
         self.collector = FrameCollector()
         self.stack = []
-        (self.height, self.width) = (480, 360)
+        (self.height, self.width) = (0, 0)
         # Indicators for Analysis
         self.indicators = {}
         self.indicators['average'] = None
-        self.indicators['weight'] = 0.05
-        self.indicators['ceil'] = 1.5
+        self.indicators['weight'] = 0.1
+        self.indicators['ceil'] = 1.0
         self.indicators['cascade'] = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
         # Feedback to be Outputted to Frame
         self.feedback = {}
@@ -52,8 +50,7 @@ class Stream:
         self.triggers = {}
         self.triggers['is_movement'] = False
         self.triggers['is_person'] = False
-        self.triggers['was_movement'] = False
-        self.triggers['was_person'] = False
+        self.triggers['movement_timer'] = time_now() + 1500
         # Config for Periodic Video
         self.config = {}
         self.config['frames_per_second'] = 30.0  # seconds
@@ -68,21 +65,22 @@ class Stream:
     #       If face_detected
     #           Add Frame to FrameCollector
     def __in__(self, frame):
-        self.triggers['was_movement'] = self.triggers['is_movement']
-        self.triggers['was_person'] = self.triggers['is_person']
-
         if self.detect_movement(frame):
-            self.camera.is_movement = self.triggers['is_movement'] = True
+            self.camera.is_movement = True
+            self.triggers['movement_timer'] = time_now() + 1500
         else:
-            self.camera.is_movement = self.triggers['is_movement'] = False
+            self.camera.is_movement = False
             self.feedback['contours'] = None
-            
+
         if self.triggers['is_movement']:
+            self.triggers['movement_timer'] = time_now() + 1500
+
+        if time_now() <= self.triggers['movement_timer']:
             if self.detect_person(frame):
-                self.camera.is_person = self.triggers['is_person'] = True
+                self.camera.is_person = True
                 self.collector.collect(frame, self.camera.address)
             else:
-                self.camera.is_person = self.triggers['is_person'] = False
+                self.camera.is_person = False
                 self.feedback['rectangles'] = None
         return frame
 
@@ -98,10 +96,10 @@ class Stream:
     #   iii : Upload images to S3 bucket
     #   iv : Make call to API Gateway to trigger DetectIntruder lambda function on given images
     async def __out__(self, frame):
-        if self.triggers['is_person']:
+        if self.feedback['rectangles'] is not None:
             frame = self.feedback_person(frame)
-            self.collector.flush()
-        elif self.triggers['is_movement']:
+            self.collector.flush()  # TODO: change this
+        elif self.feedback['contours'] is not None:
             frame = self.feedback_movement(frame)
         # check time
         now = time_now()
@@ -164,21 +162,19 @@ class Stream:
         self.feedback['rectangles'] = self.indicators['cascade'].detectMultiScale(
             cvtColor(frame, cv.COLOR_BGR2GRAY),
             scaleFactor=1.5,
-            minNeighbors=5
+            minNeighbors=2 # 5
         )
         return len(self.feedback['rectangles']) > 0  # Return True if List Not Empty
 
     # Draws Movement Feedback to Frame
     def feedback_movement(self, frame):
-        if self.feedback['contours'] is not None:
-            drawContours(frame, self.feedback['contours'], -1, (0, 255, 0), 1)
+        drawContours(frame, self.feedback['contours'], -1, (0, 255, 0), 1)
         return frame
 
     # Draws Persons Face Feedback to Frame
     def feedback_person(self, frame):
-        if self.feedback['rectangles'] is not None:
-            for (x, y, w, h) in self.feedback['rectangles']:
-                rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 15)
+        for (x, y, w, h) in self.feedback['rectangles']:
+            rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 15)
         return frame
 
     async def export_video(self):

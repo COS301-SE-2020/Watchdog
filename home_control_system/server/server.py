@@ -1,10 +1,11 @@
-import cv2
-from imutils import build_montages
+import threading
+from cv2 import waitKey
 from .camera import Camera
+from .stream.frame import time_now
 
-
-class Server:
+class Server(threading.Thread):
     def __init__(self, address, location='Home'):
+        threading.Thread.__init__(self)
         self.live = False
         self.address = address
         self.location = location
@@ -16,11 +17,13 @@ class Server:
         if not self.check_address(address):
             print("Adding camera " + address + " - " + location)
             client = Camera(address, port, path, location)
+            # Set Stream Resolution
+            # client.set_stream_dimensions(self.height / len(self.cameras), self.width / len(self.cameras))
             client.connect(protocol)
             if client.is_connected:
                 self.cameras[address] = client
-            return True  # successfully added client
-        return False
+            return client  # successfully added client
+        return None
 
     def check_address(self, address):
         # quick check
@@ -33,41 +36,32 @@ class Server:
         return False
 
     # starts the server
-    def run(self, display=True):
+    def run(self):
         if self.cameras.__len__() == 0:
             print("Error: There are currently no ip cameras detected.")
-
-        self.live = True
-        client_frames = {}
+            
+        # Start Streams
         for address, client in self.cameras.items():
-            if not display:
-                client.output = False
-            client.set_frame(self.height / len(self.cameras), self.width / len(self.cameras))
             client.start()
 
+        self.live = True
         while self.live:
+            start = time_now()
+            # end = start + 16.67
             try:
-                if display:
-                    for address, client in self.cameras.items():
-                        if client.current_frame is not None:
-                            client_frames[address] = client.current_frame
-                    montages = build_montages(client_frames.values(), (self.width, self.height), (len(self.cameras), 1))
-                    for (i, montage) in enumerate(montages):
-                        cv2.imshow("Montage Footage {}".format(i), montage)
-
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord("q"):
-                    break
-
+                for address, client in self.cameras.items():
+                    client.update_stream_view()
+                waitKey(1)
+                now = time_now()
+                # wait = 16.67 - (now - start)
+                while 16.67 > (now - start):
+                    now = time_now()
             except KeyboardInterrupt:
+                print("Server Stopped")
                 break
 
         for address, client in self.cameras.items():
             client.stop()
-            client.disconnect()
-
-        # close output window
-        cv2.destroyAllWindows()
 
     def client_stats(self, address):
         stats = {}

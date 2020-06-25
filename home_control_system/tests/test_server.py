@@ -17,7 +17,7 @@ def test_add_client():
     response = serve.add_camera(address, '', '', 'Video', '')
     stats = serve.client_stats(address)
 
-    assert response is True
+    assert response is not None
     assert stats['is_connected'] is True
 
 
@@ -27,8 +27,8 @@ def test_test_add_client_same_address():
     response1 = serve.add_camera(address, '', '', 'Video', '')
     response2 = serve.add_camera(address, '', '', 'Video', '')
 
-    assert response1 is True
-    assert response2 is False
+    assert response1 is not None
+    assert response2 is None
 
 
 def test_add_clients():
@@ -42,8 +42,8 @@ def test_add_clients():
     response2 = serve.add_camera(address2, '', '', 'Video', '')
     stats2 = serve.client_stats(address2)
 
-    assert response1 is True
-    assert response2 is True
+    assert response1 is not None
+    assert response2 is not None
     assert len(serve.cameras) == 2
     assert stats1['is_connected'] is True
     assert stats2['is_connected'] is True
@@ -63,7 +63,7 @@ def test_serve_receives_frames():
 
     stats = serve.client_stats(address)
 
-    assert response is True
+    assert response is not None
     assert stats['is_frames'] is True
 
 
@@ -81,7 +81,7 @@ def test_frames_without_movement():
 
     stats = serve.client_stats(address)
 
-    assert response is True
+    assert response is not None
     assert stats['is_movement'] is False
 
 
@@ -99,5 +99,5 @@ def test_frames_with_movement():
 
     stats = serve.client_stats(address)
 
-    assert response is True
+    assert response is not None
     assert stats['is_movement'] is True

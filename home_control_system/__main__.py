@@ -1,10 +1,13 @@
+from app.home import HomeControlPanel
 from server.server import Server
 
+
 def main():
-    serve = Server("127.0.0.1")
-    # serve.add_camera('10.0.0.114', '8080', 'h264_ulaw.sdp', 'Phone Camera', 'rtsp')
-    serve.add_camera('data/sample/big_chungus.mp4', '', '', '', '')
-    serve.run()
+    home = HomeControlPanel(Server("127.0.0.1"))
+    home.add_camera('10.0.0.112', '8080', 'h264_ulaw.sdp', 'Phone Camera', 'rtsp')
+    # home.add_camera('10.0.0.110', '8080', 'h264_ulaw.sdp', 'Tablet Camera', 'rtsp')
+    # home.add_camera('data/sample/big_chungus.mp4')
+    home.start()
 
 
 if __name__ == "__main__":
