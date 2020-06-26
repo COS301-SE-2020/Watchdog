@@ -1,4 +1,6 @@
 import copy
+import threading
+import time
 from .frame import (
     Frame,
     Tag,
@@ -10,11 +12,16 @@ from .frame import (
 #   Maintains a frame queue
 #       Ensures that each Collected Frame is Distinct from All Other Frames in Queue
 #   Exports Frames as Images
-class FrameCollector:
+class FrameCollector(threading.Thread):
     def __init__(self):
+        threading.Thread.__init__(self)
         self.queue = {}
         self.images = {}
-        self.cooldown = time_now()
+
+    def run(self):
+        while(True):
+            self.flush()
+            time.sleep(10)
 
     def collect(self, frame, address):
         frame = Frame(
@@ -30,13 +37,9 @@ class FrameCollector:
             self.queue[frame.id] = frame
 
     def flush(self):
-        if time_now() < self.cooldown:
-            return False
         for frame_name, queue_frame in self.queue.items():
             queue_frame.export()
         self.queue.clear()
-        self.cooldown = time_now() + 300000  # 5 minutes (milliseconds)
-        return True
 
     def retrieve_images(self, drop=False):
         if drop:

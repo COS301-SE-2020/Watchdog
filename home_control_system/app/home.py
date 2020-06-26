@@ -5,7 +5,8 @@ from PyQt5.QtWidgets import (
     QDesktopWidget
 )
 from .style import palette
-from .containers import Layout
+from .component import Component
+from .containers import MainLayout
 
 
 class HomeControlPanel(QApplication):
@@ -14,7 +15,6 @@ class HomeControlPanel(QApplication):
         self.setApplicationName("Home Control Panel")
         self.setStyle("Fusion")
         self.setPalette(palette)
-
         self.server = server
         self.cameras = []
 
@@ -23,27 +23,29 @@ class HomeControlPanel(QApplication):
 
     def start(self):
         self.window = Window()
-        layout = Layout()
-        layout.add_cameras(self.cameras)
-
-        widget = QWidget()
-        widget.setLayout(layout)
-
-        self.window.setWidget(widget)
+        self.window.setLayout(self.cameras)
         self.window.show()
 
         self.server.start()
         self.exec_()
 
+        while(True):
+            for camera in self.cameras:
+                camera.visit_stream_view()
 
-class Window(QMainWindow):
-    def __init__(self, *args, **kwargs):
-        super(Window, self).__init__(*args, **kwargs)
+
+class Window(QMainWindow, Component):
+    def __init__(self):
+        super(Window, self).__init__()
         sizeObject = QDesktopWidget().screenGeometry(-1)
-        self.width = sizeObject.width() / 2
-        self.height = sizeObject.height() / 1.66
+        self.set_dimensions(sizeObject.width() / 2, sizeObject.height() / 1.66)
         self.setGeometry(self.width / 2, sizeObject.height() / 4, self.width, self.height)
         self.setWindowTitle("Home Control Panel")
 
-    def setWidget(self, widget):
+    def setLayout(self, cameras):
+        layout = MainLayout(self)
+        layout.add_cameras(cameras)
+        widget = QWidget()
+        widget.setLayout(layout)
         self.setCentralWidget(widget)
+

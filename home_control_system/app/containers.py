@@ -1,9 +1,14 @@
 from PyQt5.QtWidgets import (
+    QWidget,
     QVBoxLayout,
     QHBoxLayout,
     QGridLayout,
-    QDesktopWidget
+    QSpacerItem,
+    QSizePolicy,
+    QScrollArea
 )
+from PyQt5.QtCore import Qt
+from .component import Component
 from .widgets import StreamView
 
 
@@ -11,15 +16,17 @@ from .widgets import StreamView
 # LAYOUT CONTAINER
 #   - Side Panel
 #   - View Panel
-class Layout(QHBoxLayout):
-    def __init__(self, *args, **kwargs):
-        super(Layout, self).__init__(*args, **kwargs)
-        
-        self.sidepanel = SidePanel()
-        self.view = ViewPanel()
-
-        self.addLayout(self.sidepanel, 1)
-        self.addLayout(self.view, 5)
+class MainLayout(QVBoxLayout, Component):
+    def __init__(self, ascendent):
+        super(MainLayout, self).__init__(ascendent=ascendent)
+        spacer = QSpacerItem(5, self.width, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.sidepanel = SidePanel(self)
+        self.view = ViewPanel(self)
+        layout = QHBoxLayout()
+        layout.addLayout(self.sidepanel, 1)
+        layout.addLayout(self.view, 5)
+        self.addSpacerItem(spacer)
+        self.addLayout(layout)
 
     def add_cameras(self, cameras):
         self.view.stream_grid.set_stream_views(cameras)
@@ -30,9 +37,10 @@ class Layout(QHBoxLayout):
 # SIDE PANEL CONTAINER
 #   - Location
 #   - Rooms/Alerts List
-class SidePanel(QVBoxLayout):
-    def __init__(self, *args, **kwargs):
-        super(SidePanel, self).__init__(*args, **kwargs)
+class SidePanel(QVBoxLayout, Component):
+    def __init__(self, ascendent):
+        super(SidePanel, self).__init__(ascendent=ascendent)
+
 ###############################
 
 
@@ -40,29 +48,38 @@ class SidePanel(QVBoxLayout):
 # VIEW PANEL CONTAINER
 #   - Header Block
 #   - Stream Grid
-class ViewPanel(QVBoxLayout):
-    def __init__(self, *args, **kwargs):
-        super(ViewPanel, self).__init__(*args, **kwargs)
-        self.stream_grid = StreamGrid()
+class ViewPanel(QVBoxLayout, Component):
+    def __init__(self, ascendent):
+        super(ViewPanel, self).__init__(ascendent=ascendent)
+
+        self.stream_grid = StreamGrid(self)
+
+        # widget = QWidget()                 # Widget that contains the collection of Vertical Box
+        # widget.setLayout(self.stream_grid)
+        # # Scroll Area Properties
+        # self.scroll = QScrollArea()
+        # self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        # self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.scroll.setWidgetResizable(True)
+        # self.scroll.setWidget(widget)
+
         self.addLayout(self.stream_grid)
 
-
-class StreamGrid(QGridLayout):
-    def __init__(self, *args, **kwargs):
-        super(StreamGrid, self).__init__(*args, **kwargs)
-        sizeObject = QDesktopWidget().screenGeometry(-1)
-        self.width = sizeObject.width() / 2
-        self.height = sizeObject.height() / 1.66
+class StreamGrid(QGridLayout, Component):
+    def __init__(self, ascendent):
+        super(StreamGrid, self).__init__(ascendent=ascendent)
 
     def set_stream_views(self, cameras):
+        views = []
         for index in range(len(cameras)):
-            cameras[index].set_stream_dimensions(self.height / len(cameras), self.width / len(cameras))
-            cameras[index].set_stream_view(StreamView())
+            view = StreamView()
+            cameras[index].init_stream(view, self.width / 3, self.height / len(cameras))
+            views.append(view)
         (row, col) = (0, 0)
-        for index in range(len(cameras)):
-            if col == 2:
+        for index in range(len(views)):
+            if col > 2:
                 row += 1
                 col = 0
-            self.addWidget(cameras[index].get_stream_view(), row, col)
+            self.addWidget(views[index], row, col)
             col += 1
 ###############################

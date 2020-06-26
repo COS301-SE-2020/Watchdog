@@ -3,19 +3,15 @@ import asyncio
 import threading
 from .stream.stream import Stream
 # from .app.widgets import StreamView
-# from .stream.frame import time_now
+from .stream.frame import time_now
 
 PROTOCOLS = ['', 'rstp', 'http', 'https']
 
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, address, port, path, location):
+    def __init__(self, protocol, address, port, path, location):
         threading.Thread.__init__(self)
-        # Stream Management Object
-        self.stream = Stream(self)
-        # Stream View GUI Object
-        self.stream_view = None
         # Camera Physical Location
         self.location = location
         # Camera IP Address
@@ -25,29 +21,48 @@ class Camera(threading.Thread):
         # Camera Address Path (if necessary)
         self.path = path
         # Camera Connection Protocol
-        self.protocol = ''
+        self.protocol = protocol
         # Live Boolean Spin Variable
         self.live = False
-        # Camera Stream Connection
-        self.connection = None
-        # Camera Current Frame
-        self.current_frame = None
         # Is IP Camera Connected
         self.is_connected = False
         # Is Movement Detected in Current Frame
         self.is_movement = False
         # Is Person Detected in Current Frame
         self.is_person = False
+        # Stream View GUI Object
+        self.stream_view = None
+        # Stream Management Object
+        self.stream = None
+        # Camera Stream Connection
+        self.connection = cv2.VideoCapture(self.get_url(True))
+        # Connect to Camera
+        self.connect()
 
     # Start thread
     def run(self):
         print("Starting Camera Client [" + self.get_url() + "] Location:" + self.location)
         self.connect(self.protocol)
+
+        while self.stream is None:
+            print('Waiting...')
+
         self.live = True
         while(self.live):
             self.update()
+
         self.disconnect()
         print("Camera Client Stopped [" + self.get_url() + "] Location:" + self.location)
+
+    # Update Camera Connection
+    def update(self):
+        if(not self.is_connected):
+            self.connect(self.protocol)
+        (grabbed, frame) = self.connection.read()
+        if grabbed:
+            self.stream.__in__(frame)
+        else:
+            self.check_connection()
 
     # Stop thread
     def stop(self):
@@ -62,7 +77,7 @@ class Camera(threading.Thread):
             self.protocol = protocol
         # check not already connected
         if not self.is_connected:
-            self.connection = cv2.VideoCapture(self.get_url(True))
+            # self.connection = cv2.VideoCapture(self.get_url(True))
             self.connection.set(cv2.CAP_PROP_FPS, 1)
             if self.connection.isOpened():
                 print("Connected to IP Camera [" + self.get_url() + "]")
@@ -86,21 +101,6 @@ class Camera(threading.Thread):
             self.is_connected = False
         return self.is_connected
 
-    # Update Camera Connection
-    def update(self, frame_analysis=True):
-        if(not self.is_connected):
-            self.connect(self.protocol)
-
-        (grabbed, frame) = self.connection.read()
-        if grabbed:
-            # Adds Frame to Stream
-            self.current_frame = frame
-            self.stream.__in__(self.current_frame)
-        else:
-            self.check_connection()
-
-        asyncio.run(self.stream.__out__(self.current_frame))
-
     # Return Camera URL
     def get_url(self, print_protocol=False):
         if(self.address is int):
@@ -115,21 +115,12 @@ class Camera(threading.Thread):
                 url = self.protocol + '://' + url
         return url
 
-    def update_stream_view(self):
-        try:
-            self.stream_view.setFrame(self.current_frame)
-        except RuntimeError:
-            return
+    def visit_stream_view(self):
+        if self.stream_view is not None:
+            return self.stream_view.refresh()
 
-    def get_stream_view(self):
-        return self.stream_view
-
-    def set_stream_view(self, stream_view):
-        self.stream_view = stream_view
-
-    # Set View Frame
-    def set_stream_dimensions(self, height, width):
-        self.stream.size(width, height)
-        if self.connection is not None:
-            self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    # Initialize the stream view
+    def init_stream(self, stream_view, width, height):
+        self.stream = Stream(stream_view, self.address, width, height)
+        self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

@@ -2,28 +2,15 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import (
     QImage,
-    QPainter,
-    QPalette,
-    QColor
+    QPainter
 )
-
-
-class Color(QWidget):
-    def __init__(self, color, *args, **kwargs):
-        super(Color, self).__init__(*args, **kwargs)
-        self.setAutoFillBackground(True)
-
-        palette = self.palette()
-        palette.setColor(QPalette.Window, QColor(color))
-        self.setPalette(palette)
-
 
 class StreamView(QWidget):
     def __init__(self, parent=None):
         super(StreamView, self).__init__(parent)
         self.image = None
 
-    def setFrame(self, frame):
+    def set_frame(self, frame):
         if frame is not None:
             height, width, bpc = frame.shape
             bpl = bpc * width
