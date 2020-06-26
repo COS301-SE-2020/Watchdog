@@ -8,10 +8,7 @@ def main():
     # home.add_camera('10.0.0.106', '8080', 'h264_ulaw.sdp', 'Tablet Camera', 'rtsp')
     # home.add_camera('data/sample/big_chungus.mp4')
     # home.add_camera('data/sample/still_grey.mp4')
-    home.add_camera('data/sample/fort1.mp4')
-    home.add_camera('data/sample/fort2.mp4')
-    home.add_camera('data/sample/fort3.mp4')
-    home.add_camera('data/sample/fort4.mp4')
+    home.add_camera(0)
     home.start()
 
 
