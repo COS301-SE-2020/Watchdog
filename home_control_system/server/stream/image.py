@@ -11,7 +11,7 @@ class Tag(Enum):
     ALERT = 2
 
 
-class Frame:
+class Image:
     def __init__(self, frame, address, tag=Tag.DEFAULT):
         self.frame = frame
         self.tag = tag

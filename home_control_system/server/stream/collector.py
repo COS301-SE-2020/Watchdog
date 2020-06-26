@@ -1,30 +1,32 @@
 import copy
 import threading
 import time
-from .frame import (
-    Frame,
-    Tag,
-    time_now
+from .image import (
+    Image,
+    Tag
 )
 
 
 # FrameCollector
 #   Maintains a frame queue
-#       Ensures that each Collected Frame is Distinct from All Other Frames in Queue
 #   Exports Frames as Images
+#   Exports videos
+
 class FrameCollector(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.queue = {}
         self.images = {}
+        self.live = False
 
     def run(self):
-        while(True):
+        self.live = True
+        while(self.live):
             self.flush()
             time.sleep(10)
 
     def collect(self, frame, address):
-        frame = Frame(
+        frame = Image(
             frame,
             address,
             Tag.ALERT

@@ -1,30 +1,73 @@
+import sys
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import (QPixmap, QIcon)
 from PyQt5.QtWidgets import (
     QWidget,
+    QMainWindow,
+    QDesktopWidget,
+    QPushButton,
     QVBoxLayout,
     QHBoxLayout,
     QGridLayout,
     QSpacerItem,
     QSizePolicy,
-    QScrollArea
+    QScrollArea,
+    QLabel
 )
-from PyQt5.QtCore import Qt
 from .component import Component
 from .widgets import StreamView
 
+# Window Ratio: (5:3)
+# unit = monitor_height / 2 / 3
+
+unit = 1
 
 ###############################
-# LAYOUT CONTAINER
+# MAIN WINDOW
+class Window(QMainWindow, Component):
+    def __init__(self):
+        super(Window, self).__init__()
+        self.setWindowTitle("Home Control Panel")
+        unit = QDesktopWidget().screenGeometry(-1).height() / 2 / 3
+        self.set_dimensions(5 * unit, 3 * unit)
+        self.setGeometry(self.width / 2, self.height / 2, self.width, self.height)
+
+    def buildLayout(self, cameras):
+        layout = HomeContainer(self)
+        layout.add_cameras(cameras)
+        widget = QWidget()
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
+
+    def closeEvent(self, event):
+        event.accept()  # let the window close
+        sys.exit()
+
+###############################
+
+
+###############################
+# MAIN LAYOUT CONTAINER
 #   - Side Panel
 #   - View Panel
-class MainLayout(QVBoxLayout, Component):
+class HomeContainer(QVBoxLayout, Component):
     def __init__(self, ascendent):
-        super(MainLayout, self).__init__(ascendent=ascendent)
-        spacer = QSpacerItem(5, self.width, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        self.sidepanel = SidePanel(self)
-        self.view = ViewPanel(self)
+        super(HomeContainer, self).__init__(ascendent=ascendent)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        space_size = unit / 9
+        self.set_dimensions(self.width, self.height - space_size)
+
         layout = QHBoxLayout()
+
+        self.sidepanel = SideTabContainer(self)
+        self.view = ViewContainer(self)
+
         layout.addLayout(self.sidepanel, 1)
-        layout.addLayout(self.view, 5)
+        layout.addLayout(self.view, 4)
+
+        spacer = QSpacerItem(self.width, space_size, QSizePolicy.Fixed)
+
         self.addSpacerItem(spacer)
         self.addLayout(layout)
 
@@ -35,12 +78,56 @@ class MainLayout(QVBoxLayout, Component):
 
 ###############################
 # SIDE PANEL CONTAINER
-#   - Location
+#   - LocationContainer
 #   - Rooms/Alerts List
-class SidePanel(QVBoxLayout, Component):
+class SideTabContainer(QVBoxLayout, Component):
     def __init__(self, ascendent):
-        super(SidePanel, self).__init__(ascendent=ascendent)
+        super(SideTabContainer, self).__init__(ascendent=ascendent)
+        self.set_dimensions(self.width / 5, self.height)
+        self.setContentsMargins(0, 0, 0, 0)
 
+        self.location = LocationContainer(self)
+        self.room_list = ListContainer(self)
+
+        widget = QWidget()
+        widget.setLayout(self.location)
+        widget.setStyleSheet("background-color:#1d2125;")
+
+        self.addWidget(widget, 3)
+        self.addLayout(self.room_list, 23)
+
+
+class LocationContainer(QHBoxLayout, Component):
+    def __init__(self, ascendent):
+        super(LocationContainer, self).__init__(ascendent=ascendent)
+        self.set_dimensions(self.width, (self.height / 26) * 3)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self.lbl_location = QLabel()
+        self.icon_home = QLabel()
+        self.btn_settings = QPushButton()
+
+        self.lbl_location.setAlignment(Qt.AlignLeft)
+        self.icon_home.setAlignment(Qt.AlignLeft)
+
+        self.lbl_location.setText("Home")
+
+        map = QPixmap("assets/images/home.png")
+        self.icon_home.setPixmap(map.scaled(50, 50, Qt.KeepAspectRatio, Qt.FastTransformation))
+
+        map = QPixmap("assets/images/settings.png")
+        self.btn_settings.setIcon(QIcon(map.scaled(50, 50, Qt.KeepAspectRatio, Qt.FastTransformation)))
+
+        self.addWidget(self.icon_home)
+        self.addWidget(self.lbl_location)
+        self.addWidget(self.btn_settings)
+
+
+class ListContainer(QHBoxLayout, Component):
+    def __init__(self, ascendent):
+        super(ListContainer, self).__init__(ascendent=ascendent)
+        self.set_dimensions(self.width, (self.height / 26) * 23)
+        self.setContentsMargins(0, 0, 0, 0)
 ###############################
 
 
@@ -48,26 +135,65 @@ class SidePanel(QVBoxLayout, Component):
 # VIEW PANEL CONTAINER
 #   - Header Block
 #   - Stream Grid
-class ViewPanel(QVBoxLayout, Component):
+class ViewContainer(QVBoxLayout, Component):
     def __init__(self, ascendent):
-        super(ViewPanel, self).__init__(ascendent=ascendent)
+        super(ViewContainer, self).__init__(ascendent=ascendent)
+        self.set_dimensions((self.width / 5) * 4, self.height)
+        self.setContentsMargins(0, 0, 0, 0)
 
-        self.stream_grid = StreamGrid(self)
+        self.header = HeaderContainer(self)
 
-        # widget = QWidget()                 # Widget that contains the collection of Vertical Box
-        # widget.setLayout(self.stream_grid)
-        # # Scroll Area Properties
-        # self.scroll = QScrollArea()
-        # self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        # self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.scroll.setWidgetResizable(True)
-        # self.scroll.setWidget(widget)
+        self.header.setAlignment(Qt.AlignLeft)
 
-        self.addLayout(self.stream_grid)
+        self.stream_grid = GridContainer(self)
 
-class StreamGrid(QGridLayout, Component):
+        widget = QWidget()
+        widget.setLayout(self.header)
+        widget.setStyleSheet("background-color:#1d2125;")
+
+        self.addWidget(widget, 3)
+        self.addLayout(self.stream_grid, 23)
+
+
+class HeaderContainer(QHBoxLayout, Component):
     def __init__(self, ascendent):
-        super(StreamGrid, self).__init__(ascendent=ascendent)
+        super(HeaderContainer, self).__init__(ascendent=ascendent)
+        self.set_dimensions(self.width, (self.height / 26) * 3)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self.icon_logo = QLabel()
+        self.icon_header = QLabel()
+
+        map = QPixmap("assets/images/watchdog.png")
+        self.icon_logo.setPixmap(map.scaled(100, 100, Qt.KeepAspectRatio, Qt.FastTransformation))
+
+        map = QPixmap("assets/images/header.png")
+        self.icon_header.setPixmap(map.scaledToHeight(80))
+
+        self.icon_header.setAlignment(Qt.AlignLeft)
+        self.icon_logo.setAlignment(Qt.AlignLeft)
+
+        self.addWidget(self.icon_logo)
+        self.addWidget(self.icon_header)
+
+
+class GridContainer(QVBoxLayout, Component):
+    def __init__(self, ascendent):
+        super(GridContainer, self).__init__(ascendent=ascendent)
+        self.setContentsMargins(unit, unit, unit, unit)
+
+        self.viewer = StreamGrid(self)
+
+        widget = QWidget()                 # Widget that contains the collection of Vertical Box
+        widget.setLayout(self.viewer)
+
+        self.scroll = QScrollArea()
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setWidget(widget)
+
+        self.addWidget(self.scroll)
 
     def set_stream_views(self, cameras):
         views = []
@@ -75,6 +201,15 @@ class StreamGrid(QGridLayout, Component):
             view = StreamView()
             cameras[index].init_stream(view, self.width / 3, self.height / len(cameras))
             views.append(view)
+        self.viewer.set_views(views)
+
+class StreamGrid(QGridLayout, Component):
+    def __init__(self, ascendent):
+        super(StreamGrid, self).__init__(ascendent=ascendent)
+        self.set_dimensions(self.width, (self.height / 26) * 23)
+        self.setContentsMargins(unit / 4, unit / 4, unit / 4, unit / 4)
+
+    def set_views(self, views):
         (row, col) = (0, 0)
         for index in range(len(views)):
             if col > 2:

@@ -3,6 +3,7 @@ import cv2 as cv
 import asyncio
 from numpy import array
 from imutils import grab_contours
+from types import SimpleNamespace
 from cv2 import (
     CascadeClassifier,
     VideoWriter,
@@ -20,11 +21,15 @@ from cv2 import (
     absdiff,
     resize
 )
-from .frame_collector import FrameCollector
-from .frame import (
+from .collector import FrameCollector
+from .image import (
     time_now,
     hash_id
 )
+
+collector = FrameCollector()
+collector.start()
+
 
 # Stream
 #   In-Out Frame Processing Pipe
@@ -34,35 +39,33 @@ from .frame import (
 #   Upload the Result Videos and Images to S3 Bucket
 class Stream:
     def __init__(self, view, address, width, height):
+        self.size(width, height)
         self.current_frame = None
         self.address = address
         self.viewer = view
         self.stack = []
-        self.collector = FrameCollector()
-        self.collector.start()
-        self.size(width, height)
         # Indicators for Analysis
-        self.indicators = {}
-        self.indicators['average'] = None
-        self.indicators['weight'] = 0.1
-        self.indicators['ceil'] = 1.0
-        self.indicators['cascade'] = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.indicators = SimpleNamespace()
+        self.indicators.average = None
+        self.indicators.weight = 0.1
+        self.indicators.ceil = 1.0
+        self.indicators.cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
         # Feedback to be Outputted to Frame
-        self.feedback = {}
-        self.feedback['contours'] = None
-        self.feedback['rectangles'] = None
+        self.feedback = SimpleNamespace()
+        self.feedback.contours = None
+        self.feedback.rectangles = None
         # Checks
-        self.triggers = {}
-        self.triggers['is_movement'] = False
-        self.triggers['is_person'] = False
-        self.triggers['movement_timer'] = time_now() + 1500
+        self.triggers = SimpleNamespace()
+        self.triggers.is_movement = False
+        self.triggers.is_person = False
+        self.triggers.movement_timer = time_now() + 1500
         # Config for Periodic Video
-        self.config = {}
-        self.config['frames_per_second'] = 30.0  # seconds
-        self.config['clip_length'] = 10000  # milliseconds
-        self.config['gap_length'] = 20000  # milliseconds
-        self.config['start_time'] = time_now()
-        self.config['stop_time'] = time_now() + self.config['clip_length']
+        self.config = SimpleNamespace()
+        self.config.frames_per_second = 30.0  # seconds
+        self.config.clip_length = 10000  # milliseconds
+        self.config.gap_length = 20000  # milliseconds
+        self.config.start_time = time_now()
+        self.config.stop_time = time_now() + self.config.clip_length
 
     # Add frame to stream
     #   Push to Stack
@@ -85,46 +88,46 @@ class Stream:
         # self.current_frame = frame
         self.current_frame = resize(frame, (self.width, self.height))
 
-        self.triggers['is_movement'] = False
-        self.triggers['is_person'] = False
+        self.triggers.is_movement = False
+        self.triggers.is_person = False
 
         if self.detect_movement():
-            self.triggers['is_movement'] = True
-            self.triggers['movement_timer'] = now + 1500
+            self.triggers.is_movement = True
+            self.triggers.movement_timer = now + 1500
 
-        if now <= self.triggers['movement_timer']:
+        if now <= self.triggers.movement_timer:
             if self.detect_person():
-                self.triggers['is_person'] = True
+                self.triggers.is_person = True
                 self.feedback_person()
-                self.collector.collect(self.current_frame, self.address)
+                collector.collect(self.current_frame, self.address)
             else:
                 self.feedback_movement()
 
         self.viewer.set_frame(self.current_frame)
 
         # Within Clip Record Timeframe
-        if self.config['start_time'] < now:
+        if self.config.start_time < now:
             self.stack.append(self.current_frame)
             # Past Clip Record Timeframe
-            if self.config['stop_time'] < now:
-                self.config['start_time'] = self.config['stop_time'] + self.config['gap_length']
-                self.config['stop_time'] = self.config['start_time'] + self.config['clip_length']
+            if self.config.stop_time < now:
+                self.config.start_time = self.config.stop_time + self.config.gap_length
+                self.config.stop_time = self.config.start_time + self.config.clip_length
                 asyncio.run(self.export_video())
 
     # Detects Movement in Frame
     #   Returns True if Movement
     #   Fills Feedback Buffer for Movement
     def detect_movement(self):
-        if self.indicators['average'] is None:
-            self.indicators['average'] = array(self.current_frame, float)
+        if self.indicators.average is None:
+            self.indicators.average = array(self.current_frame, float)
         accumulateWeighted(
             self.current_frame,
-            self.indicators['average'],
-            self.indicators['weight']
+            self.indicators.average,
+            self.indicators.weight
         )
         difference = cvtColor(absdiff(
             self.current_frame,
-            convertScaleAbs(self.indicators['average'])
+            convertScaleAbs(self.indicators.average)
         ), cv.COLOR_BGR2GRAY)
         thresh = erode(
             dilate(
@@ -133,7 +136,7 @@ class Stream:
                 iterations=2
             ), None, iterations=1
         )
-        self.feedback['contours'] = grab_contours(
+        self.feedback.contours = grab_contours(
             findContours(
                 thresh,
                 cv.RETR_EXTERNAL,
@@ -141,33 +144,33 @@ class Stream:
             )
         )
         current_surface_area = 0.0
-        for contour in self.feedback['contours']:
+        for contour in self.feedback.contours:
             current_surface_area += contourArea(contour)
 
-        if current_surface_area > self.indicators['ceil']:
-            self.indicators['ceil'] *= 1.05
+        if current_surface_area > self.indicators.ceil:
+            self.indicators.ceil *= 1.05
             return True
-        self.indicators['ceil'] *= 0.95
+        self.indicators.ceil *= 0.95
         return False
 
     # Detects Persons Face in Frame
     #   Returns True if Face Present
     #   Fills Feedback Buffer for Faces
     def detect_person(self):
-        self.feedback['rectangles'] = self.indicators['cascade'].detectMultiScale(
+        self.feedback.rectangles = self.indicators.cascade.detectMultiScale(
             cvtColor(self.current_frame, cv.COLOR_BGR2GRAY),
             scaleFactor=1.5,
             minNeighbors=2  # 5
         )
-        return len(self.feedback['rectangles']) > 0  # Return True if List Not Empty
+        return len(self.feedback.rectangles) > 0  # Return True if List Not Empty
 
     # Draws Movement Feedback to Frame
     def feedback_movement(self):
-        drawContours(self.current_frame, self.feedback['contours'], -1, (0, 255, 0), 1)
+        drawContours(self.current_frame, self.feedback.contours, -1, (0, 255, 0), 1)
 
     # Draws Persons Face Feedback to Frame
     def feedback_person(self):
-        for (x, y, w, h) in self.feedback['rectangles']:
+        for (x, y, w, h) in self.feedback.rectangles:
             rectangle(self.current_frame, (x, y), (x+w, y+h), (0, 255, 0), 15)
 
     async def export_video(self):
@@ -178,7 +181,7 @@ class Stream:
         stack = copy.deepcopy(self.stack)
         self.stack.clear()
 
-        file = VideoWriter(name, VideoWriter_fourcc(*"MJPG"), self.config['frames_per_second'], (w, h), True)
+        file = VideoWriter(name, VideoWriter_fourcc(*"MJPG"), self.config.frames_per_second, (w, h), True)
         for index in range(len(stack)):
             file.write(stack[index])
         file.release()

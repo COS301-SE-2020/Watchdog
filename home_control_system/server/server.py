@@ -1,5 +1,7 @@
 import threading
 from .camera import Camera
+from .stream.stream import collector
+
 
 class Server(threading.Thread):
     def __init__(self, address, location='Home'):
@@ -37,6 +39,12 @@ class Server(threading.Thread):
         for address, client in self.cameras.items():
             client.start()
 
+    # stops the server
+    def stops(self):
+        for address, client in self.cameras.items():
+            client.stop()
+        collector.live = False
+
     def client_stats(self, address):
         stats = {}
         stats['is_connected'] = self.cameras[address].is_connected
@@ -44,3 +52,12 @@ class Server(threading.Thread):
         stats['is_person'] = self.cameras[address].is_person
         stats['is_frames'] = self.cameras[address].current_frame is not None
         return stats
+
+    def __str__(self):
+        server = 'Home Control Panel Server' + '\n'
+        server += '\t' + 'Located @ [label:' + self.location + ']' + '\n'
+        server += '\t' + 'Serving @ [url:' + self.address + ']' + '\n'
+        server += '\t' + 'Hosting [' + str(len(self.cameras)) + ' IP Camera(s)]' + '\n'
+        for address, client in self.cameras.items():
+            server += '\t\t' + str(client) + '\n'
+        return server
