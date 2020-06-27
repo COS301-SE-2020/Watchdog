@@ -49,11 +49,13 @@ class Stream:
         self.indicators.average = None
         self.indicators.weight = 0.1
         self.indicators.ceil = 1.0
-        self.indicators.cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.indicators.face_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.indicators.iris_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_eye.xml')
         # Feedback to be Outputted to Frame
         self.feedback = SimpleNamespace()
         self.feedback.contours = None
-        self.feedback.rectangles = None
+        self.feedback.faces = None
+        self.feedback.irides = None
         # Checks
         self.triggers = SimpleNamespace()
         self.triggers.is_movement = False
@@ -67,41 +69,41 @@ class Stream:
         self.config.start_time = time_now()
         self.config.stop_time = time_now() + self.config.clip_length
 
-    # Add frame to stream
-    #   Push to Stack
-    #   If movement_detected
-    #       If face_detected
-    #           Add Frame to FrameCollector
-    # 0 : Output Feedback to Frame
-    # 1 : Export Stack to Video
+    # 0 : Add frame to stream
+    #   i : If movement_detected
+    #       i : If face_detected
+    #           i : Add Frame to FrameCollector
+    #   ii : Push to Stack
+    # 1 : Output Feedback to Frame
+    # 2 : Export Stack to Video
     #   i : Check timing parameters are triggered
     #   ii : Pop frames from stack
     #   iii : Construct video from frames
     #   iv : Upload video to S3 bucket
-    # 2 : Export Frame Collectors Images
+    # - : Export Frame Collectors Images (concurrently managed)
     #   i : Flush Frame Collector
     #   ii : Retrieve Images
     #   iii : Upload images to S3 bucket
     #   iv : Make call to API Gateway to trigger DetectIntruder lambda function on given images
-    def __in__(self, frame):
+    def put(self, frame):
         now = time_now()
-        # self.current_frame = frame
-        self.current_frame = resize(frame, (self.width, self.height))
-
         self.triggers.is_movement = False
         self.triggers.is_person = False
 
+        self.current_frame = resize(frame, (self.width, self.height))
+
+        # Detect Movement in Current Frame
         if self.detect_movement():
             self.triggers.is_movement = True
             self.triggers.movement_timer = now + 1500
-
+        # Check if there was any Recent Movement
         if now <= self.triggers.movement_timer:
+            # Detect Face in Current Frame
             if self.detect_person():
                 self.triggers.is_person = True
-                self.feedback_person()
+                asyncio.run(self.feedback_person())
                 collector.collect(self.current_frame, self.address)
-            else:
-                self.feedback_movement()
+            asyncio.run(self.feedback_movement())
 
         self.viewer.set_frame(self.current_frame)
 
@@ -157,21 +159,38 @@ class Stream:
     #   Returns True if Face Present
     #   Fills Feedback Buffer for Faces
     def detect_person(self):
-        self.feedback.rectangles = self.indicators.cascade.detectMultiScale(
-            cvtColor(self.current_frame, cv.COLOR_BGR2GRAY),
-            scaleFactor=1.5,
-            minNeighbors=2  # 5
+        grey = cvtColor(self.current_frame, cv.COLOR_BGR2GRAY)
+
+        self.feedback.faces = self.indicators.face_cascade.detectMultiScale(
+            grey,
+            scaleFactor=1.3,
+            minNeighbors=6,
+            minSize=(int(self.width * 0.1), int(self.height * 0.1))  # square must be 10% of screens size
         )
-        return len(self.feedback.rectangles) > 0  # Return True if List Not Empty
+
+        for (x, y, w, h) in self.feedback.faces:
+            self.feedback.irides = self.indicators.iris_cascade.detectMultiScale(
+                grey[y:y+h, x:x+w],
+                scaleFactor=1.2,
+                minNeighbors=5,
+                minSize=(int(self.width * 0.01), int(self.height * 0.01))
+            )
+
+        if self.feedback.faces is None or self.feedback.irides is None:
+            return False
+
+        return len(self.feedback.faces) >= 1 and len(self.feedback.irides) >= 2  # Return True if List Not Empty
 
     # Draws Movement Feedback to Frame
-    def feedback_movement(self):
+    async def feedback_movement(self):
         drawContours(self.current_frame, self.feedback.contours, -1, (0, 255, 0), 1)
 
     # Draws Persons Face Feedback to Frame
-    def feedback_person(self):
-        for (x, y, w, h) in self.feedback.rectangles:
-            rectangle(self.current_frame, (x, y), (x+w, y+h), (0, 255, 0), 15)
+    async def feedback_person(self):
+        for (x, y, w, h) in self.feedback.faces:
+            rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            for (ex, ey, ew, eh) in self.feedback.irides:
+                rectangle(self.current_frame[y:y+h, x:x+w], (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
 
     async def export_video(self):
         name = 'data/temp/video/' + hash_id(time_now(), self.address) + '.avi'

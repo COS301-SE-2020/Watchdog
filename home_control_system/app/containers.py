@@ -1,4 +1,5 @@
 import sys
+from enum import Enum
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import (QPixmap, QIcon)
 from PyQt5.QtWidgets import (
@@ -22,6 +23,25 @@ from .widgets import StreamView
 
 unit = 1
 
+class ComponentClass(Enum):
+    WIDGET = 0
+    SPACER = 1
+    CONTAINER = 2
+
+class Container(Component):
+    def __init__(self, ascendent):
+        super(Container, self).__init__(ascendent=ascendent)
+        self.setContentsMargins(0, 0, 0, 0)
+
+    # Add Widgets / Layouts / Spaces
+    def add(self, **kwargs):
+        for key, value in kwargs.items():
+            if key == ComponentClass.WIDGET:
+                self.addWidget(value)
+            elif key == ComponentClass.SPACER:
+                self.addSpacerItem(value)
+            elif key == ComponentClass.CONTAINER:
+                self.addLayout(value)
 ###############################
 # MAIN WINDOW
 class Window(QMainWindow, Component):
@@ -107,15 +127,15 @@ class LocationContainer(QHBoxLayout, Component):
         self.icon_home = QLabel()
         self.btn_settings = QPushButton()
 
-        self.lbl_location.setAlignment(Qt.AlignLeft)
-        self.icon_home.setAlignment(Qt.AlignLeft)
+        # self.lbl_location.setAlignment(Qt.AlignLeft)
+        # self.icon_home.setAlignment(Qt.AlignLeft)
 
         self.lbl_location.setText("Home")
 
-        map = QPixmap("assets/images/home.png")
+        map = QPixmap("assets/icons/home.png")
         self.icon_home.setPixmap(map.scaled(50, 50, Qt.KeepAspectRatio, Qt.FastTransformation))
 
-        map = QPixmap("assets/images/settings.png")
+        map = QPixmap("assets/icons/settings.png")
         self.btn_settings.setIcon(QIcon(map.scaled(50, 50, Qt.KeepAspectRatio, Qt.FastTransformation)))
 
         self.addWidget(self.icon_home)
@@ -163,18 +183,20 @@ class HeaderContainer(QHBoxLayout, Component):
 
         self.icon_logo = QLabel()
         self.icon_header = QLabel()
+        self.btn_user = QPushButton()
 
-        map = QPixmap("assets/images/watchdog.png")
-        self.icon_logo.setPixmap(map.scaled(100, 100, Qt.KeepAspectRatio, Qt.FastTransformation))
-
-        map = QPixmap("assets/images/header.png")
-        self.icon_header.setPixmap(map.scaledToHeight(80))
-
-        self.icon_header.setAlignment(Qt.AlignLeft)
-        self.icon_logo.setAlignment(Qt.AlignLeft)
+        map = QPixmap("assets/icons/watchdog.png")
+        self.icon_logo.setPixmap(map.scaled(110, 110, Qt.KeepAspectRatio, Qt.FastTransformation))
+        self.icon_logo.setContentsMargins(unit / 2, unit / 2, unit / 4, unit / 2)
+        map = QPixmap("assets/icons/header.png")
+        self.icon_header.setPixmap(map.scaledToHeight(45))
+        self.icon_logo.setContentsMargins(unit / 2, unit / 2, unit / 2, unit / 2)
+        map = QPixmap("assets/icons/user.png")
+        self.btn_user.setIcon(QIcon(map.scaled(50, 50, Qt.KeepAspectRatio, Qt.FastTransformation)))
 
         self.addWidget(self.icon_logo)
         self.addWidget(self.icon_header)
+        self.addWidget(self.btn_user)
 
 
 class GridContainer(QVBoxLayout, Component):
@@ -199,7 +221,7 @@ class GridContainer(QVBoxLayout, Component):
         views = []
         for index in range(len(cameras)):
             view = StreamView()
-            cameras[index].init_stream(view, self.width / 3, self.height / len(cameras))
+            cameras[index].init_stream(view, self.width / 3, self.width / 4.8)
             views.append(view)
         self.viewer.set_views(views)
 

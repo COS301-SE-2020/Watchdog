@@ -56,7 +56,7 @@ class Camera(threading.Thread):
             self.connect(self.protocol)
         (grabbed, frame) = self.connection.read()
         if grabbed:
-            self.stream.__in__(frame)
+            self.stream.put(frame)
         else:
             self.check_connection()
 
