@@ -38,19 +38,20 @@ collector.start()
 #      Handles Intruder Alert Frames then Adds to FrameCollector which Exports the Result Image
 #   Upload the Result Videos and Images to S3 Bucket
 class Stream:
-    def __init__(self, view, address, width, height):
-        self.size(width, height)
+    def __init__(self, address, dimensions):
+        self.size(dimensions[0], dimensions[1])
         self.current_frame = None
         self.address = address
-        self.viewer = view
         self.stack = []
-        # Indicators for Analysis
-        self.indicators = SimpleNamespace()
-        self.indicators.average = None
-        self.indicators.weight = 0.1
-        self.indicators.ceil = 1.0
-        self.indicators.face_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        self.indicators.iris_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_eye.xml')
+        # Stream View
+        self.stream_views = []
+        # Config for Periodic Video
+        self.config = SimpleNamespace()
+        self.config.frames_per_second = 30.0  # seconds
+        self.config.clip_length = 10000  # milliseconds
+        self.config.gap_length = 20000  # milliseconds
+        self.config.start_time = time_now()
+        self.config.stop_time = time_now() + self.config.clip_length
         # Feedback to be Outputted to Frame
         self.feedback = SimpleNamespace()
         self.feedback.contours = None
@@ -61,13 +62,16 @@ class Stream:
         self.triggers.is_movement = False
         self.triggers.is_person = False
         self.triggers.movement_timer = time_now() + 1500
-        # Config for Periodic Video
-        self.config = SimpleNamespace()
-        self.config.frames_per_second = 30.0  # seconds
-        self.config.clip_length = 10000  # milliseconds
-        self.config.gap_length = 20000  # milliseconds
-        self.config.start_time = time_now()
-        self.config.stop_time = time_now() + self.config.clip_length
+        # Indicators for Analysis
+        self.indicators = SimpleNamespace()
+        self.indicators.average = None
+        self.indicators.weight = 0.1
+        self.indicators.ceil = 1.0
+        self.indicators.face_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.indicators.iris_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_eye.xml')
+
+    def add_stream_view(self, stream_view, dimensions):
+        self.stream_views.append((stream_view, (int(dimensions[0]), int(dimensions[1]))))
 
     # 0 : Add frame to stream
     #   i : If movement_detected
@@ -105,7 +109,8 @@ class Stream:
                 collector.collect(self.current_frame, self.address)
             asyncio.run(self.feedback_movement())
 
-        self.viewer.set_frame(self.current_frame)
+        for (stream_view, (width, height)) in self.stream_views:
+            stream_view.set_frame(resize(self.current_frame, (width, height)))
 
         # Within Clip Record Timeframe
         if self.config.start_time < now:

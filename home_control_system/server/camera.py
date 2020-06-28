@@ -3,7 +3,8 @@ import threading
 from .stream.stream import Stream
 
 PROTOCOLS = ['', 'rstp', 'http', 'https']
-
+FPS = 20
+(RES_X, RES_Y) = (900, 500)
 
 # Camera connector
 class Camera(threading.Thread):
@@ -28,11 +29,9 @@ class Camera(threading.Thread):
         # Is Person Detected in Current Frame
         self.is_person = False
         # Stream Management Object
-        self.stream = None
+        self.stream = Stream(self.address, (RES_X, RES_Y))
         # Stream View GUI Object
         self.stream_view = None
-        # Camera Stream Connection
-        self.connection = cv2.VideoCapture(self.get_url(True))
         # Connect to Camera
         self.connect()
 
@@ -53,7 +52,7 @@ class Camera(threading.Thread):
     # Update Camera Connection
     def update(self):
         if(not self.is_connected):
-            self.connect(self.protocol)
+            self.connect()
         (grabbed, frame) = self.connection.read()
         if grabbed:
             self.stream.put(frame)
@@ -69,8 +68,11 @@ class Camera(threading.Thread):
     def connect(self):
         # check not already connected
         if not self.is_connected:
-            # self.connection = cv2.VideoCapture(self.get_url(True))
-            self.connection.set(cv2.CAP_PROP_FPS, 1)
+            # Camera Stream Connection
+            self.connection = cv2.VideoCapture(self.get_url(True))
+            self.connection.set(cv2.CAP_PROP_FPS, FPS)
+            self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, RES_X)
+            self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, RES_Y)
             if self.connection.isOpened():
                 print("Connected to IP Camera [" + self.get_url() + "]")
                 self.is_connected = True
@@ -106,16 +108,6 @@ class Camera(threading.Thread):
             if self.protocol != '':
                 url = self.protocol + '://' + url
         return url
-
-    def visit_stream_view(self):
-        if self.stream_view is not None:
-            return self.stream_view.refresh()
-
-    # Initialize the stream view
-    def init_stream(self, stream_view, width, height):
-        self.stream = Stream(stream_view, self.address, width, height)
-        self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
     def __str__(self):
         camera = '[address:' + self.get_url() + ']'

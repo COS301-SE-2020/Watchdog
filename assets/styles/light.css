@@ -1,0 +1,60 @@
+QApplication 
+{
+    background-color: #24292e;
+    border-radius: 0px;
+    padding: 0px;
+    margin: 0px;
+    color: white;
+}
+
+QWidget
+{
+    background-color: #24292e;
+    border-radius: 3px;
+    padding: 0px;
+    margin: 0px;
+}
+
+QHBoxLayout
+{
+    background-color: #24292e;
+    border-radius: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+QVBoxLayout
+{
+    background-color: #24292e;
+    border-radius: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+QScrollArea
+{
+    border-radius: 5pt;
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+QGridLayout
+{
+    background-color: #24292e;
+    border-radius: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+QPushButton
+{
+    background-color: transparent;
+    border: 0px;
+    border-radius: 0px;
+}
+
+QLabel
+{
+    color: white;
+}

@@ -1,5 +1,7 @@
 # Component Abstract Class
 class Component():
+    unit = 1
+
     def __init__(self, ascendent=None):
         (self.width, self.height) = (0, 0)
         self.descendents = []
@@ -13,4 +15,4 @@ class Component():
         self.descendents.append(descendent)
 
     def set_dimensions(self, width, height):
-        (self.width, self.height) = (width, height)
+        (self.width, self.height) = (int(width), int(height))
