@@ -1,11 +1,15 @@
 import sys
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import (
+    Qt,
+    QSize
+)
 from PyQt5.QtGui import (
     QPixmap,
     QIcon
 )
 from PyQt5.QtWidgets import (
     QWidget,
+    QLabel,
     QMainWindow,
     QPushButton,
     QVBoxLayout,
@@ -13,7 +17,7 @@ from PyQt5.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
     QScrollArea,
-    QLabel
+    QGraphicsDropShadowEffect
 )
 from .widgets import (
     StreamView,
@@ -80,7 +84,7 @@ class HomeContainer(QHBoxLayout, Component):
         self.addLayout(self.view, 4)
 
     def add_cameras(self, cameras):
-        self.view.stream_grid.set_stream_views(cameras)
+        self.view.grid.set_stream_views(cameras)
 ###############################
 
 
@@ -95,16 +99,21 @@ class SidePanelContainer(QVBoxLayout, Component):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
-        self.location = SideHeaderContainer(self)
-        self.room_list = SideListToggleContainer(self)
+        self.header = SideHeaderContainer(self)
+        self.list = SideListToggleContainer(self)
 
         # Dark Header
         contain_location = QWidget()
-        contain_location.setLayout(self.location)
+        contain_location.setLayout(self.header)
         contain_location.setStyleSheet(style_dark)
+        # contain_location.setMinimumSize(QSize(contain_location.width, contain_location.height))
+        contain_location.setMinimumHeight(int(self.header.height))
+
+        shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
+        contain_location.setGraphicsEffect(shadow)
 
         self.addWidget(contain_location, 3)
-        self.addLayout(self.room_list, 23)
+        self.addLayout(self.list, 23)
 # SIDE HEADER CONTAINER
 #   - Home Icon [WIDGET]
 #   - Location Label [WIDGET]
@@ -116,17 +125,16 @@ class SideHeaderContainer(QHBoxLayout, Component):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
-        self.lbl_location = QLabel()
         self.icon_home = QLabel()
+        self.lbl_location = QLabel()
         self.btn_settings = QPushButton()
 
-        map = QPixmap("assets/icons/home.png")
-        self.icon_home.setPixmap(map.scaled(int(Component.unit / 8), int(Component.unit / 8), Qt.KeepAspectRatio, Qt.FastTransformation))
-
+        map_home = QPixmap("assets/icons/home.png")
+        self.icon_home.setPixmap(map_home.scaled(int(Component.unit / 8), int(Component.unit / 8), Qt.KeepAspectRatio, Qt.FastTransformation))
         self.lbl_location.setText("Home")
-
-        map = QPixmap("assets/icons/settings.png")
-        self.btn_settings.setIcon(QIcon(map.scaled(int(Component.unit / 4), int(Component.unit / 4), Qt.KeepAspectRatio, Qt.FastTransformation)))
+        map_settings = QPixmap("assets/icons/settings.png")
+        self.btn_settings.setIcon(QIcon(map_settings))
+        self.btn_settings.setIconSize(QSize(int(Component.unit / 8), int(Component.unit / 8)))
 
         self.icon_home.setContentsMargins(int(Component.unit / 8), 0, int(Component.unit / 24), 0)
         self.btn_settings.setContentsMargins(0, 0, int(Component.unit / 8), 0)
@@ -159,15 +167,19 @@ class ViewPanelContainer(QVBoxLayout, Component):
         self.setSpacing(0)
 
         self.header = ViewHeaderContainer(self)
-        self.stream_grid = ViewGridContainer(self)
+        self.grid = ViewGridContainer(self)
 
         # Dark Header
         contain_header = QWidget()
         contain_header.setLayout(self.header)
         contain_header.setStyleSheet(style_dark)
 
+        shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
+        contain_header.setGraphicsEffect(shadow)
+        contain_header.setMinimumHeight(int(self.header.height))
+
         self.addWidget(contain_header, 3)
-        self.addLayout(self.stream_grid, 23)
+        self.addLayout(self.grid, 23)
 # VIEW HEADER CONTAINER
 #   - Watchdog Logo [WIDGET]
 #   - Watchdog Text [WIDGET]
@@ -183,15 +195,14 @@ class ViewHeaderContainer(QHBoxLayout, Component):
         self.icon_header = QLabel()
         self.btn_user = QPushButton()
 
-        map = QPixmap("assets/icons/watchdog.png")
-        self.icon_logo.setPixmap(map.scaled(110, 110, Qt.KeepAspectRatio, Qt.FastTransformation))
+        map_logo = QPixmap("assets/icons/watchdog.png")
+        self.icon_logo.setPixmap(map_logo.scaled(int(Component.unit * 0.25), int(Component.unit * 0.25), Qt.KeepAspectRatio, Qt.FastTransformation))
+        map_header = QPixmap("assets/icons/header.png")
+        self.icon_header.setPixmap(map_header.scaledToHeight(Component.unit / 10))
+        map_user = QPixmap("assets/icons/user.png")
+        self.btn_user.setIcon(QIcon(map_user))
+        self.btn_user.setIconSize(QSize(int(Component.unit / 4), int(Component.unit / 4)))
 
-        map = QPixmap("assets/icons/header.png")
-        self.icon_header.setPixmap(map.scaledToHeight(45))
-
-        map = QPixmap("assets/icons/user.png")
-        self.btn_user.setIcon(QIcon(map.scaled(int(Component.unit / 2), int(Component.unit / 2), Qt.KeepAspectRatio, Qt.FastTransformation)))
-        
         self.icon_logo.setContentsMargins(int(Component.unit / 8), 0, int(Component.unit / 16), 0)
         self.btn_user.setContentsMargins(0, 0, int(Component.unit / 8), 0)
 

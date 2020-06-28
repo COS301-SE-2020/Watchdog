@@ -1,7 +1,7 @@
 QWidget
 {
     background-color: #1d2125;
-    border-radius: 3px;
+    border-radius: 0px;
 }
 
 QHBoxLayout
@@ -32,4 +32,6 @@ QPushButton
 QLabel
 {
     color: white;
+    font: 40px Arial, sans-serif;
+    font-weight: lighter;
 }

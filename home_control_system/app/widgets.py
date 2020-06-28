@@ -2,7 +2,8 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import (
     QWidget,
     QGridLayout,
-    QHBoxLayout
+    QHBoxLayout,
+    QGraphicsDropShadowEffect
 )
 from PyQt5.QtGui import (
     QImage,
@@ -14,6 +15,8 @@ class StreamView(QWidget):
     def __init__(self, parent=None):
         super(StreamView, self).__init__(parent)
         self.image = None
+        shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
+        self.setGraphicsEffect(shadow)
 
     def set_frame(self, frame):
         if frame is not None:

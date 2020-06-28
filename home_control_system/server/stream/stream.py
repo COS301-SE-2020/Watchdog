@@ -1,6 +1,5 @@
 import copy
 import cv2 as cv
-import asyncio
 from numpy import array
 from imutils import grab_contours
 from types import SimpleNamespace
@@ -89,7 +88,7 @@ class Stream:
     #   ii : Retrieve Images
     #   iii : Upload images to S3 bucket
     #   iv : Make call to API Gateway to trigger DetectIntruder lambda function on given images
-    def put(self, frame):
+    async def put(self, frame):
         now = time_now()
         self.triggers.is_movement = False
         self.triggers.is_person = False
@@ -105,9 +104,9 @@ class Stream:
             # Detect Face in Current Frame
             if self.detect_person():
                 self.triggers.is_person = True
-                asyncio.run(self.feedback_person())
+                await self.feedback_person()
                 collector.collect(self.current_frame, self.address)
-            asyncio.run(self.feedback_movement())
+            await self.feedback_movement()
 
         for (stream_view, (width, height)) in self.stream_views:
             stream_view.set_frame(resize(self.current_frame, (width, height)))
@@ -119,7 +118,7 @@ class Stream:
             if self.config.stop_time < now:
                 self.config.start_time = self.config.stop_time + self.config.gap_length
                 self.config.stop_time = self.config.start_time + self.config.clip_length
-                asyncio.run(self.export_video())
+                await self.export_video()
 
     # Detects Movement in Frame
     #   Returns True if Movement

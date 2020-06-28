@@ -1,14 +1,17 @@
 import cv2
 import threading
+import asyncio
+import base64
+import zmq
 from .stream.stream import Stream
 
 PROTOCOLS = ['', 'rstp', 'http', 'https']
-FPS = 20
 (RES_X, RES_Y) = (900, 500)
+FPS = 15
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, protocol, address, port, path, location):
+    def __init__(self, server, protocol, address, port, path, location):
         threading.Thread.__init__(self)
         # Camera Physical Location
         self.location = location
@@ -28,10 +31,14 @@ class Camera(threading.Thread):
         self.is_movement = False
         # Is Person Detected in Current Frame
         self.is_person = False
-        # Stream Management Object
-        self.stream = Stream(self.address, (RES_X, RES_Y))
         # Stream View GUI Object
         self.stream_view = None
+        # Stream Management Object
+        self.stream = Stream(self.address, (RES_X, RES_Y))
+        # Camera Stream Serving
+        self.socket = zmq.Context().socket(zmq.PUB)
+        # Establish Socket Server
+        self.socket.connect('tcp://' + server.address + ':' + str(server.port + len(server.cameras)))
         # Connect to Camera
         self.connect()
 
@@ -55,7 +62,9 @@ class Camera(threading.Thread):
             self.connect()
         (grabbed, frame) = self.connection.read()
         if grabbed:
-            self.stream.put(frame)
+            asyncio.run(self.stream.put(frame))
+            encoded, buffer = cv2.imencode('.jpg', frame)
+            self.socket.send(base64.b64encode(buffer))
         else:
             self.check_connection()
 

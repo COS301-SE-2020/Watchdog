@@ -4,18 +4,19 @@ from .stream.stream import collector
 
 
 class Server(threading.Thread):
-    def __init__(self, address, location='Home'):
+    def __init__(self, address, location='Home', port=5000):
         threading.Thread.__init__(self)
         self.live = False
         self.address = address
         self.location = location
+        self.port = port
         self.cameras = {}
 
     # adds a ip camera client to an allocated port on the server
     def add_camera(self, address, port='', path='', location='Room', protocol=''):
         if not self.check_address(address):
             print("Adding camera " + str(address) + " - " + location)
-            client = Camera(protocol, address, port, path, location)
+            client = Camera(self, protocol, address, port, path, location)
             if client.is_connected:
                 self.cameras[address] = client
             return client  # successfully added client
