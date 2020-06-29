@@ -7,19 +7,21 @@ QWidget
 QHBoxLayout
 {
     background-color: #1d2125;
-    border: 1px black;
+    border: 15px black;
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
+    width: 100%;
 }
 
 QVBoxLayout
 {
     background-color: #1d2125;
-    border: 2px black;
+    border: 15px black;
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
+    width: 100%;
 }
 
 QPushButton

@@ -1,6 +1,6 @@
-QApplication 
+QMainWindow 
 {
-    background-color: #24292e;
+    background-color: #181b1e;
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
@@ -13,6 +13,7 @@ QWidget
     border-radius: 3px;
     padding: 0px;
     margin: 0px;
+    width: 100%;
 }
 
 QHBoxLayout
@@ -21,20 +22,13 @@ QHBoxLayout
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
+    width: 100%;
 }
 
 QVBoxLayout
 {
     background-color: #24292e;
     border-radius: 0px;
-    padding: 0px;
-    margin: 0px;
-}
-
-QScrollArea
-{
-    border-radius: 5pt;
-    border: 0px;
     padding: 0px;
     margin: 0px;
 }
@@ -50,13 +44,61 @@ QGridLayout
 QPushButton
 {
     background-color: transparent;
+    color: white;
     border: 0px;
     border-radius: 0px;
+    text-align: left;
 }
 
 QLabel
 {
-    color: white;
+    color: #24292e;
     font: 40px Corbel, sans-serif;
     font-weight: lighter;
+}
+
+/* SCROLL BAR */
+QScrollBar::handle
+{              
+    border: 0px;
+    border-radius: 5px;
+    background-color: transparent;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar:vertical
+{              
+    border: 0px;
+    border-radius: 5px;
+    background-color: transparent;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical
+{
+    border: 0px;
+    border-radius: 5px;
+    background-color: #1d2125;
+    min-height: 0px;
+}
+
+QScrollBar::add-line:vertical
+{
+    border: 0px;
+    border-radius: 5px;
+    background-color: #1d2125;
+    height: 0px;
+    subcontrol-position: bottom;
+    subcontrol-origin: margin;
+}
+QScrollBar::sub-line:vertical
+{
+    border: 0px;
+    border-radius: 5px;
+    background-color: #1d2125;
+    height: 0 px;
+    subcontrol-position: top;
+    subcontrol-origin: margin;
 }
