@@ -38,7 +38,9 @@ class Camera(threading.Thread):
         # Camera Stream Serving
         self.socket = zmq.Context().socket(zmq.PUB)
         # Establish Socket Server
-        self.socket.connect('tcp://' + server.address + ':' + str(server.port + len(server.cameras)))
+        socket = server.port + len(server.cameras)
+        print("Serving on socket " + str(socket))
+        self.socket.connect('tcp://' + server.address + ':' + str(socket))
         # Connect to Camera
         self.connect()
 
@@ -64,7 +66,8 @@ class Camera(threading.Thread):
         if grabbed:
             asyncio.run(self.stream.put(frame))
             encoded, buffer = cv2.imencode('.jpg', frame)
-            self.socket.send(base64.b64encode(buffer))
+            # self.socket.send(base64.b64encode(buffer))
+            self.socket.send(buffer)
         else:
             self.check_connection()
 

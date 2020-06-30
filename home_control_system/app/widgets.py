@@ -2,15 +2,13 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QWidget,
+    QFrame,
     QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
     QPushButton,
-    QLabel,
-    QGraphicsDropShadowEffect,
-    QFrame,
     QSizePolicy,
-    QSpacerItem
+    QGraphicsDropShadowEffect
 )
 from PyQt5.QtGui import (
     QImage,
@@ -73,21 +71,22 @@ class ButtonToggle(QVBoxLayout, Component):
 
         self.left_button = ButtonSwitch(self, left_label)
         self.left_button.on()
+        self.left_button.button.clicked.connect(self.toggle_handler)
 
         self.spacer = QVSeperationLine()
-        # self.spacer.setFixedHeight(Component.unit / 8)
+
         self.right_button = ButtonSwitch(self, right_label)
-        self.right_button.off()
+        self.right_button.button.clicked.connect(self.toggle_handler)
 
         left_container = QWidget()
         left_container.setLayout(self.left_button)
         left_container.setMaximumWidth(Component.unit / 2)
-        left_container.setStyleSheet('text-align: center;')
+        left_container.setStyleSheet('text-align: center; padding-bottom: 2px;')
 
         right_container = QWidget()
         right_container.setLayout(self.right_button)
         right_container.setMaximumWidth(Component.unit / 2)
-        right_container.setStyleSheet('text-align: center;')
+        right_container.setStyleSheet('text-align: center; padding-bottom: 2px;')
 
         self.toggle_layout.addWidget(left_container)
         self.toggle_layout.addWidget(self.spacer)
@@ -95,9 +94,9 @@ class ButtonToggle(QVBoxLayout, Component):
 
         self.contain_toggle = QWidget()
         self.contain_toggle.setLayout(self.toggle_layout)
-        self.contain_toggle.setFixedHeight(Component.unit / 8)
+        self.contain_toggle.setMinimumHeight(Component.unit / 8)
         self.contain_toggle.setMinimumWidth(Component.unit)
-        self.contain_toggle.setStyleSheet("background-color: #1d2125; margin-bottom: 5px;") 
+        self.contain_toggle.setStyleSheet("background-color: #1d2125;") 
 
         shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
         self.contain_toggle.setGraphicsEffect(shadow)
@@ -105,32 +104,46 @@ class ButtonToggle(QVBoxLayout, Component):
         self.setAlignment(Qt.AlignCenter)
         self.addWidget(self.contain_toggle)
 
+    def toggle_handler(self):
+        print("Handled")
+        self.left_button.toggle()
+        self.right_button.toggle()
+
 
 class ButtonSwitch(QVBoxLayout, Component):
     def __init__(self, ascendent, label):
         super(ButtonSwitch, self).__init__(ascendent=ascendent)
         self.active = False
+        self.marker = QHSeperationLine()
+        self.marker.setStyleSheet("background-color:#1d2125;")
         self.button = QPushButton()
         self.button.setText(label)
+        self.button.setMinimumHeight(25)
+        self.addWidget(self.button)
+        self.addWidget(self.marker)
         self.draw()
 
     def draw(self):
-        self.marker = None
         if self.active:
-            self.marker = QHSeperationLine()
-            self.marker.setStyleSheet("background-color:blue;")
-            self.addWidget(self.marker)
+            self.marker.setStyleSheet("background-color:white;")
         else:
-            self.marker = QSpacerItem(self.width, 1, QSizePolicy.Fixed)
-            self.addSpacerItem(self.marker)
-        self.addWidget(self.button)
+            self.marker.setStyleSheet("background-color:#1d2125;")
         self.update()
 
     def on(self):
         self.active = True
+        self.draw()
 
     def off(self):
         self.active = False
+        self.draw()
+
+    def toggle(self):
+        if self.active:
+            self.active = False
+        else:
+            self.active = True
+        self.draw()
 
 class ButtonList(QVBoxLayout, Component):
     def __init__(self, ascendent):

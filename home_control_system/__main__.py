@@ -3,11 +3,11 @@ from server.server import Server
 
 
 def main():
-    home = HomeControlPanel(Server('127.0.0.1'))
-    # home.add_camera('10.0.0.105', '8080', 'h264_ulaw.sdp', 'Phone Camera', 'rtsp')
+    home = HomeControlPanel(Server('127.0.0.1', 'Home', 5000))
+    home.add_camera('10.0.0.105', '8080', 'h264_ulaw.sdp', 'Phone Camera', 'rtsp')  # Android IP Camera App
     for x in range(4):
-        home.add_camera('data/sample/surveillance1.mp4')
-        home.add_camera('data/sample/surveillance2.mp4')
+        home.add_camera('data/sample/surveillance1.mp4')  # Sample CCTV Clips
+        home.add_camera('data/sample/surveillance2.mp4')  # Sample CCTV Clips
     home.start()
 
 

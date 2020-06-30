@@ -57,7 +57,7 @@ class Server(threading.Thread):
     def __str__(self):
         server = 'Home Control Panel Server' + '\n'
         server += '\t' + 'Located @ [label:' + self.location + ']' + '\n'
-        server += '\t' + 'Serving @ [url:' + self.address + ']' + '\n'
+        server += '\t' + 'Serving @ [url:' + self.address + ':' + str(self.port) + ']' + '\n'
         server += '\t' + 'Hosting [' + str(len(self.cameras)) + ' IP Camera(s)]' + '\n'
         for address, client in self.cameras.items():
             server += '\t\t' + str(client) + '\n'
