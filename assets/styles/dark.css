@@ -7,9 +7,9 @@ QWidget
 QHBoxLayout
 {
     background-color: #1d2125;
-    border: 15px black;
+    border: 15px solid black;
     border-radius: 0px;
-    padding: 0px;
+    padding: 5px;
     margin: 0px;
     width: 100%;
 }
@@ -17,7 +17,7 @@ QHBoxLayout
 QVBoxLayout
 {
     background-color: #1d2125;
-    border: 15px black;
+    border: 15px solid black;
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
@@ -34,6 +34,6 @@ QPushButton
 QLabel
 {
     color: white;
-    font: 40px Arial, sans-serif;
-    font-weight: lighter;
+    font: 36px Corbel, sans-serif;
+    font-weight: 8;
 }

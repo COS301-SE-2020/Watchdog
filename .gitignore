@@ -1,9 +1,10 @@
 # Hidden
 .idea
 .DS_Store
-# Init. VS-Code
+# IDEs
+.vs
 .vscode
-# Init. Python-Module
+# Python-Module
 home_controller_system.egg-info
 # Python-Cache
 .pytest_cache

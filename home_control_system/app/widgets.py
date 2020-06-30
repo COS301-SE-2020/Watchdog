@@ -7,7 +7,10 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QPushButton,
     QLabel,
-    QGraphicsDropShadowEffect
+    QGraphicsDropShadowEffect,
+    QFrame,
+    QSizePolicy,
+    QSpacerItem
 )
 from PyQt5.QtGui import (
     QImage,
@@ -19,6 +22,7 @@ class StreamView(QWidget):
     def __init__(self, parent=None):
         super(StreamView, self).__init__(parent)
         self.image = None
+        self.setFixedWidth(Component.unit)
         self.setContentsMargins(0, 0, 0, 0)
         shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
         self.setGraphicsEffect(shadow)
@@ -48,47 +52,85 @@ class StreamGrid(QGridLayout, Component):
     def set_views(self, views):
         (row, col) = (0, 0)
         for index in range(len(views)):
-            # if col == 0:
-                # views[index].setContentsMargins(int(Component.unit / 8), 0, int(Component.unit / 4), int(Component.unit / 8))
-            # elif col == 1:
-                # views[index].setContentsMargins(0, 0, int(Component.unit / 4), int(Component.unit / 8))
-            # elif col == 2:
-                # views[index].setContentsMargins(0, 0, int(Component.unit / 4), int(Component.unit / 8))
             if col >= 3:
-                # views[index].setContentsMargins(0, 0, 0, int(Component.unit / 8))
                 row += 1
                 col = 0
-            self.addWidget(views[index], row, col)
+            layout = QHBoxLayout()
+            layout.setAlignment(Qt.AlignCenter)
+            layout.addWidget(views[index])
+            self.addLayout(layout, row, col)
             self.setRowMinimumHeight(row, (Component.unit * 0.6) + int(Component.unit / 8))
             col += 1
 
 
-class ButtonToggle(QHBoxLayout, Component):
+class ButtonToggle(QVBoxLayout, Component):
     def __init__(self, ascendent, left_label, right_label):
         super(ButtonToggle, self).__init__(ascendent=ascendent)
 
-        self.setContentsMargins(0, 0, 0, 0)
+        self.toggle_layout = QHBoxLayout()
+        self.toggle_layout.setContentsMargins(0, 0, 0, 0)
+        self.toggle_layout.setAlignment(Qt.AlignCenter)
+
+        self.left_button = ButtonSwitch(self, left_label)
+        self.left_button.on()
+
+        self.spacer = QVSeperationLine()
+        # self.spacer.setFixedHeight(Component.unit / 8)
+        self.right_button = ButtonSwitch(self, right_label)
+        self.right_button.off()
+
+        left_container = QWidget()
+        left_container.setLayout(self.left_button)
+        left_container.setMaximumWidth(Component.unit / 2)
+        left_container.setStyleSheet('text-align: center;')
+
+        right_container = QWidget()
+        right_container.setLayout(self.right_button)
+        right_container.setMaximumWidth(Component.unit / 2)
+        right_container.setStyleSheet('text-align: center;')
+
+        self.toggle_layout.addWidget(left_container)
+        self.toggle_layout.addWidget(self.spacer)
+        self.toggle_layout.addWidget(right_container)
+
+        self.contain_toggle = QWidget()
+        self.contain_toggle.setLayout(self.toggle_layout)
+        self.contain_toggle.setFixedHeight(Component.unit / 8)
+        self.contain_toggle.setMinimumWidth(Component.unit)
+        self.contain_toggle.setStyleSheet("background-color: #1d2125; margin-bottom: 5px;") 
+
+        shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
+        self.contain_toggle.setGraphicsEffect(shadow)
+
         self.setAlignment(Qt.AlignCenter)
+        self.addWidget(self.contain_toggle)
 
-        self.left_button = QPushButton()
-        self.left_button.setText(left_label)
 
-        self.spacer = QLabel()
-        self.spacer.setText('|')
-        self.spacer.setStyleSheet("QLabel {                             \
-                                        font: 26px Corbel, sans-serif;  \
-                                    }")                                 
+class ButtonSwitch(QVBoxLayout, Component):
+    def __init__(self, ascendent, label):
+        super(ButtonSwitch, self).__init__(ascendent=ascendent)
+        self.active = False
+        self.button = QPushButton()
+        self.button.setText(label)
+        self.draw()
 
-        self.right_button = QPushButton()
-        self.right_button.setText(right_label)
+    def draw(self):
+        self.marker = None
+        if self.active:
+            self.marker = QHSeperationLine()
+            self.marker.setStyleSheet("background-color:blue;")
+            self.addWidget(self.marker)
+        else:
+            self.marker = QSpacerItem(self.width, 1, QSizePolicy.Fixed)
+            self.addSpacerItem(self.marker)
+        self.addWidget(self.button)
+        self.update()
 
-        self.left_button.setContentsMargins(0, 0, 0, 0)
-        self.spacer.setContentsMargins(5, 0, 5, 0)
-        self.right_button.setContentsMargins(0, 0, 0, 0)
+    def on(self):
+        self.active = True
 
-        self.addWidget(self.left_button)
-        self.addWidget(self.spacer)
-        self.addWidget(self.right_button)
+    def off(self):
+        self.active = False
 
 class ButtonList(QVBoxLayout, Component):
     def __init__(self, ascendent):
@@ -98,9 +140,34 @@ class ButtonList(QVBoxLayout, Component):
 
     def addButton(self, label):
         btn = QPushButton()
-        btn.setMinimumHeight(Component.unit / 4)
-        btn.setMinimumWidth(self.width * 0.9)
-        btn.setContentsMargins((Component.unit / 4), (Component.unit / 8), 0, (Component.unit / 8))
         btn.setText(label)
+        btn.setFixedHeight(Component.unit / 4)
+        btn.setMinimumWidth(self.width * 0.9)
+        btn.setStyleSheet('margin-left: 25px; font: 18px Corbel, sans-serif;')
         self.buttons.append(btn)
+
+        seperator = QHSeperationLine()
         self.addWidget(btn)
+        self.addWidget(seperator)
+
+
+class QHSeperationLine(QFrame):
+    def __init__(self):
+        super().__init__()
+        self.setStyleSheet("background-color:white;")
+        self.setMinimumWidth(1)
+        self.setFixedHeight(1)
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+
+
+class QVSeperationLine(QFrame):
+    def __init__(self):
+        super().__init__()
+        self.setStyleSheet("background-color:white;")
+        self.setFixedWidth(1)
+        self.setMinimumHeight(1)
+        self.setFrameShape(QFrame.VLine)
+        self.setFrameShadow(QFrame.Sunken)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
