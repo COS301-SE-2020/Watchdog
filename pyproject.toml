@@ -13,7 +13,8 @@ vidgear = "^0.1.7"
 imutils = "^0.5.3"
 numpy = "^1.18.5"
 opencv-python = "^4.2.0"
-pandas = "^1.0.4"
+warrant = "^0.6.1"
+PyQT5 = "^5.15.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

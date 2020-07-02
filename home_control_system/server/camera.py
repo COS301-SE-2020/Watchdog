@@ -1,18 +1,18 @@
 import cv2
-import asyncio
 import threading
+import asyncio
+import base64
+import zmq
 from .stream.stream import Stream
-from .stream.frame import time_now
 
 PROTOCOLS = ['', 'rstp', 'http', 'https']
-
+(RES_X, RES_Y) = (900, 500)
+FPS = 15
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, address, port, path, location):
+    def __init__(self, server, protocol, address, port, path, location):
         threading.Thread.__init__(self)
-        # Stream Management Object
-        self.stream = Stream(self)
         # Camera Physical Location
         self.location = location
         # Camera IP Address
@@ -22,49 +22,71 @@ class Camera(threading.Thread):
         # Camera Address Path (if necessary)
         self.path = path
         # Camera Connection Protocol
-        self.protocol = ''
+        self.protocol = protocol
         # Live Boolean Spin Variable
         self.live = False
-        # Camera Stream Connection
-        self.connection = None
-        # Camera Current Frame
-        self.current_frame = None
         # Is IP Camera Connected
         self.is_connected = False
         # Is Movement Detected in Current Frame
         self.is_movement = False
         # Is Person Detected in Current Frame
         self.is_person = False
+        # Stream View GUI Object
+        self.stream_view = None
+        # Stream Management Object
+        self.stream = Stream(self.address, (RES_X, RES_Y))
+        # Camera Stream Serving
+        self.socket = zmq.Context().socket(zmq.PUB)
+        # Establish Socket Server
+        self.socket.connect('tcp://' + server.address + ':' + str(server.port + len(server.cameras)))
+        # Connect to Camera
+        self.connect()
 
     # Start thread
     def run(self):
-        print("Starting Camera Client [" + self.get_url() + "] Location:" + self.location)
-        self.connect(self.protocol)
+        print("Starting Camera Client " + str(self))
+        # Spin until stream has been defined
+        while self.stream is None:
+            self.live = False
+        # Update stream while live
         self.live = True
         while(self.live):
             self.update()
+        # Disconnect after the stream has been stopped
         self.disconnect()
-        print("Camera Client Stopped [" + self.get_url() + "] Location:" + self.location)
+        print("Camera Client Stopped " + str(self))
+
+    # Update Camera Connection
+    def update(self):
+        if(not self.is_connected):
+            self.connect()
+        (grabbed, frame) = self.connection.read()
+        if grabbed:
+            asyncio.run(self.stream.put(frame))
+            encoded, buffer = cv2.imencode('.jpg', frame)
+            self.socket.send(base64.b64encode(buffer))
+        else:
+            self.check_connection()
 
     # Stop thread
     def stop(self):
         self.live = False
+        self.disconnect()
 
     # Connect to IP Camera
-    def connect(self, protocol=''):
-        # new protocol used
-        if self.protocol != protocol:
-            self.is_connected = False
-            self.protocol = protocol
+    def connect(self):
         # check not already connected
         if not self.is_connected:
+            # Camera Stream Connection
             self.connection = cv2.VideoCapture(self.get_url(True))
-            self.connection.set(cv2.CAP_PROP_FPS, 1)
+            self.connection.set(cv2.CAP_PROP_FPS, FPS)
+            self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, RES_X)
+            self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, RES_Y)
             if self.connection.isOpened():
                 print("Connected to IP Camera [" + self.get_url() + "]")
                 self.is_connected = True
             else:
-                print("Failed to connect to IP Camera [" + self.get_url() + "]")
+                print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = False
                 # after a few tries, change protocol before retrying
         return self.is_connected
@@ -82,28 +104,6 @@ class Camera(threading.Thread):
             self.is_connected = False
         return self.is_connected
 
-    # Update Camera Connection
-    def update(self, frame_analysis=True):
-        if(not self.is_connected):
-            self.connect(self.protocol)
-
-        fps = 1
-        limit = 1000 / (fps)  # milliseconds
-        begin = time_now()
-
-        (grabbed, frame) = self.connection.read()
-        if grabbed:
-            # Adds Frame to Stream
-            self.current_frame = frame
-            self.stream.__in__(self.current_frame)
-        else:
-            self.check_connection()
-
-        now = time_now()
-        if now < begin + limit:
-            # Outputs Feedback to Frame
-            asyncio.run(self.stream.__out__(self.current_frame))
-
     # Return Camera URL
     def get_url(self, print_protocol=False):
         if(self.address is int):
@@ -118,6 +118,10 @@ class Camera(threading.Thread):
                 url = self.protocol + '://' + url
         return url
 
-    # Set View Frame
-    def set_frame(self, height, width):
-        self.stream.size(width, height)
+    def __str__(self):
+        camera = '[address:' + self.get_url() + ']'
+        if self.protocol != '':
+            camera = '[protocol:' + self.protocol + ']' + camera
+        if self.location != '':
+            camera = '[location:' + self.location + ']' + camera
+        return camera
