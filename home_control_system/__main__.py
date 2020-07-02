@@ -1,6 +1,6 @@
 from app.home import HomeControlPanel
 from server.server import Server
-from service.services import upload_detected_movement_image
+from service.services import upload_to_s3
 
 
 def main():
@@ -13,10 +13,10 @@ def main():
 
 
 def detect_intruder_integration():
-    path = "data/temp/images/integrate.jpg"
+    path = "data/temp/images"
     file_name = "test.jpeg"
     tag = "detected"
-    response = upload_detected_movement_image(path, file_name, tag)
+    response = upload_to_s3(path, file_name, tag)
     print(response)
 
 
