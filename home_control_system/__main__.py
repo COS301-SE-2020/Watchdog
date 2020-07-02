@@ -1,5 +1,6 @@
 from app.home import HomeControlPanel
 from server.server import Server
+from service.services import upload_to_s3
 
 
 def main():
@@ -11,6 +12,15 @@ def main():
     home.start()
 
 
+def detect_intruder_integration():
+    path = "data/temp/images"
+    file_name = "test.jpeg"
+    tag = "detected"
+    response = upload_to_s3(path, file_name, tag)
+    print(response)
+
+
 if __name__ == "__main__":
     print("Running Home Control Panel")
-    main()
+    # main()
+    detect_intruder_integration()

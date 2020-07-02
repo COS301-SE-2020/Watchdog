@@ -74,7 +74,6 @@ class ButtonToggle(QVBoxLayout, Component):
         self.left_button.button.clicked.connect(self.toggle_handler)
 
         self.spacer = QVSeperationLine()
-
         self.right_button = ButtonSwitch(self, right_label)
         self.right_button.button.clicked.connect(self.toggle_handler)
 
@@ -83,10 +82,12 @@ class ButtonToggle(QVBoxLayout, Component):
         left_container.setMaximumWidth(Component.unit / 2)
         left_container.setStyleSheet('text-align: center; padding-bottom: 2px;')
 
+
         right_container = QWidget()
         right_container.setLayout(self.right_button)
         right_container.setMaximumWidth(Component.unit / 2)
         right_container.setStyleSheet('text-align: center; padding-bottom: 2px;')
+
 
         self.toggle_layout.addWidget(left_container)
         self.toggle_layout.addWidget(self.spacer)
@@ -95,6 +96,7 @@ class ButtonToggle(QVBoxLayout, Component):
         self.contain_toggle = QWidget()
         self.contain_toggle.setLayout(self.toggle_layout)
         self.contain_toggle.setMinimumHeight(Component.unit / 8)
+
         self.contain_toggle.setMinimumWidth(Component.unit)
         self.contain_toggle.setStyleSheet("background-color: #1d2125;") 
 
@@ -109,18 +111,19 @@ class ButtonToggle(QVBoxLayout, Component):
         self.left_button.toggle()
         self.right_button.toggle()
 
-
 class ButtonSwitch(QVBoxLayout, Component):
     def __init__(self, ascendent, label):
         super(ButtonSwitch, self).__init__(ascendent=ascendent)
         self.active = False
         self.marker = QHSeperationLine()
         self.marker.setStyleSheet("background-color:#1d2125;")
+
         self.button = QPushButton()
         self.button.setText(label)
         self.button.setMinimumHeight(25)
         self.addWidget(self.button)
         self.addWidget(self.marker)
+
         self.draw()
 
     def draw(self):
