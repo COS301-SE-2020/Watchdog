@@ -18,3 +18,4 @@ home_control_system/app/__pycache__
 data/temp/image/*
 data/temp/video/*
 # test for branch to be in repo
+poetry.lock
