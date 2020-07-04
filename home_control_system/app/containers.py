@@ -92,14 +92,14 @@ class HomeContainer(QHBoxLayout, Component):
         contain_panel = QWidget()
         contain_panel.setLayout(self.sidepanel)
         contain_panel.setMinimumWidth(self.width * 1/5)
-        contain_panel.setMaximumWidth(self.width * 3/10)
+        contain_panel.setMaximumWidth(self.width * 6/10)
 
         self.view = ViewPanelContainer(self)
 
         contain_view = QWidget()
         contain_view.setLayout(self.view)
         contain_view.setMinimumWidth(self.width * 4/5)
-        contain_view.setMaximumWidth(self.width * 6/5)
+        contain_view.setMaximumWidth(self.width * 12/5)
 
         line = QVSeperationLine()
         line.setStyleSheet("background-color:black;")
@@ -135,14 +135,28 @@ class SidePanelContainer(QVBoxLayout, Component):
         contain_location.setMinimumHeight(int(self.header.height))
 
         shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
-        contain_location.setGraphicsEffect(shadow)
+        contain_location.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
 
-        line = QHSeperationLine()
-        line.setStyleSheet("background-color:black;")
+        line_h = QHSeperationLine()
+        line_h.setStyleSheet("background-color:black;")
 
-        self.addWidget(contain_location, 4)
-        self.addWidget(line)
-        self.addLayout(self.list, 22)
+        line_v = QVSeperationLine()
+        line_v.setStyleSheet("background-color:black;")
+
+        line_alt = QVSeperationLine()
+        line_alt.setStyleSheet("background-color:white;")
+
+        holder_layout_top = QHBoxLayout()
+        holder_layout_top.addWidget(contain_location)
+        holder_layout_top.addWidget(line_v)
+
+        holder_layout_bottom = QHBoxLayout()
+        holder_layout_bottom.addLayout(self.list)
+        holder_layout_bottom.addWidget(line_alt)
+
+        self.addLayout(holder_layout_top, 4)
+        self.addWidget(line_h)
+        self.addLayout(holder_layout_bottom, 22)
 # SIDE HEADER CONTAINER
 #   - Home Icon [WIDGET]
 #   - Location Label [WIDGET]
@@ -182,22 +196,20 @@ class SideListToggleContainer(QVBoxLayout, Component):
         self.set_dimensions(self.width, (self.height / 26) * 23)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
-        self.setAlignment(Qt.AlignLeft)
 
         self.list_toggle = ButtonToggle(self, 'Rooms', 'Logs')
+
+        contain_toggle = QWidget()
+        contain_toggle.setLayout(self.list_toggle)
+        contain_toggle.setStyleSheet('background-color: #1d2125;')
+
+        shadow = QGraphicsDropShadowEffect(blurRadius=3, xOffset=2, yOffset=3)
+        contain_toggle.setGraphicsEffect(shadow)
 
         self.button_list = ButtonList(self)
         self.button_list.addButton('Living Room')
         self.button_list.addButton('Kitchen')
         self.button_list.addButton('Master Bedroom')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
         self.button_list.addButton('Kids Room')
         self.button_list.addButton('Kids Room')
         self.button_list.addButton('Kids Room')
@@ -207,14 +219,15 @@ class SideListToggleContainer(QVBoxLayout, Component):
 
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setAlignment(Qt.AlignTop)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(contain_list)
         self.scroll.setMinimumHeight(self.height - (Component.unit / 4))
 
-        self.addLayout(self.list_toggle)
+        self.addWidget(contain_toggle)
         self.addWidget(self.scroll)
-        self.addStretch(1)
+        self.addStretch(2)
 ###############################
 
 
@@ -261,9 +274,12 @@ class ViewHeaderContainer(QHBoxLayout, Component):
         self.btn_user = QPushButton()
 
         map_logo = QPixmap("assets/icons/watchdog.png")
-        self.icon_logo.setPixmap(map_logo.scaled(int(Component.unit * 0.25), int(Component.unit * 0.25), Qt.KeepAspectRatio, Qt.FastTransformation))
-        map_header = QPixmap("assets/icons/header.png")
-        self.icon_header.setPixmap(map_header.scaledToHeight(Component.unit / 10))
+        self.icon_logo.setPixmap(map_logo.scaled(int(Component.unit * 0.33), int(Component.unit * 0.33), Qt.KeepAspectRatio, Qt.FastTransformation))
+
+        self.lbl_header = QLabel()
+        self.lbl_header.setText("WATCHDOG")
+        self.lbl_header.setStyleSheet("font: 60px Corbel, sans-serif; font-weight: 50;")
+
         map_user = QPixmap("assets/icons/user.png")
         self.btn_user.setIcon(QIcon(map_user))
         self.btn_user.setIconSize(QSize(int(Component.unit / 4), int(Component.unit / 4)))
@@ -272,7 +288,7 @@ class ViewHeaderContainer(QHBoxLayout, Component):
         self.btn_user.setContentsMargins(0, 0, int(Component.unit / 8), 0)
 
         self.addWidget(self.icon_logo)
-        self.addWidget(self.icon_header, Qt.AlignLeft)
+        self.addWidget(self.lbl_header, Qt.AlignLeft)
         self.addStretch(6)
         self.addWidget(self.btn_user, Qt.AlignRight)
 # VIEW GRID CONTAINER
@@ -292,7 +308,7 @@ class ViewGridContainer(QVBoxLayout, Component):
         toggle_layout.addLayout(self.view_toggle)
 
         contain_layout = QWidget()
-        contain_layout.setMaximumWidth(self.width)
+        # contain_layout.setMaximumWidth(self.width)
         contain_layout.setFixedHeight(Component.unit / 2)
         contain_layout.setLayout(toggle_layout)
 

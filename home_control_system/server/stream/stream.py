@@ -20,21 +20,20 @@ from cv2 import (
     absdiff,
     resize
 )
-from .collector import FrameCollector
-from .image import (
+from .collectors.image import (
+    ImageCollector,
+    Tag,
     time_now,
     hash_id
 )
-
-collector = FrameCollector()
-collector.start()
+from .collectors.video import FrameCollector
 
 
 # Stream
 #   In-Out Frame Processing Pipe
 #      Does Movement Detection & Face Detection
 #      Periodically Stacks frames then Exports Result Video
-#      Handles Intruder Alert Frames then Adds to FrameCollector which Exports the Result Image
+#      Handles Intruder Alert Frames then Adds to ImageCollector which Exports the Result Image
 #   Upload the Result Videos and Images to S3 Bucket
 class Stream:
     def __init__(self, address, dimensions):
@@ -56,6 +55,7 @@ class Stream:
         self.feedback.contours = None
         self.feedback.faces = None
         self.feedback.irides = None
+        self.feedback.bodies = None
         # Checks
         self.triggers = SimpleNamespace()
         self.triggers.is_movement = False
@@ -68,6 +68,12 @@ class Stream:
         self.indicators.ceil = 1.0
         self.indicators.face_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.indicators.iris_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_eye.xml')
+        self.indicators.body_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_upperbody.xml')
+        # Collectors
+        self.image_collector = ImageCollector(self.address)
+        self.frame_collector = FrameCollector(self.address)
+        self.image_collector.start()
+        self.frame_collector.start()
 
     def add_stream_view(self, stream_view, dimensions):
         self.stream_views.append((stream_view, (int(dimensions[0]), int(dimensions[1]))))
@@ -75,7 +81,7 @@ class Stream:
     # 0 : Add frame to stream
     #   i : If movement_detected
     #       i : If face_detected
-    #           i : Add Frame to FrameCollector
+    #           i : Add Frame to ImageCollector
     #   ii : Push to Stack
     # 1 : Output Feedback to Frame
     # 2 : Export Stack to Video
@@ -105,9 +111,14 @@ class Stream:
             if self.detect_person():
                 self.triggers.is_person = True
                 await self.feedback_person()
-                collector.collect(self.current_frame, self.address)
+                self.frame_collector.collect(frame, Tag.ALERT)
+                self.image_collector.collect(frame)
+            elif self.detect_movement:
+                self.frame_collector.collect(frame, Tag.ACTIVITY)
             await self.feedback_movement()
-
+        else:
+            self.frame_collector.collect(frame, Tag.PERIODIC)
+            
         for (stream_view, (width, height)) in self.stream_views:
             stream_view.set_frame(resize(self.current_frame, (width, height)))
 
@@ -118,7 +129,7 @@ class Stream:
             if self.config.stop_time < now:
                 self.config.start_time = self.config.stop_time + self.config.gap_length
                 self.config.stop_time = self.config.start_time + self.config.clip_length
-                await self.export_video()
+                # await self.export_video()
 
     # Detects Movement in Frame
     #   Returns True if Movement
@@ -167,23 +178,32 @@ class Stream:
 
         self.feedback.faces = self.indicators.face_cascade.detectMultiScale(
             grey,
-            scaleFactor=1.3,
-            minNeighbors=6,
-            minSize=(int(self.width * 0.1), int(self.height * 0.1))  # square must be 10% of screens size
+            scaleFactor=1.1,
+            minNeighbors=4,
+            minSize=(int(self.width * 0.05), int(self.height * 0.05))  # square must be 10% of screens size
         )
 
         for (x, y, w, h) in self.feedback.faces:
             self.feedback.irides = self.indicators.iris_cascade.detectMultiScale(
                 grey[y:y+h, x:x+w],
-                scaleFactor=1.2,
+                scaleFactor=1.3,
                 minNeighbors=5,
                 minSize=(int(self.width * 0.01), int(self.height * 0.01))
             )
 
-        if self.feedback.faces is None or self.feedback.irides is None:
+        if len(self.feedback.faces) < 1 or len(self.feedback.irides) < 2:
             return False
+            # self.feedback.faces = []
+            # self.feedback.irides = []
+            # self.feedback.bodies = self.indicators.body_cascade.detectMultiScale(
+            #     grey,
+            #     scaleFactor=1.05,
+            #     minNeighbors=8,
+            #     minSize=(int(self.width * 0.1), int(self.height * 0.1))  # square must be 10% of screens size
+            # )
+            # return len(self.feedback.bodies) > 0
 
-        return len(self.feedback.faces) >= 1 and len(self.feedback.irides) >= 2  # Return True if List Not Empty
+        return True
 
     # Draws Movement Feedback to Frame
     async def feedback_movement(self):
@@ -191,10 +211,15 @@ class Stream:
 
     # Draws Persons Face Feedback to Frame
     async def feedback_person(self):
-        for (x, y, w, h) in self.feedback.faces:
-            rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            for (ex, ey, ew, eh) in self.feedback.irides:
-                rectangle(self.current_frame[y:y+h, x:x+w], (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+        if len(self.feedback.faces) > 0:
+            for (x, y, w, h) in self.feedback.faces:
+                rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 1)
+                for (ex, ey, ew, eh) in self.feedback.irides:
+                    if ey + (eh / 2) < y + (h / 2):
+                        rectangle(self.current_frame[y:y+h, x:x+w], (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+        # elif len(self.feedback.bodies) > 0:
+        #     for (x, y, w, h) in self.feedback.bodies:
+        #         rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 1)
 
     async def export_video(self):
         name = 'data/temp/video/' + hash_id(time_now(), self.address) + '.avi'

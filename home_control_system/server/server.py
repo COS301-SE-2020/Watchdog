@@ -1,6 +1,5 @@
 import threading
 from .camera import Camera
-from .stream.stream import collector
 
 
 class Server(threading.Thread):
@@ -44,7 +43,6 @@ class Server(threading.Thread):
     def stops(self):
         for address, client in self.cameras.items():
             client.stop()
-        collector.live = False
 
     def client_stats(self, address):
         stats = {}

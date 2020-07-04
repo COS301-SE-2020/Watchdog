@@ -47,7 +47,8 @@ QPushButton
     border: 0px;
     border-radius: 0px;
     text-align: left;
-    font: 16px Corbel, sans-serif;
+    font: 18px Corbel, sans-serif;
+    font-weight: 30;
 }
 
 QLabel

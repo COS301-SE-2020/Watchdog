@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QPushButton,
     QSizePolicy,
+    QLabel,
     QGraphicsDropShadowEffect
 )
 from PyQt5.QtGui import (
@@ -17,13 +18,14 @@ from PyQt5.QtGui import (
 from .component import Component
 
 class StreamView(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, location='location', address='address'):
         super(StreamView, self).__init__(parent)
         self.image = None
+        self.location = location
+        self.address = address
         self.setFixedWidth(Component.unit)
         self.setContentsMargins(0, 0, 0, 0)
-        shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
-        self.setGraphicsEffect(shadow)
+        self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
 
     def set_frame(self, frame):
         if frame is not None:
@@ -44,8 +46,9 @@ class StreamView(QWidget):
 class StreamGrid(QGridLayout, Component):
     def __init__(self, ascendent):
         super(StreamGrid, self).__init__(ascendent=ascendent)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setSpacing(0)
+        self.setContentsMargins(Component.unit / 4, 0, Component.unit / 4, Component.unit / 4)
+        self.setSpacing(Component.unit / 4)
+        self.setAlignment(Qt.AlignLeft)
 
     def set_views(self, views):
         (row, col) = (0, 0)
@@ -53,9 +56,24 @@ class StreamGrid(QGridLayout, Component):
             if col >= 3:
                 row += 1
                 col = 0
-            layout = QHBoxLayout()
-            layout.setAlignment(Qt.AlignCenter)
+            lbl_address = QLabel()
+            lbl_address.setContentsMargins(0, 0, 0, 0)
+            lbl_address.setText(views[index].address)
+            lbl_address.setAlignment(Qt.AlignCenter)
+            lbl_address.setStyleSheet("font: 12px Corbel, sans-serif; font-weight: 10; background: none; color: white; margin: 0px; padding: 0px;")
+
+            lbl_location = QLabel()
+            lbl_location.setContentsMargins(0, 0, 0, 0)
+            lbl_location.setText(views[index].location)
+            lbl_location.setAlignment(Qt.AlignCenter)
+            lbl_location.setStyleSheet("font: 12px Corbel, sans-serif; font-weight: 10; background: none; color: white; margin: 0px; padding: 0px;")
+
+            layout = QVBoxLayout()
+            layout.setAlignment(Qt.AlignTop)
             layout.addWidget(views[index])
+            # layout.addWidget(lbl_address)
+            # layout.addWidget(lbl_location)
+
             self.addLayout(layout, row, col)
             self.setRowMinimumHeight(row, (Component.unit * 0.6) + int(Component.unit / 8))
             col += 1
@@ -64,6 +82,7 @@ class StreamGrid(QGridLayout, Component):
 class ButtonToggle(QVBoxLayout, Component):
     def __init__(self, ascendent, left_label, right_label):
         super(ButtonToggle, self).__init__(ascendent=ascendent)
+        self.setContentsMargins(0, 0, 0, 0)
 
         self.toggle_layout = QHBoxLayout()
         self.toggle_layout.setContentsMargins(0, 0, 0, 0)
@@ -73,63 +92,58 @@ class ButtonToggle(QVBoxLayout, Component):
         self.left_button.on()
         self.left_button.button.clicked.connect(self.toggle_handler)
 
-        self.spacer = QVSeperationLine()
         self.right_button = ButtonSwitch(self, right_label)
+        self.right_button.off()
         self.right_button.button.clicked.connect(self.toggle_handler)
 
         left_container = QWidget()
         left_container.setLayout(self.left_button)
-        left_container.setMaximumWidth(Component.unit / 2)
-        left_container.setStyleSheet('text-align: center; padding-bottom: 2px;')
-
+        left_container.setStyleSheet('text-align: center; padding-right: 20px; margin-right: 10px; padding-left: 10px;')
 
         right_container = QWidget()
         right_container.setLayout(self.right_button)
-        right_container.setMaximumWidth(Component.unit / 2)
-        right_container.setStyleSheet('text-align: center; padding-bottom: 2px;')
+        right_container.setStyleSheet('text-align: center; padding-left: 20px; margin-left: 10px; padding-right: 10px;')
 
+        self.spacer = QVSeperationLine()
 
         self.toggle_layout.addWidget(left_container)
-        self.toggle_layout.addWidget(self.spacer)
+        # self.toggle_layout.addWidget(self.spacer)
         self.toggle_layout.addWidget(right_container)
 
         self.contain_toggle = QWidget()
         self.contain_toggle.setLayout(self.toggle_layout)
         self.contain_toggle.setMinimumHeight(Component.unit / 8)
 
-        self.contain_toggle.setMinimumWidth(Component.unit)
-        self.contain_toggle.setStyleSheet("background-color: #1d2125;") 
-
-        shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
-        self.contain_toggle.setGraphicsEffect(shadow)
+        self.contain_toggle.setMinimumWidth(Component.unit * 0.6)
+        self.contain_toggle.setStyleSheet("background-color: #1d2125; margin: 0px; padding: 0px;") 
 
         self.setAlignment(Qt.AlignCenter)
         self.addWidget(self.contain_toggle)
 
     def toggle_handler(self):
-        print("Handled")
         self.left_button.toggle()
         self.right_button.toggle()
 
 class ButtonSwitch(QVBoxLayout, Component):
     def __init__(self, ascendent, label):
         super(ButtonSwitch, self).__init__(ascendent=ascendent)
+        self.setContentsMargins(0, 0, 0, 0)
         self.active = False
         self.marker = QHSeperationLine()
-        self.marker.setStyleSheet("background-color:#1d2125;")
-
         self.button = QPushButton()
         self.button.setText(label)
-        self.button.setMinimumHeight(25)
+        self.button.setMinimumHeight(28)
+
         self.addWidget(self.button)
         self.addWidget(self.marker)
-
-        self.draw()
+        self.off()
 
     def draw(self):
         if self.active:
-            self.marker.setStyleSheet("background-color:white;")
+            self.button.setStyleSheet("margin: 0px; padding: 0px; padding-top: 2px; color: #8cbeff;")
+            self.marker.setStyleSheet("background-color:#8cbeff;")
         else:
+            self.button.setStyleSheet("margin: 0px; padding: 0px; padding-top: 2px; color: white;") 
             self.marker.setStyleSheet("background-color:#1d2125;")
         self.update()
 
@@ -151,20 +165,33 @@ class ButtonSwitch(QVBoxLayout, Component):
 class ButtonList(QVBoxLayout, Component):
     def __init__(self, ascendent):
         super(ButtonList, self).__init__(ascendent=ascendent)
-        self.setAlignment(Qt.AlignLeft)
+        self.setAlignment(Qt.AlignTop)
         self.buttons = []
+        self.highlights = []
 
     def addButton(self, label):
         btn = QPushButton()
         btn.setText(label)
-        btn.setFixedHeight(Component.unit / 4)
+        btn.setFixedHeight(Component.unit / 4 * 0.8)
         btn.setMinimumWidth(self.width * 0.9)
-        btn.setStyleSheet('margin-left: 25px; font: 18px Corbel, sans-serif;')
-        self.buttons.append(btn)
 
         seperator = QHSeperationLine()
+
+        self.buttons.append(btn)
+        self.highlights.append(seperator)
+        btn.clicked.connect(lambda: self.toggle_handler(self.buttons.index(btn)))
+
         self.addWidget(btn)
         self.addWidget(seperator)
+
+        self.toggle_handler(0)
+
+    def toggle_handler(self, btn_index):
+        for index in range(len(self.buttons)):
+            self.buttons[index].setStyleSheet('margin-left: 35px; font: 18px Corbel, sans-serif; font-weight: 15; color: white;')
+            self.highlights[index].setStyleSheet('padding-left: 10px; padding-right: 10px; background-color: white;')
+        self.buttons[btn_index].setStyleSheet('margin-left: 35px; font: 18px Corbel, sans-serif; font-weight: 15; color: #8cbeff;')
+        self.highlights[btn_index].setStyleSheet('padding-left: 10px; padding-right: 10px; background-color: #8cbeff;')
 
 
 class QHSeperationLine(QFrame):

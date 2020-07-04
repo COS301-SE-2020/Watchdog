@@ -1,7 +1,7 @@
 import cv2
 import threading
 import asyncio
-import base64
+# import base64
 import zmq
 from .stream.stream import Stream
 
@@ -39,7 +39,7 @@ class Camera(threading.Thread):
         self.socket = zmq.Context().socket(zmq.PUB)
         # Establish Socket Server
         socket = server.port + len(server.cameras)
-        print("Serving on socket " + str(socket))
+        print("Serving on " + str(server.address) + ":" + str(socket))
         self.socket.connect('tcp://' + server.address + ':' + str(socket))
         # Connect to Camera
         self.connect()
