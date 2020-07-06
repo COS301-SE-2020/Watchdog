@@ -1,7 +1,8 @@
 import sys
 from PyQt5.QtCore import (
     Qt,
-    QSize
+    QSize,
+    QPoint
 )
 from PyQt5.QtGui import (
     QPixmap,
@@ -17,18 +18,26 @@ from PyQt5.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
     QScrollArea,
-    QGraphicsDropShadowEffect
+    QGraphicsDropShadowEffect,
+    QMessageBox,
+    QGroupBox,
+    QFormLayout,
+    QLineEdit,
+    QComboBox,
+    QSpinBox
 )
 from .widgets import (
     StreamView,
     StreamGrid,
-    ButtonToggle,
+    CenterToggle,
+    PanelToggle,
     ButtonList,
     QVSeperationLine,
-    QHSeperationLine
+    QHSeperationLine,
+    PopupButton
 )
 from .component import Component
-from .styles import style_dark
+from .styles import (style_dark, light_blue)
 
 
 ###############################
@@ -40,11 +49,13 @@ class Window(QMainWindow, Component):
 
         (width, height) = self.ascendent.get_resolution()
         Component.unit = (width / 2) / 5  # 1 Component.unit = (1/2 width) / 5 segments
-        self.set_dimensions(5 * Component.unit, 3 * Component.unit)
+        self.set_dimensions(5.5 * Component.unit, 3 * Component.unit)
 
         self.setWindowTitle("Home Control Panel")
+        self.setWindowIcon(QIcon("assets/icons/watchdog_white.png"))
         self.setContentsMargins(0, 0, 0, 0)
-        self.setGeometry(int(self.width / 2), int(self.height / 2), self.width, self.height)
+        self.setGeometry(int((5 * Component.unit) / 2), int(self.height / 2), self.width, self.height)
+        self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint))
 
     def buildLayout(self, cameras):
         home = HomeContainer(self)
@@ -54,7 +65,7 @@ class Window(QMainWindow, Component):
         home_container.setMinimumWidth(self.width)
         home_container.setLayout(home)
 
-        spacer = QSpacerItem(self.width, int(Component.unit / 16), QSizePolicy.Fixed)
+        spacer = QSpacerItem(self.width, int(Component.unit / 8), QSizePolicy.Fixed)
         line = QHSeperationLine()
         line.setStyleSheet("background-color:black;")
 
@@ -133,8 +144,6 @@ class SidePanelContainer(QVBoxLayout, Component):
         contain_location.setLayout(self.header)
         contain_location.setStyleSheet(style_dark)
         contain_location.setMinimumHeight(int(self.header.height))
-
-        shadow = QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3)
         contain_location.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
 
         line_h = QHSeperationLine()
@@ -171,7 +180,7 @@ class SideHeaderContainer(QHBoxLayout, Component):
 
         self.icon_home = QLabel()
         self.lbl_location = QLabel()
-        self.btn_settings = QPushButton()
+        self.btn_settings = PopupButton(self)
 
         map_home = QPixmap("assets/icons/home.png")
         self.icon_home.setPixmap(map_home.scaled(int(Component.unit / 8), int(Component.unit / 8), Qt.KeepAspectRatio, Qt.FastTransformation))
@@ -187,6 +196,8 @@ class SideHeaderContainer(QHBoxLayout, Component):
         self.addWidget(self.lbl_location)
         self.addStretch(1)
         self.addWidget(self.btn_settings, Qt.AlignRight)
+
+        # self.btn_settings.clicked.connect(show_popup())
 # SIDE LIST TOGGLE CONTAINER
 #   - Button Toggle [WIDGET]
 #   - Button List [WIDGET]
@@ -197,14 +208,7 @@ class SideListToggleContainer(QVBoxLayout, Component):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
-        self.list_toggle = ButtonToggle(self, 'Rooms', 'Logs')
-
-        contain_toggle = QWidget()
-        contain_toggle.setLayout(self.list_toggle)
-        contain_toggle.setStyleSheet('background-color: #1d2125;')
-
-        shadow = QGraphicsDropShadowEffect(blurRadius=3, xOffset=2, yOffset=3)
-        contain_toggle.setGraphicsEffect(shadow)
+        self.list_toggle = PanelToggle(self, 'Rooms', 'Logs')
 
         self.button_list = ButtonList(self)
         self.button_list.addButton('Living Room')
@@ -213,6 +217,7 @@ class SideListToggleContainer(QVBoxLayout, Component):
         self.button_list.addButton('Kids Room')
         self.button_list.addButton('Kids Room')
         self.button_list.addButton('Kids Room')
+        self.button_list.addPlus()
 
         contain_list = QWidget()
         contain_list.setLayout(self.button_list)
@@ -225,7 +230,7 @@ class SideListToggleContainer(QVBoxLayout, Component):
         self.scroll.setWidget(contain_list)
         self.scroll.setMinimumHeight(self.height - (Component.unit / 4))
 
-        self.addWidget(contain_toggle)
+        self.addWidget(self.list_toggle)
         self.addWidget(self.scroll)
         self.addStretch(2)
 ###############################
@@ -300,34 +305,28 @@ class ViewGridContainer(QVBoxLayout, Component):
         self.setSpacing(0)
         self.setAlignment(Qt.AlignCenter)
 
-        self.view_toggle = ButtonToggle(self, 'Live', 'History')
-        self.view_toggle.contain_toggle.setStyleSheet("background-color: #1d2125; border-radius: 20px;") 
-
-        toggle_layout = QHBoxLayout()
-        toggle_layout.setAlignment(Qt.AlignCenter)
-        toggle_layout.addLayout(self.view_toggle)
-
-        contain_layout = QWidget()
-        # contain_layout.setMaximumWidth(self.width)
-        contain_layout.setFixedHeight(Component.unit / 2)
-        contain_layout.setLayout(toggle_layout)
+        spacer = QSpacerItem(self.width, int(Component.unit / 8), QSizePolicy.Fixed)
+        self.view_toggle = CenterToggle(self, 'Live', 'History')
 
         layout_above = QVBoxLayout()
         layout_above.setAlignment(Qt.AlignCenter)
-        layout_above.addWidget(contain_layout)
+        layout_above.addSpacerItem(spacer)
+        layout_above.addWidget(self.view_toggle)
 
         self.viewer = StreamGrid(self)
 
-        contain_viewer = QWidget()                 # Widget that contains the collection of Vertical Box
+        # Widget that contains the collection of Vertical Box
+        contain_viewer = QWidget()                 
         contain_viewer.setMinimumWidth(self.width)
         contain_viewer.setLayout(self.viewer)
+        contain_viewer.setStyleSheet("border: 0px; background-color: " + light_blue + ";")
 
         self.scroll = QScrollArea()
-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(contain_viewer)
-        self.scroll.setMaximumWidth(self.width)
+        self.scroll.setStyleSheet("margin: " + str(Component.unit / 8) + "px; padding: " + str(Component.unit / 8) + "px; border: 1px solid white; border-radius: 30px; background-color: " + light_blue + ";")
 
         self.addLayout(layout_above)
         self.addWidget(self.scroll)

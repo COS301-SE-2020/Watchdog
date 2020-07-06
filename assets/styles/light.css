@@ -1,6 +1,5 @@
 QMainWindow 
 {
-    background-color: #181b1e;
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
@@ -9,7 +8,7 @@ QMainWindow
 
 QWidget
 {
-    background-color: #24292e;
+    background-color: #0f131a;
     padding: 0px;
     margin: 0px;
     width: 100%;
@@ -17,7 +16,7 @@ QWidget
 
 QHBoxLayout
 {
-    background-color: #24292e;
+    background-color: #0f131a;
     border-radius: 0px;
     padding: 5px;
     margin: 0px;
@@ -26,7 +25,7 @@ QHBoxLayout
 
 QVBoxLayout
 {
-    background-color: #24292e;
+    background-color: #0f131a;
     border-radius: 5px;
     padding: 0px;
     margin: 0px;
@@ -34,7 +33,7 @@ QVBoxLayout
 
 QGridLayout
 {
-    background-color: #24292e;
+    background-color: #0f131a;
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
@@ -53,9 +52,11 @@ QPushButton
 
 QLabel
 {
-    color: #24292e;
+    color: white;
     font: 36px Corbel, sans-serif;
     font-weight: 10;
+    border: 0px;
+    border-radius: 0px;
 }
 
 QFrame
@@ -77,7 +78,7 @@ QScrollBar
 {              
     border: 0px;
     border-radius: 5px;
-    background:  #24292e;
+    background:  #0f131a;
     width: 10px;
     margin: 0px 0px 0px 0px;
 }
@@ -86,7 +87,7 @@ QScrollBar::handle
 {              
     border: 0px;
     border-radius: 5px;
-    background:  #24292e;
+    background:  #0f131a;
     width: 10px;
     margin: 0px 0px 0px 0px;
 }
@@ -95,7 +96,7 @@ QScrollBar:vertical
 {              
     border: 0px;
     border-radius: 5px;
-    background:  #24292e;
+    background:  #0f131a;
     width: 10px;
     margin: 0px 0px 0px 0px;
 }
@@ -130,10 +131,10 @@ QScrollBar::sub-line:vertical
 
 QScrollBar::sub-page:vertical
 {
-    background: #24292e;
+    background: #0f131a;
 }
 
 QScrollBar::add-page:vertical
 {
-    background:  #24292e;
+    background:  #0f131a;
 }

@@ -11,6 +11,7 @@ class HomeControlPanel(QApplication, Component):
         self.server = server
         self.setApplicationName("Home Control Panel (Watchdog)")
         self.setStyleSheet(style_light)
+        self.setStyle('Fusion')
 
     def add_camera(self, address, port='', path='', location='', protocol=''):
         self.cameras.append(self.server.add_camera(address, port, path, location, protocol))

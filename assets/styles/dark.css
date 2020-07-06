@@ -1,12 +1,12 @@
 QWidget
 {
-    background-color: #1d2125;
+    background-color: #1a1d24;
     border-radius: 0px;
 }
 
 QHBoxLayout
 {
-    background-color: #1d2125;
+    background-color: #1a1d24;
     border: 15px solid black;
     border-radius: 0px;
     padding: 5px;
@@ -16,7 +16,7 @@ QHBoxLayout
 
 QVBoxLayout
 {
-    background-color: #1d2125;
+    background-color: #1a1d24;
     border: 15px solid black;
     border-radius: 0px;
     padding: 0px;
