@@ -12,9 +12,9 @@ boto3 ="1.14.0"
 vidgear = "^0.1.7"
 imutils = "^0.5.3"
 numpy = "^1.18.5"
-opencv-python = "^4.2.0"
+opencv-python = "4.1.0.25"
 warrant = "^0.6.1"
-PyQT5 = "^5.15.0"
+PyQt5 = "^5.15.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
