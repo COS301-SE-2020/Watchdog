@@ -2,15 +2,18 @@ import time
 from PyQt5.QtWidgets import QApplication
 from .containers import Window
 from .component import Component
-from .styles import style_light
+from .styles import Style
 
 class HomeControlPanel(QApplication, Component):
     def __init__(self, server):
         super(HomeControlPanel, self).__init__([])
         self.cameras = []
         self.server = server
+
         self.setApplicationName("Home Control Panel (Watchdog)")
-        self.setStyleSheet(style_light)
+
+        (width, height) = self.get_resolution()
+        Style.set_unit((width / 2) / 5)
         self.setStyle('Fusion')
 
     def add_camera(self, address, port='', path='', location='', protocol=''):

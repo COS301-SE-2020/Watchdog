@@ -1,140 +1,37 @@
-QMainWindow 
-{
-    border-radius: 0px;
-    padding: 0px;
-    margin: 0px;
-    color: white;
-}
-
 QWidget
 {
-    background-color: #0f131a;
-    padding: 0px;
-    margin: 0px;
-    width: 100%;
+    border-radius: 0px;
+    background-color: @LightColor;
 }
 
 QHBoxLayout
 {
-    background-color: #0f131a;
+    border: 15px solid black;
     border-radius: 0px;
     padding: 5px;
     margin: 0px;
-    width: 100%;
+    background-color: @LightColor;
 }
 
 QVBoxLayout
 {
-    background-color: #0f131a;
-    border-radius: 5px;
-    padding: 0px;
-    margin: 0px;
-}
-
-QGridLayout
-{
-    background-color: #0f131a;
+    border: 15px solid black;
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
+    background-color: @LightColor;
 }
 
 QPushButton
 {
     background-color: transparent;
-    color: white;
     border: 0px;
-    border-radius: 0px;
-    text-align: left;
-    font: 18px Corbel, sans-serif;
-    font-weight: 30;
+    font: @SubTextSize Corbel, sans-serif;
 }
 
 QLabel
 {
-    color: white;
-    font: 36px Corbel, sans-serif;
-    font-weight: 10;
-    border: 0px;
-    border-radius: 0px;
-}
-
-QFrame
-{
-    background-color: white;
-}
-
-/* SCROLL Area */
-
-QScrollArea
-{              
-    border: 0px;
-    border-radius: 0px;
-    background-color: transparent;
-    margin: 0px 0px 0px 0px;
-}
-
-QScrollBar
-{              
-    border: 0px;
-    border-radius: 5px;
-    background:  #0f131a;
-    width: 10px;
-    margin: 0px 0px 0px 0px;
-}
-
-QScrollBar::handle
-{              
-    border: 0px;
-    border-radius: 5px;
-    background:  #0f131a;
-    width: 10px;
-    margin: 0px 0px 0px 0px;
-}
-
-QScrollBar:vertical
-{              
-    border: 0px;
-    border-radius: 5px;
-    background:  #0f131a;
-    width: 10px;
-    margin: 0px 0px 0px 0px;
-}
-
-QScrollBar::handle:vertical
-{
-    border: 0px;
-    border-radius: 5px;
-    background-color: white;
-    min-height: 0px;
-}
-
-QScrollBar::add-line:vertical
-{
-    border: 0px;
-    border-radius: 5px;
-    background-color: white;
-    height: 0px;
-    subcontrol-position: bottom;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::sub-line:vertical
-{
-    border: 0px;
-    border-radius: 5px;
-    background-color: white;
-    height: 0 px;
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::sub-page:vertical
-{
-    background: #0f131a;
-}
-
-QScrollBar::add-page:vertical
-{
-    background:  #0f131a;
+    font-weight: 8;
+    color: @LightTextColor;
+    font: @SubTextSize Corbel, sans-serif;
 }
