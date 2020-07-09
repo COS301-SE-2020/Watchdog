@@ -1,89 +1,93 @@
 import requests
 import json
-from warrant import AWSSRP, Cognito
 import os
 import datetime
 from hashlib import sha256
+from service.user import User, authenticate_user
+
+BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
 
 
-def login(username, password):
+def login(username, password, post_site=True):
     # authenticate user
-    client_id = "5bl2caob065vqodmm3sobp3k7d"
-    user_pool_id = "eu-west-1_mQ0D78123"
-    try:
-        u = Cognito(client_id=client_id, user_pool_id=user_pool_id, username=username, user_pool_region='eu-west-1')
-        u.authenticate(password=password)
-        user = u.get_user(attr_map={"user_id": "sub"})
-        user_id = user.sub
-    except Exception as e:
-        print("incorrect username or password")
-        return
+    is_valid = authenticate_user(username, password)
     # generate user data for a user that logs into the system for the first time on a specific computer
-    hcp_id = sha256((str(datetime.datetime.now().timestamp()) + user_id).encode('ascii')).hexdigest()
-    user_logged_in_before = False
-    user = {
-        user_id: {
-            'user_id': user_id,
-            "username": username,
-            "hcp_id": hcp_id
+    if is_valid:
+        user = User.get_instance()
+        hcp_id = "s"+sha256((str(datetime.datetime.now().timestamp()) + user.user_id).encode('ascii')).hexdigest()
+
+        user_logged_in_before = False
+        user_details = {}
+        if os.path.exists('.hash'):     # at least one user has logged on this computer before
+            f = open('.hash', 'r')
+            user_details = json.loads(f.read())
+            f.close()
+            if user.username in user_details:     # new user logging into the HCP on this computer
+                user_logged_in_before = True
+                hcp_id = user_details[user.username]['hcp_id']
+
+        user.set_hcp_id(hcp_id)
+        if not user_logged_in_before:   # persistently store the HCP id of the new user.
+            user_details.update(user.__str__())
+            f = open('.hash', 'w')
+            f.write(json.dumps(user_details))
+            f.close()
+            if post_site:
+                upload_site()
+
+    return is_valid
+
+
+def upload_site():
+    api_endpoint = BASE_URL + '/sites'
+    user = User.get_instance()
+    response = requests.post(
+        api_endpoint,
+        params={
+            "site_id": user.hcp_id
         },
-    }
-    if os.path.exists('.hash'):     # at least one user has logged on this computer before
-        # TODO: encrypt hash file to prevent it being accessible to user as raw text
-        # user_details = sha256(str(user_details).encode()).hexdigest()
-        f = open('.hash', 'r')
-        user_details = json.loads(f.read())
-        f.close()
-        if user_id not in user_details:     # new user logging into the HCP on this computer
-            user_details.update(user)
-        else:
-            user = user_details    # previous user has logged into the HCP on this computer
-            user_logged_in_before = True
-    else:
-        user_details = user     # first user to log into the HCP in this computer
-
-    u = open('.current_user', 'w')  # write the details of the current user logged in on this computer
-    u.write(json.dumps(user[user_id]))
-    u.close()
-
-    if not user_logged_in_before:   # persistently store the new user that logged into the HCP on this computer
-        f = open('.hash', 'w')
-        f.write(json.dumps(user_details))
-        f.close()
+        json={},
+        headers={'Authorization': user.get_token()}
+    )
+    return response
 
 
-def get_current_user_details() -> dict:
-    if os.path.exists('.current_user'):
-        f = open('.current_user', 'r')
-        user_details = f.read()
-        user_details = json.loads(user_details)
-        return user_details
-
-
-def get_token():
-    client_id = "5bl2caob065vqodmm3sobp3k7d"
-    user_pool_id = "eu-west-1_mQ0D78123"
-    aws = AWSSRP(username='test', password='Test123@', pool_id=user_pool_id,
-                 client_id=client_id, pool_region='eu-west-1')
-    token = aws.authenticate_user()
-    return token["AuthenticationResult"]["AccessToken"]
+def upload_camera(camera_id, metadata):
+    api_endpoint = BASE_URL+"/cameras"
+    user = User.get_instance()
+    token = user.get_token()
+    response = requests.post(
+        api_endpoint,
+        params={
+            "site_id": user.hcp_id,
+            "camera_id": camera_id
+        },
+        json={
+            "address": metadata['address'],
+            "port": metadata['port'],
+            "room": metadata['room'],
+            "protocol": metadata['protocol']
+        },
+        headers={'Authorization': token}
+    )
+    return response
 
 
 def upload_to_s3(path_to_resource, file_name, tag):
-    user_details = get_current_user_details()
-    token = get_token()
+    user = User.get_instance()
+    token = user.token
     path = f"{path_to_resource}/{file_name}"
     possible_tags = ['detected', 'periodic', 'movement', 'intruder']
     if os.path.exists(path):
         if tag in possible_tags:
             # get S3 url to post image to
-            api_endpoint = 'https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload'
+            api_endpoint = BASE_URL+'/storage/upload'
             response = requests.post(
                 api_endpoint, params=
                 {
                     "file_name": file_name,
                     "tag": tag,
-                    "user_id": user_details['user_id'],
+                    "user_id": user.user_id,
                     "camera_id": "2321"
                 },
                 headers={'Authorization': f'TOK:{token}'}
