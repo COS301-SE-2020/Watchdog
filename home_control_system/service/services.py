@@ -4,6 +4,14 @@ from warrant.aws_srp import AWSSRP
 import os
 
 
+def detect_intruder_integration():
+    path = "data/temp/images"
+    file_name = "test.jpeg"
+    tag = "detected"
+    response = upload_to_s3(path, file_name, tag)
+    print(response)
+
+
 def get_token():
     client_id = "5bl2caob065vqodmm3sobp3k7d"
     user_pool_id = "eu-west-1_mQ0D78123"

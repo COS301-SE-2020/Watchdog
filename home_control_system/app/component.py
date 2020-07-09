@@ -1,6 +1,7 @@
 # Component Abstract Class
 class Component():
     unit = 1
+    root = None
 
     def __init__(self, ascendent=None):
         (self.width, self.height) = (0, 0)
@@ -10,6 +11,9 @@ class Component():
             self.ascendent = ascendent
             self.ascendent.add_descendent(self)
             (self.width, self.height) = (self.ascendent.width, self.ascendent.height)
+
+        if Component.root is None:
+            Component.root = self
 
     def add_descendent(self, descendent):
         self.descendents.append(descendent)

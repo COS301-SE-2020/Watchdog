@@ -2,7 +2,7 @@ import cv2
 import threading
 import asyncio
 # import base64
-import zmq
+# import zmq
 from .stream.stream import Stream
 
 PROTOCOLS = ['', 'rstp', 'http', 'https']
@@ -11,8 +11,9 @@ FPS = 15
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, server, protocol, address, port, path, location):
+    def __init__(self, id, server, protocol, address, port, path, location):
         threading.Thread.__init__(self)
+        self.id = id
         # Camera Physical Location
         self.location = location
         # Camera IP Address
@@ -35,14 +36,12 @@ class Camera(threading.Thread):
         self.stream_view = None
         # Stream Management Object
         self.stream = Stream(self.address, (RES_X, RES_Y))
-        # Camera Stream Serving
-        self.socket = zmq.Context().socket(zmq.PUB)
-        # Establish Socket Server
-        socket = server.port + len(server.cameras)
-        print("Serving on " + str(server.address) + ":" + str(socket))
-        self.socket.connect('tcp://' + server.address + ':' + str(socket))
         # Connect to Camera
         self.connect()
+        # Camera Stream Serving
+        # self.socket = zmq.Context().socket(zmq.PUB)
+        # Establish Socket Server
+        # self.socket.connect('tcp://' + server.address + ':' + str(server.port + len(server.cameras)))
 
     # Start thread
     def run(self):
@@ -65,9 +64,8 @@ class Camera(threading.Thread):
         (grabbed, frame) = self.connection.read()
         if grabbed:
             asyncio.run(self.stream.put(frame))
-            encoded, buffer = cv2.imencode('.jpg', frame)
+            # encoded, buffer = cv2.imencode('.jpg', frame)
             # self.socket.send(base64.b64encode(buffer))
-            self.socket.send(buffer)
         else:
             self.check_connection()
 

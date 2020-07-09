@@ -76,7 +76,10 @@ class Stream:
         self.frame_collector.start()
 
     def add_stream_view(self, stream_view, dimensions):
-        self.stream_views.append((stream_view, (int(dimensions[0]), int(dimensions[1]))))
+        stream_object = SimpleNamespace()
+        stream_object.view = stream_view
+        stream_object.dimensions = (int(dimensions[0]), int(dimensions[1]))
+        self.stream_views.append(stream_object)
 
     # 0 : Add frame to stream
     #   i : If movement_detected
@@ -119,8 +122,8 @@ class Stream:
         else:
             self.frame_collector.collect(frame, Tag.PERIODIC)
             
-        for (stream_view, (width, height)) in self.stream_views:
-            stream_view.set_frame(resize(self.current_frame, (width, height)))
+        for stream_object in self.stream_views:
+            stream_object.view.set_frame(resize(self.current_frame, stream_object.dimensions))
 
         # Within Clip Record Timeframe
         if self.config.start_time < now:

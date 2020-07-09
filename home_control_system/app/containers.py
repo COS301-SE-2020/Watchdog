@@ -20,7 +20,6 @@ from PyQt5.QtWidgets import (
     QGraphicsDropShadowEffect
 )
 from .widgets import (
-    StreamView,
     StreamGrid,
     ButtonList,
     PopupButton,
@@ -48,17 +47,15 @@ class Window(QMainWindow, Component):
         self.setWindowIcon(QIcon('assets/icons/watchdog_white.png'))
         self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint))
 
-    def buildLayout(self, cameras):
-        home = HomeContainer(self)
-        home.add_cameras(cameras)
+        self.home = HomeContainer(self)
 
         home_container = QWidget()
         home_container.setMinimumWidth(self.width)
-        home_container.setLayout(home)
+        home_container.setLayout(self.home)
 
         spacer = QSpacerItem(self.width, int(Style.unit / 8), QSizePolicy.Fixed)
         line = QHSeperationLine()
-        line.setStyleSheet('background-color:black;')
+        line.setStyleSheet(Style.replace_variables(('background-color:black;')))
 
         layout = QVBoxLayout()
         layout.addSpacerItem(spacer)
@@ -72,7 +69,12 @@ class Window(QMainWindow, Component):
         contain_layout.setMinimumWidth(self.width)
 
         self.setCentralWidget(contain_layout)
-        self.update()
+
+    def addCamera(self, camera):
+        self.home.add_camera(camera)
+    
+    def addLocation(self, location):
+        self.home.sidepanel.list.add_button(location)
 
     def closeEvent(self, event):
         event.accept()  # let the window close
@@ -105,14 +107,14 @@ class HomeContainer(QHBoxLayout, Component):
         contain_view.setMaximumWidth(self.width * 12/5)
 
         line = QVSeperationLine()
-        line.setStyleSheet('background-color:black;')
+        line.setStyleSheet(Style.replace_variables('background-color:black;'))
 
         self.addWidget(contain_panel, 1)
         self.addWidget(line)
         self.addWidget(contain_view, 4)
 
-    def add_cameras(self, cameras):
-        self.view.grid.set_stream_views(cameras)
+    def add_camera(self, camera):
+        self.view.grid.add_stream_view(camera)
 ###############################
 
 
@@ -139,13 +141,13 @@ class SidePanelContainer(QVBoxLayout, Component):
         contain_location.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
 
         line_h = QHSeperationLine()
-        line_h.setStyleSheet('background-color:black;')
+        line_h.setStyleSheet(Style.replace_variables('background-color:black;'))
 
         line_v = QVSeperationLine()
-        line_v.setStyleSheet('background-color:black;')
+        line_v.setStyleSheet(Style.replace_variables('background-color:black;'))
 
         line_alt = QVSeperationLine()
-        line_alt.setStyleSheet('background-color:white;')
+        line_alt.setStyleSheet(Style.replace_variables('background-color:white;'))
 
         holder_layout_top = QHBoxLayout()
         holder_layout_top.addWidget(contain_location)
@@ -175,11 +177,11 @@ class SideHeaderContainer(QHBoxLayout, Component):
         self.btn_settings = PopupButton(self, SettingsPopup)
 
         map_home = QPixmap('assets/icons/home.png')
-        self.icon_home.setPixmap(map_home.scaled(int(Style.unit / 8), int(Style.unit / 8), Qt.KeepAspectRatio, Qt.FastTransformation))
+        self.icon_home.setPixmap(map_home.scaled(Style.sizes.icon_medium, Style.sizes.icon_medium, Qt.KeepAspectRatio, Qt.FastTransformation))
         self.lbl_location.setText('Home')
         map_settings = QPixmap('assets/icons/settings.png')
         self.btn_settings.setIcon(QIcon(map_settings))
-        self.btn_settings.setIconSize(QSize(int(Style.unit / 8), int(Style.unit / 8)))
+        self.btn_settings.setIconSize(QSize(Style.sizes.icon_medium, Style.sizes.icon_medium))
 
         self.icon_home.setContentsMargins(int(Style.unit / 8), 0, int(Style.unit / 24), 0)
         self.btn_settings.setContentsMargins(0, 0, int(Style.unit / 8), 0)
@@ -203,13 +205,6 @@ class SideListToggleContainer(QVBoxLayout, Component):
         self.list_toggle = PanelToggle(self, 'Rooms', 'Logs')
 
         self.button_list = ButtonList(self)
-        self.button_list.addButton('Living Room')
-        self.button_list.addButton('Kitchen')
-        self.button_list.addButton('Master Bedroom')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addButton('Kids Room')
-        self.button_list.addPlus()
 
         contain_list = QWidget()
         contain_list.setLayout(self.button_list)
@@ -225,6 +220,9 @@ class SideListToggleContainer(QVBoxLayout, Component):
         self.addWidget(self.list_toggle)
         self.addWidget(self.scroll)
         self.addStretch(2)
+
+    def add_button(self, label):
+        self.button_list.add_button(label)
 ###############################
 
 
@@ -245,13 +243,13 @@ class ViewPanelContainer(QVBoxLayout, Component):
         # Dark Header
         contain_header = QWidget()
         contain_header.setLayout(self.header)
-        contain_header.setStyleSheet('border: 2px solid black;')
+        contain_header.setStyleSheet(Style.replace_variables('border: @BorderThick solid black;'))
         contain_header.setStyleSheet(Style.light)
         contain_header.setMinimumWidth(self.width)
         contain_header.setMinimumHeight(int(self.header.height))
 
         line = QHSeperationLine()
-        line.setStyleSheet('background-color: black;')
+        line.setStyleSheet(Style.replace_variables('background-color: black;'))
 
         self.addWidget(contain_header, 4)
         self.addWidget(line)
@@ -271,16 +269,16 @@ class ViewHeaderContainer(QHBoxLayout, Component):
         self.btn_user = QPushButton()
 
         map_logo = QPixmap('assets/icons/watchdog.png')
-        self.icon_logo.setPixmap(map_logo.scaled(int(Style.unit * 0.33), int(Style.unit * 0.33), Qt.KeepAspectRatio, Qt.FastTransformation))
+        self.icon_logo.setPixmap(map_logo.scaled(Style.sizes.icon_logo, Style.sizes.icon_logo, Qt.KeepAspectRatio, Qt.FastTransformation))
 
         self.lbl_header = QLabel()
         self.lbl_header.setText('WATCHDOG')
-        self.lbl_header.setStyleSheet('font: ' + Style.text.head + ' Corbel, sans-serif; \
-                                        font-weight: 50;')
+        self.lbl_header.setStyleSheet(Style.replace_variables('font: @HeadTextSize @TextFont; \
+                                                                font-weight: 50;'))
 
         map_user = QPixmap('assets/icons/user.png')
         self.btn_user.setIcon(QIcon(map_user))
-        self.btn_user.setIconSize(QSize(int(Style.unit / 4), int(Style.unit / 4)))
+        self.btn_user.setIconSize(QSize(Style.sizes.icon_large, Style.sizes.icon_large))
 
         self.icon_logo.setContentsMargins(int(Style.unit / 8), 0, int(Style.unit / 16), 0)
         self.btn_user.setContentsMargins(0, 0, int(Style.unit / 8), 0)
@@ -313,20 +311,20 @@ class ViewGridContainer(QVBoxLayout, Component):
         center_viewer.addLayout(self.viewer)
         center_viewer.addStretch()
         # Widget that contains the collection of Vertical Box
-        contain_viewer = QWidget()
-        contain_viewer.setLayout(center_viewer)
-        contain_viewer.setStyleSheet(Style.replace_variables('border: 0px; \
+        self.contain_viewer = QWidget()
+        self.contain_viewer.setLayout(center_viewer)
+        self.contain_viewer.setStyleSheet(Style.replace_variables('border: @None; \
                                                             background-color: @LightColor;'))
 
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(contain_viewer)
+        self.scroll.setWidget(self.contain_viewer)
         self.scroll.setMinimumWidth(self.width)
         self.scroll.setStyleSheet(Style.replace_variables('margin: ' + str(Style.unit / 8) + 'px; \
                                                             padding: ' + str(Style.unit / 8) + 'px; \
-                                                            border: 1px solid @LightTextColor; \
+                                                            border: @BorderThin solid @LightTextColor; \
                                                             border-radius: @LargeRadius; \
                                                             background-color: @LightColor;'))
 
@@ -334,11 +332,9 @@ class ViewGridContainer(QVBoxLayout, Component):
         self.addWidget(self.scroll)
 
     def set_stream_views(self, cameras):
-        views = []
-        for index in range(len(cameras)):
-            view = StreamView()
-            cameras[index].stream.add_stream_view(view, (Style.unit, Style.unit * 0.6))
-            views.append(view)
-        self.viewer.set_views(views)
-        # self.viewer.append_plus()
+        self.viewer.clear_views()
+        self.viewer.add_views(cameras)
+
+    def add_stream_view(self, camera):
+        self.viewer.add_view(camera)
 ###############################
