@@ -1,5 +1,7 @@
 from warrant import AWSSRP, Cognito
 from datetime import datetime, timedelta
+import traceback
+import sys
 
 
 # Singleton User of HCP
@@ -9,12 +11,20 @@ class User:
     @staticmethod
     def get_instance(metadata=None):
         if User.__instance is None:
-            User(metadata)
+            try:
+                User(metadata)
+            except Exception as e:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_tb)
+                return None
         return User.__instance
 
     def __init__(self, metadata):
         if User.__instance is None:
             User.__instance = self
+
+        if metadata is None:
+            raise Exception("You need to authenticate your account by providing respective metadata as a map!")
 
         self.hcp_id = None
 

@@ -14,6 +14,8 @@ def login(username, password, post_site=True):
     # generate user data for a user that logs into the system for the first time on a specific computer
     if is_valid:
         user = User.get_instance()
+        if user is None:
+            return False
         hcp_id = "s"+sha256((str(datetime.datetime.now().timestamp()) + user.user_id).encode('ascii')).hexdigest()
 
         user_logged_in_before = False
@@ -41,6 +43,9 @@ def login(username, password, post_site=True):
 def upload_site():
     api_endpoint = BASE_URL + '/sites'
     user = User.get_instance()
+    if user is None:
+        print("\033[31mCould not Upload site because you have not authenticated a valid user!")
+        return 400
     response = requests.post(
         api_endpoint,
         params={
@@ -55,6 +60,9 @@ def upload_site():
 def upload_camera(camera_id, metadata):
     api_endpoint = BASE_URL+"/cameras"
     user = User.get_instance()
+    if user is None:
+        print(f"\033[31mCould not Upload {camera_id} because you have not authenticated a valid user!")
+        return 400
     token = user.get_token()
     response = requests.post(
         api_endpoint,
@@ -73,27 +81,33 @@ def upload_camera(camera_id, metadata):
     return response
 
 
-def upload_to_s3(path_to_resource, file_name, tag):
+def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
     user = User.get_instance()
-    token = user.token
+    if user is None:
+        print(f"\033[31mCould not Upload {file_name} to S3 because you have not authenticated a valid user!")
+        return 400
+    if timestamp is None:
+        timestamp = str(datetime.datetime.now().timestamp())
     path = f"{path_to_resource}/{file_name}"
     possible_tags = ['detected', 'periodic', 'movement', 'intruder']
     if os.path.exists(path):
         if tag in possible_tags:
             # get S3 url to post image to
-            api_endpoint = BASE_URL+'/storage/upload'
+            # api_endpoint = BASE_URL+'/storage/upload'
+            api_endpoint = 'https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload'
             response = requests.post(
                 api_endpoint, params=
                 {
                     "file_name": file_name,
                     "tag": tag,
                     "user_id": user.user_id,
-                    "camera_id": "2321"
+                    "camera_id": camera_id,
+                    "timestamp": timestamp
                 },
-                headers={'Authorization': f'TOK:{token}'}
+                headers={'Authorization': user.get_token()}
             )
             response = json.loads(response.text)
-            # upload image to bucket
+            # Upload video/image to bucket
             with open(path, 'rb') as binary_object:
                 files = {
                     'file': (file_name, binary_object)
