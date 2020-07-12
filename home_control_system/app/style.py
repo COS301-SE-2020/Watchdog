@@ -55,25 +55,26 @@ class Style:
     # Icons
     sizes.icon_small = 1
     # Margin
-    sizes.margin_large = 35
+    sizes.margin_large = 1
     # Margin
-    sizes.margin_medium = 15
+    sizes.margin_medium = 1
     # Margin
-    sizes.margin_small = 5
+    sizes.margin_small = 1
     # Padding
-    sizes.padding_large = 15
+    sizes.padding_large = 1
     # Padding
-    sizes.padding_medium = 10
+    sizes.padding_medium = 1
     # Padding
-    sizes.padding_small = 2
+    sizes.padding_small = 1
 
     @staticmethod
     def get_unit(multiplier=1.0):
         return Style.unit * multiplier
 
     @staticmethod
-    def set_unit(unit):
-        Style.unit = unit  # 384px
+    def set_unit(dimensions):
+        (width, height) = dimensions
+        Style.unit = (width / 2) / 5  # 384px
         Style.text.head = str(int(Style.unit / 6.4)) + 'px'  # 60px
         Style.text.subhead = str(int(Style.unit / 10.67)) + 'px'  # 36px
         Style.text.button = str(int(Style.unit / 21.33)) + 'px'  # 18px

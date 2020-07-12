@@ -3,6 +3,7 @@ from PyQt5.QtCore import (
     QSize,
     QPoint
 )
+from cv2 import resize
 from PyQt5.QtWidgets import (
     QFrame,
     QLabel,
@@ -23,26 +24,30 @@ from PyQt5.QtGui import (
     QPixmap,
     QPainter
 )
-# from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
-# from PyQt5.QtMultimediaWidgets import QVideoWidget
-# from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QSlider, QStyle, QVBoxLayout, QWidget, QStatusBar)
 from .component import Component
-from .styles import Style
+from .style import Style
 
 class StreamView(QWidget):
-    def __init__(self, parent=None, location='', address=''):
+    count = 0
+
+    def __init__(self, camera, parent=None):
         super(StreamView, self).__init__(parent)
+        self.id = StreamView.count
         self.qp = QPainter()
         self.image = QImage()
-        self.location = location
-        self.address = address
+        self.camera = camera
+        self.location = camera.location
+        self.address = camera.address
+        self.dimensions = (int(Style.unit), int(Style.unit * 0.6))
         self.setContentsMargins(0, 0, 0, 0)
         self.setMinimumWidth(Style.unit)
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
+        StreamView.count += 1
 
-    def set_frame(self, frame):
-        if frame is not None:
+    def set_frame(self):
+        if self.camera.stream.current_frame is not None:
             del self.image
+            frame = resize(self.camera.stream.current_frame, self.dimensions)
             height, width, bpc = frame.shape
             bpl = bpc * width
             self.image = QImage(frame.data, width, height, bpl, QImage.Format_RGB888)
@@ -50,11 +55,13 @@ class StreamView(QWidget):
             self.update()
 
     def paintEvent(self, event):
-        self.qp.begin(self)
-        if self.image:
-            self.qp.drawImage(QPoint(0, 0), self.image)
-        self.qp.end()
-
+        try:
+            self.qp.begin(self)
+            if self.image:
+                self.qp.drawImage(QPoint(0, 0), self.image)
+            self.qp.end()
+        except Exception as e:
+            return
 
 class StreamGrid(QGridLayout, Component):
     def __init__(self, ascendent):
@@ -64,12 +71,19 @@ class StreamGrid(QGridLayout, Component):
         self.setAlignment(Qt.AlignLeft)
         (self.row, self.col) = (0, 0)
         self.views = []
-        self.append_plus()
-    
+        self.streams = []
+
+    def refresh(self):
+        for index in range(len(self.streams)):
+            self.streams[index].set_frame()
+
     def append_plus(self):
         if self.col >= 3:
             self.row += 1
             self.col = 0
+        elif self.col < 0:
+            self.row -= max(1, 0)
+            self.col = max(2, 0)
 
         btn = PlusButton(self, CameraPopup)
         btn.setStyleSheet('border: @None; margin: @None; padding: @None;')
@@ -86,12 +100,13 @@ class StreamGrid(QGridLayout, Component):
         btn_container_in.setStyleSheet(Style.replace_variables('border: @None; \
                                                             margin: @None; \
                                                             padding: @None;'))
-
         btn_holder_out = QHBoxLayout()
         btn_holder_out.setContentsMargins(0, 0, 0, 0)
         btn_holder_out.setSpacing(0)
         btn_holder_out.setAlignment(Qt.AlignCenter)
+        btn_holder_out.addStretch()
         btn_holder_out.addWidget(btn_container_in)
+        btn_holder_out.addStretch()
 
         btn_container = QWidget()
         btn_container.setContentsMargins(0, 0, 0, 0)
@@ -108,20 +123,23 @@ class StreamGrid(QGridLayout, Component):
         inner_layout.setSpacing(0)
         inner_layout.setAlignment(Qt.AlignCenter)
         inner_layout.addWidget(btn_container)
-        inner_layout.addStretch()
 
         outer_layout = QVBoxLayout()
         outer_layout.setContentsMargins(0, 0, 0, 0)
         outer_layout.setSpacing(0)
-        outer_layout.setAlignment(Qt.AlignCenter)
+        outer_layout.setAlignment(Qt.AlignTop)
         outer_layout.addLayout(inner_layout)
-        outer_layout.addStretch()
+
+        centre_layout = QVBoxLayout()
+        centre_layout.setContentsMargins(0, 0, 0, 0)
+        centre_layout.setSpacing(0)
+        centre_layout.setAlignment(Qt.AlignLeft)
+        centre_layout.addLayout(outer_layout)
 
         layout_container = QWidget()
         layout_container.setContentsMargins(0, 0, 0, 0)
-        layout_container.setLayout(outer_layout)
+        layout_container.setLayout(centre_layout)
         layout_container.setMaximumWidth(Style.unit + int(Style.unit / 4))
-        layout_container.setMaximumHeight(Style.unit)
         layout_container.setStyleSheet(Style.replace_variables('border: @None; \
                                                                 margin: @None; \
                                                                 padding: @None;'))
@@ -131,28 +149,26 @@ class StreamGrid(QGridLayout, Component):
         self.views.append(layout_container)
         self.col += 1
 
-    def remove_view(self, index):
-        self.removeWidget(self.views[index])
-        self.views[index].deleteLater()
-        del self.views[index]
-        self.col -= 1
-        if self.col < 0:
-            self.row -= 1
-            self.col = 2
+        self.update()
 
-    def add_view(self, camera):
-        self.remove_view(len(self.views) - 1)
+    def add_view(self, camera, append=True):
+        if append and len(self.views) > 0:
+            self.remove_view(len(self.views) - 1)
 
         if self.col >= 3:
             self.row += 1
             self.col = 0
+        elif self.col < 0:
+            self.row -= max(1, 0)
+            self.col = max(2, 0)
 
-        view = StreamView(location=camera.location, address=camera.address)
+        view = StreamView(camera)
+        self.streams.append(view)
 
         lbl_address = QLabel()
         lbl_address.setContentsMargins(0, 0, 0, 0)
         lbl_address.setText(view.address)
-        lbl_address.setAlignment(Qt.AlignLeft)
+        lbl_address.setAlignment(Qt.AlignCenter)
         lbl_address.setStyleSheet(Style.replace_variables('font: @SmallTextSize @TextFont; \
                                                             font-weight: 10; \
                                                             background: none; \
@@ -163,7 +179,7 @@ class StreamGrid(QGridLayout, Component):
         lbl_location = QLabel()
         lbl_location.setContentsMargins(0, 0, 0, 0)
         lbl_location.setText(view.location)
-        lbl_location.setAlignment(Qt.AlignLeft)
+        lbl_location.setAlignment(Qt.AlignCenter)
         lbl_location.setStyleSheet(Style.replace_variables('font: @SmallTextSize @TextFont; \
                                                             font-weight: 10; \
                                                             background: none; \
@@ -172,10 +188,9 @@ class StreamGrid(QGridLayout, Component):
                                                             padding: @None; \
                                                             margin-top: @MarginSmall;'))
         outer_layout = QHBoxLayout()
-        outer_layout.setAlignment(Qt.AlignCenter)
+        outer_layout.setAlignment(Qt.AlignLeft)
         inner_layout = QVBoxLayout()
         inner_layout.setAlignment(Qt.AlignCenter)
-
         layout_address = QHBoxLayout()
         layout_address.setAlignment(Qt.AlignCenter)
 
@@ -202,35 +217,51 @@ class StreamGrid(QGridLayout, Component):
         inner_layout.addWidget(view)
         inner_layout.addLayout(layout_address)
         inner_layout.addLayout(layout_location)
-        inner_layout.addStretch(1)
         outer_layout.addLayout(inner_layout)
-        outer_layout.addStretch(1)
 
         layout_container = QWidget()
+        layout_container.setMaximumWidth(Style.unit + int(Style.unit / 4))
         layout_container.setLayout(outer_layout)
         self.addWidget(layout_container, self.row, self.col)
         self.setRowMinimumHeight(self.row, (Style.unit * 0.6) + int(Style.unit / 8))
         self.views.append(layout_container)
+
+        if append:
+            self.append_plus()
+
         self.col += 1
 
-        self.append_plus()
-
         self.update()
 
-        camera.stream.add_stream_view(view, (Style.unit, Style.unit * 0.6))
+    def remove_view(self, index):
+        if self.col >= 3:
+            self.row += 1
+            self.col = 0
+        elif self.col < 0:
+            self.row -= 1
+            self.col = 2
+        if 0 <= index and index < len(self.streams) and self.streams[index] is not None:
+            del self.streams[index]
+        if 0 <= index and index < len(self.views) and self.views[index] is not None:
+            self.removeWidget(self.views[index])
+            self.views[index].deleteLater()
+            del self.views[index]
+            self.col -= 1
 
     def clear_views(self):
-        print('Clearing Views')
-        for index in range(len(self.views)):
-            self.remove_view(index)
+        while len(self.views) > 0:
+            self.remove_view(0)
         (self.row, self.col) = (0, 0)
         self.views = []
-        self.update()
 
     def add_views(self, cameras):
-        print('Adding Views')
         for index in range(len(cameras)):
-            self.add_view(cameras[index])
+            self.add_view(cameras[index], False)
+        self.append_plus()
+
+    def reset(self, cameras):
+        self.clear_views()
+        self.add_views(cameras)
         self.update()
 
 
@@ -457,7 +488,7 @@ class ButtonList(QVBoxLayout, Component):
         layout_container = QWidget()
         layout_container.setLayout(outer_layout)
 
-        layout_container.setStyleSheet(Style.replace_variables('margin: @None; padding: @None;'))
+        layout_container.setStyleSheet(Style.replace_variables('margin: @None; padding-top: @PaddingMedium;'))
 
         self.buttons.append(layout_container)
         self.addWidget(layout_container)
@@ -480,9 +511,8 @@ class ButtonList(QVBoxLayout, Component):
             self.highlights[btn_index].setStyleSheet(Style.replace_variables('padding-left: @MediumPadding; \
                                                         padding-right: @MediumPadding; \
                                                         background-color: @HighlightColor;'))
-
         self.active_index = btn_index
-
+        Component.root.list.changeActive(self.active_index)
 
 class QHSeperationLine(QFrame):
     def __init__(self):
@@ -506,15 +536,6 @@ class QVSeperationLine(QFrame):
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
 
 
-class PopupButton(QPushButton, Component):
-    def __init__(self, ascendent, popup_class):
-        super(PopupButton, self).__init__(ascendent=ascendent)
-        self.clicked.connect(self.buildPopup)
-        self.popup = popup_class(ascendent=self)
-
-    def buildPopup(self):
-        self.popup.show()
-
 class Popup(QWidget, Component):
     def __init__(self, ascendent):
         super(Popup, self).__init__(ascendent=ascendent)
@@ -534,6 +555,25 @@ class Popup(QWidget, Component):
 
     def cancel(self):
         self.hide()
+
+
+class PopupButton(QPushButton, Component):
+    def __init__(self, ascendent, popup_class):
+        super(PopupButton, self).__init__(ascendent=ascendent)
+        self.clicked.connect(self.buildPopup)
+        self.popup = popup_class(ascendent=self)
+
+    def buildPopup(self):
+        self.popup.show()
+
+
+class PlusButton(PopupButton):
+    def __init__(self, ascendent, popup_class=Popup):
+        super(PlusButton, self).__init__(ascendent=ascendent, popup_class=popup_class)
+        map_plus = QPixmap('assets/icons/plus.png')
+        self.setIcon(QIcon(map_plus))
+        self.setIconSize(QSize(Style.sizes.icon_small, Style.sizes.icon_small))
+        self.setStyleSheet('border: @None; margin: @None; padding: @None;')
 
 
 class SettingsPopup(Popup):
@@ -603,6 +643,67 @@ class SettingsPopup(Popup):
         self.setLayout(layout_form)
 
 
+class LoginPopup(Popup):
+    def __init__(self, ascendent):
+        super(LoginPopup, self).__init__(ascendent=ascendent)
+        top_margin = Style.unit * 1.5
+        left_margin = Style.unit * 2.5
+        main_height = int(3 * Style.unit)
+        main_width = int(5 * Style.unit)
+        popup_width = int(Style.unit * 2)
+
+        self.setGeometry(left_margin + (main_width) - (popup_width / 1.8), top_margin + (main_height / 2) - (popup_width / 2), popup_width, (popup_width / 2))
+        self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint))
+        
+        self.btn_submit = QPushButton('Login')
+        self.btn_cancel = QPushButton('Cancel')
+
+        self.btn_submit.setFixedWidth(int(Style.unit / 3))
+        self.btn_cancel.setFixedWidth(int(Style.unit / 3))
+        self.btn_cancel.setFixedHeight(int(Style.unit / 4))
+        self.btn_submit.clicked.connect(self.submit)
+        self.btn_cancel.clicked.connect(self.cancel)
+
+        hbox_click = QHBoxLayout()
+        hbox_click.addWidget(self.btn_submit)
+        hbox_click.addWidget(self.btn_cancel)
+
+        self.lbl_user = QLabel('Username')
+        self.lbl_pass = QLabel('Password')
+        self.lbl_empty = QLabel()
+
+        self.lbl_user.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_pass.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
+
+        self.layout = QFormLayout()
+        self.layout.setAlignment(Qt.AlignRight)
+        self.layout.addRow(self.lbl_user, QLineEdit(''))
+        self.layout.addRow(self.lbl_pass, QLineEdit(''))
+        self.layout.addRow(self.lbl_empty, hbox_click)
+
+        layout_center = QVBoxLayout()
+        layout_center.setAlignment(Qt.AlignTop)
+        layout_center.addLayout(self.layout)
+
+        contain_form = QWidget()
+        contain_form.setLayout(layout_center)
+        contain_form.setStyleSheet(Style.replace_variables('margin: @MediumMargin; \
+                                                            padding: @LargePadding; \
+                                                            border: @BorderThin solid @LightTextColor; \
+                                                            border-radius: @SmallRadius; \
+                                                            background-color: @LightColor; \
+                                                            color: @LightTextColor; \
+                                                            font: @ButtonTextSize @TextFont; \
+                                                            font-weight: 30;'))
+        layout_form = QHBoxLayout()
+        layout_form.addStretch()
+        layout_form.addWidget(contain_form)
+        layout_form.addStretch()
+
+        self.setLayout(layout_form)
+
+
 class CameraPopup(Popup):
     def __init__(self, ascendent):
         super(CameraPopup, self).__init__(ascendent=ascendent)
@@ -630,7 +731,6 @@ class CameraPopup(Popup):
         hbox_click.addWidget(self.btn_cancel)
         hbox_click.addStretch()
 
-        self.lbl_id = QLabel('Camera ID')
         self.lbl_location = QLabel('Location')
         self.lbl_address = QLabel('IP Address')
         self.lbl_port = QLabel('Port')
@@ -638,7 +738,6 @@ class CameraPopup(Popup):
         self.lbl_path = QLabel('Path (Optional)')
         self.lbl_empty = QLabel()
 
-        self.lbl_id.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_location.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_address.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_port.setStyleSheet(Style.replace_variables('border: @None'))
@@ -646,8 +745,6 @@ class CameraPopup(Popup):
         self.lbl_path.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None'))
 
-        self.input_id = QLabel(str(len(Component.root.cameras)))
-        self.input_id.setStyleSheet(Style.replace_variables('border: @None'))
 
         self.input_location = QLineEdit('Sample Video')
         self.input_address = QLineEdit('data/sample/surveillance1.mp4')
@@ -657,7 +754,6 @@ class CameraPopup(Popup):
 
         self.layout = QFormLayout()
         self.layout.setAlignment(Qt.AlignRight)
-        self.layout.addRow(self.lbl_id, self.input_id)
         self.layout.addRow(self.lbl_location, self.input_location)
         self.layout.addRow(self.lbl_address, self.input_address)
         self.layout.addRow(self.lbl_port, self.input_port)
@@ -697,7 +793,6 @@ class CameraPopup(Popup):
 
     def complete(self):
         Component.root.add_camera(
-            self.input_id.text(),
             self.input_address.text(),
             self.input_port.text(),
             self.input_path.text(),
@@ -741,7 +836,7 @@ class LocationPopup(Popup):
         self.lbl_streaming.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None'))
 
-        self.input_id = QLabel(str(len(Component.root.locations)))
+        self.input_id = QLabel(str(len(Component.root.get_locations())))
         self.input_id.setStyleSheet(Style.replace_variables('border: @None'))
         self.input_location = QLineEdit('Room')
         self.input_priority = QLineEdit('5')
@@ -785,15 +880,6 @@ class LocationPopup(Popup):
 
     def complete(self):
         Component.root.add_location(
-            self.input_id.text(),
             self.input_location.text()
         )
 
-
-class PlusButton(PopupButton):
-    def __init__(self, ascendent, popup_class=Popup):
-        super(PlusButton, self).__init__(ascendent=ascendent, popup_class=popup_class)
-        map_plus = QPixmap('assets/icons/plus.png')
-        self.setIcon(QIcon(map_plus))
-        self.setIconSize(QSize(Style.sizes.icon_small, Style.sizes.icon_small))
-        self.setStyleSheet('border: @None; margin: @None; padding: @None;')

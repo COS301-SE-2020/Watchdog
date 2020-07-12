@@ -24,13 +24,14 @@ from .widgets import (
     ButtonList,
     PopupButton,
     SettingsPopup,
+    LoginPopup,
     PanelToggle,
     CenterToggle,
     QVSeperationLine,
     QHSeperationLine
 )
 from .component import Component
-from .styles import Style
+from .style import Style
 
 
 ###############################
@@ -69,12 +70,6 @@ class Window(QMainWindow, Component):
         contain_layout.setMinimumWidth(self.width)
 
         self.setCentralWidget(contain_layout)
-
-    def addCamera(self, camera):
-        self.home.add_camera(camera)
-    
-    def addLocation(self, location):
-        self.home.sidepanel.list.add_button(location)
 
     def closeEvent(self, event):
         event.accept()  # let the window close
@@ -266,7 +261,8 @@ class ViewHeaderContainer(QHBoxLayout, Component):
 
         self.icon_logo = QLabel()
         self.icon_header = QLabel()
-        self.btn_user = QPushButton()
+        # self.btn_user = QPushButton()
+        self.btn_user = PopupButton(self, LoginPopup)
 
         map_logo = QPixmap('assets/icons/watchdog.png')
         self.icon_logo.setPixmap(map_logo.scaled(Style.sizes.icon_logo, Style.sizes.icon_logo, Qt.KeepAspectRatio, Qt.FastTransformation))
@@ -327,13 +323,11 @@ class ViewGridContainer(QVBoxLayout, Component):
                                                             border: @BorderThin solid @LightTextColor; \
                                                             border-radius: @LargeRadius; \
                                                             background-color: @LightColor;'))
-
         self.addLayout(layout_above)
         self.addWidget(self.scroll)
 
     def set_stream_views(self, cameras):
-        self.viewer.clear_views()
-        self.viewer.add_views(cameras)
+        self.viewer.reset(cameras)
 
     def add_stream_view(self, camera):
         self.viewer.add_view(camera)

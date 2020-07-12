@@ -1,3 +1,6 @@
+from .style import Style
+
+
 # Component Abstract Class
 class Component():
     unit = 1
@@ -14,6 +17,7 @@ class Component():
 
         if Component.root is None:
             Component.root = self
+            Style.set_unit(self.get_resolution())
 
     def add_descendent(self, descendent):
         self.descendents.append(descendent)

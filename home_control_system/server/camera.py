@@ -89,6 +89,7 @@ class Camera(threading.Thread):
             else:
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = False
+                self.live = False
                 # after a few tries, change protocol before retrying
         return self.is_connected
 

@@ -3,9 +3,21 @@ import copy
 import threading
 import time
 from enum import Enum
+from imutils import grab_contours
 from cv2 import (
     resize,
-    imwrite
+    imwrite,
+    absdiff,
+    cvtColor,
+    dilate,
+    erode,
+    threshold,
+    contourArea,
+    THRESH_BINARY,
+    findContours,
+    COLOR_BGR2GRAY,
+    RETR_EXTERNAL,
+    CHAIN_APPROX_SIMPLE
 )
 
 
@@ -55,16 +67,17 @@ class ImageCollector(threading.Thread):
             time.sleep(5)
             self.flush()
 
-#   def sort(self):
-#         unique = True
-#         for index in range(len(self.queue)):
-#             if not distinct_frames(self.queue[index], frame):
-#                 unique = False
-
     def collect(self, frame):
         self.queue.append(frame)
 
+    def sort(self):
+        for index in range(len(self.queue)):
+            for step in range(len(self.queue)):
+                if index < len(self.queue) and step < len(self.queue) and not distinct_frames(self.queue[index], self.queue[step]):
+                    del self.queue[step]
+
     def flush(self):
+        self.sort()
         if len(self.queue) == 0:
             return None
         images = []
@@ -89,7 +102,35 @@ class ImageCollector(threading.Thread):
 # Determines if two frames are distinct from one another
 #   Use Pixels, Location, Time, etc...
 def distinct_frames(frame_x, frame_y):
-    return False
+    (width, height) = (30, 30)
+    difference = cvtColor(absdiff(
+        resize(
+            frame_x,
+            (width, height)
+        ),
+        resize(
+            frame_y,
+            (width, height)
+        )
+    ), COLOR_BGR2GRAY)
+    thresh = erode(
+        dilate(
+            threshold(difference, 70, 255, THRESH_BINARY)[1],
+            None,
+            iterations=2
+        ), None, iterations=1
+    )
+    contours = grab_contours(
+        findContours(
+            thresh,
+            RETR_EXTERNAL,
+            CHAIN_APPROX_SIMPLE
+        )
+    )
+    current_surface_area = 0.0
+    for contour in contours:
+        current_surface_area += contourArea(contour)
+    return current_surface_area > 1000.0
 
 def time_now():
     return int(round(time.time() * 1000))  # milliseconds

@@ -1,13 +1,13 @@
-import requests
-import json
-from warrant.aws_srp import AWSSRP
 import os
+import json
 import datetime
+import requests
 from hashlib import sha256
-from service.user import User, authenticate_user
+from warrant.aws_srp import AWSSRP
+from .user import User, authenticate_user
+
 
 BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
-
 
 
 def detect_intruder_integration():
@@ -21,6 +21,7 @@ def detect_intruder_integration():
 def get_token():
     client_id = "5bl2caob065vqodmm3sobp3k7d"
     user_pool_id = "eu-west-1_mQ0D78123"
+
 
 def login(username, password, post_site=True):
     # authenticate user

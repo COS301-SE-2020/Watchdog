@@ -189,9 +189,9 @@ class FrameCollector(threading.Thread):
         #     if index >= len(self.period_queue):
         #         index = 0
 
-        videoxx = Video('xxxx', tag)
-        videoxx.set_frames(self.period_queue)
-        videoxx.export()
+        # videoxx = Video('xxxx', tag)
+        # videoxx.set_frames(self.period_queue)
+        # videoxx.export()
 
         self.alert_queue.clear()
         self.move_queue.clear()

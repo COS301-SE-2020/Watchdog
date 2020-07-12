@@ -15,6 +15,7 @@ class User:
                 User(metadata)
             except Exception as e:
                 exc_type, exc_value, exc_tb = sys.exc_info()
+                print(str(e))
                 traceback.print_exception(exc_type, exc_value, exc_tb)
                 return None
         return User.__instance
@@ -80,7 +81,7 @@ def authenticate_user(username, password):
         user = u.get_user(attr_map={"user_id": "sub"})
         user_id = user.sub
     except Exception as e:
-        print("incorrect username or password, please try again")
+        print("incorrect username or password, please try again" + str(e))
         return False
 
     user_data = {
@@ -91,7 +92,3 @@ def authenticate_user(username, password):
 
     User.get_instance(user_data)  # instantiate singleton object
     return True
-
-
-
-
