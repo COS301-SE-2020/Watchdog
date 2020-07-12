@@ -12,6 +12,7 @@ from .collector import (
     hash_id,
     distinct_frames
 )
+from service import services
 
 
 class ImageCollector(threading.Thread):
@@ -72,7 +73,9 @@ class Image:
         resize(self.frame, (width, height))
 
     def export(self):
-        return imwrite("data/temp/image/%s.jpg" % self.id, self.frame)
+        imwrite("data/temp/image/%s.jpg" % self.id, self.frame)
+        # services.upload_to_s3()
+        return True
 
     def get_metadata(self):
         meta_data = {

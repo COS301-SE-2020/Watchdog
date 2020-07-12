@@ -142,5 +142,5 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
                   "\nIf you want to upload a detected image: tag must be detected")
     else:
         print("File not found! Please ensure that the file path is correct!, current path provided: \
-              " + path +"\nNOTE: the first parameter is the path to the resource without a leading backslash")
+              " + path + "\nNOTE: the first parameter is the path to the resource without a leading backslash")
     return 500

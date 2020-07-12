@@ -14,6 +14,7 @@ from .collector import (
     clip_length,
     recording_ratio
 )
+from service import services
 
 #################################################
 # FrameCollector
@@ -184,6 +185,9 @@ class Video:
                 if self.frames[index] is not None:
                     file.write(self.frames[index])
             file.release()
+            # services.upload_to_s3()
+            return True
+        return False
 
     def get_metadata(self):
         meta_data = {
