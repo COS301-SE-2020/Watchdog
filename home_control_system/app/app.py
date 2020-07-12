@@ -3,20 +3,40 @@ import time
 from PyQt5.QtWidgets import QApplication
 from .containers import Window
 from .component import Component
+from service import (
+    config,
+    services
+)
+
 
 class HomeControlPanel(QApplication, Component):
     def __init__(self, server):
         super(HomeControlPanel, self).__init__([])
+        self.setApplicationName("Watchdog Control Panel")
+        self.setStyle('Fusion')
         self.list = None
+        self.credentials = None
         self.server = server
         self.window = Window(self)
         self.list = LocationList(self.window)
-        self.setApplicationName("Watchdog Control Panel")
-        self.setStyle('Fusion')
+        # self.setup_environment()
 
     def user_login(self, username, password):
-        print('Logging in')
-        # TODO: Perform login here
+        print('Logging in...')
+        # TODO: Perform login here (which one was the correct one?) ~INTEGRATION~
+        services.login(username, password)
+        # services.authenticate_user(username, password)
+        self.credentials = (username, password)
+
+    def setup_environment(self):
+        print('Loading Environment...')
+        # locations = services.get_location_setup()
+        # cameras = services.get_camera_setup()
+        # for location in locations:
+        #     self.add_location()
+        #     for camera in cameras:
+        #         if camera.location equals location:
+        #             self.add_camera()
 
     def add_camera(self, address, port='', path='', location='', protocol=''):
         return self.list.add_camera(address, port, path, location, protocol)
@@ -50,9 +70,6 @@ class HomeControlPanel(QApplication, Component):
 
 
 class Location:
-    # Number reserved ports (for if we serve it)
-    camera_spaces = 20
-
     def __init__(self, id, location):
         self.id = id
         self.label = location
@@ -62,6 +79,15 @@ class Location:
         camera = Component.root.server.add_camera(id, address, port, path, location, protocol)
         self.cameras.append(camera)
         return camera
+
+    def get_metadata(self):
+        camera_list = ''
+        for index in range(len(self.cameras)):
+            camera_list += str(self.cameras.id)
+        return {
+            "location": self.label,
+            "cameras": camera_list
+        }
 
 
 class LocationList(threading.Thread):
@@ -86,7 +112,10 @@ class LocationList(threading.Thread):
         if self.view is not None:
             self.view.home.sidepanel.list.add_button(label)
 
-        # TODO: update location in database
+        # TODO: Update location in database ~INTEGRATION~
+        # response = services.upload_location(location.id, location.get_metadata())
+        # if response is not good:
+        #   return None
 
         return location
 
@@ -94,12 +123,22 @@ class LocationList(threading.Thread):
         if self.index > len(self.locations):
             return None
 
-        camera = self.locations[self.index].add_camera((self.index * Location.camera_spaces) + len(self.locations[self.index].cameras), address, port, path, location, protocol)
+        camera = self.locations[self.index].add_camera(
+            (self.index * 100) + len(self.locations[self.index].cameras),  # 100 ports
+            address,
+            port,
+            path,
+            location,
+            protocol
+        )
 
         if self.view is not None:
             self.view.home.view.grid.set_stream_views(self.locations[self.index].cameras)
 
-        # TODO: update camera in database
+        # TODO: Update camera in database ~INTEGRATION~
+        # response = services.upload_camera(camera.id, camera.get_metadata())
+        # if response is not good:
+        #   return None
 
         return camera
 

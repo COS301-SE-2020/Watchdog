@@ -1,19 +1,26 @@
+import os
+import json
 import cv2
 import threading
 import asyncio
+from hashlib import sha256
 # import base64
 # import zmq
 from .stream.stream import Stream
+from .stream.collectors.collector import time_now
 
+
+conf = json.loads(os.environ['config'])
 PROTOCOLS = ['', 'rstp', 'http', 'https']
-(RES_X, RES_Y) = (900, 500)
-FPS = 15
+FPS = conf['video']['frames_per_second']
+(RES_X, RES_Y) = (conf['video']['resolution']['width'], conf['video']['resolution']['height'])
+
 
 # Camera connector
 class Camera(threading.Thread):
     def __init__(self, id, server, protocol, address, port, path, location):
         threading.Thread.__init__(self)
-        self.id = id
+        self.id = str(id) + str(sha256((str(time_now())).encode('ascii')).hexdigest())
         # Camera Physical Location
         self.location = location
         # Camera IP Address
@@ -38,6 +45,7 @@ class Camera(threading.Thread):
         self.stream = Stream(self.address, (RES_X, RES_Y))
         # Connect to Camera
         self.connect()
+
         # Camera Stream Serving
         # self.socket = zmq.Context().socket(zmq.PUB)
         # Establish Socket Server
@@ -119,6 +127,15 @@ class Camera(threading.Thread):
             if self.protocol != '':
                 url = self.protocol + '://' + url
         return url
+
+    def get_metadata(self):
+        return {
+            "address": self.address,
+            "port": self.port,
+            "path": self.path,
+            "location": self.location,
+            "protocol": self.protocol
+        }
 
     def __str__(self):
         camera = '[address:' + self.get_url() + ']'

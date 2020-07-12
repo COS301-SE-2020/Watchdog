@@ -1,13 +1,21 @@
+import os
+import json
 from warrant import AWSSRP, Cognito
 from datetime import datetime, timedelta
 import traceback
 import sys
 
 
-# Singleton User of HCP
+# client_id = "5bl2caob065vqodmm3sobp3k7d"
+# user_pool_id = "eu-west-1_mQ0D78123"
+conf = json.loads(os.environ['config'])
+client_id = conf['services']['client']['id']
+user_pool_id = conf['services']['client']['pool']
+
+
 class User:
     __instance = None
-
+    # Singleton User of HCP
     @staticmethod
     def get_instance(metadata=None):
         if User.__instance is None:
@@ -38,16 +46,7 @@ class User:
         }
         self.generate_token()
 
-    def __str__(self):
-        return {
-            self.username: {
-                "hcp_id": self.hcp_id,
-            },
-        }
-
     def generate_token(self):
-        client_id = "5bl2caob065vqodmm3sobp3k7d"
-        user_pool_id = "eu-west-1_mQ0D78123"
         aws = AWSSRP(
             username=self.username,
             password=self.password,
@@ -56,7 +55,6 @@ class User:
             pool_region='eu-west-1'
         )
         token = aws.authenticate_user()
-
         expires_in = int(token["AuthenticationResult"]['ExpiresIn'])
         expires_in = datetime.now() + timedelta(seconds=expires_in)
         self.token['token'] = token["AuthenticationResult"]["IdToken"]
@@ -71,17 +69,23 @@ class User:
     def set_hcp_id(self, hcp_id):
         self.hcp_id = hcp_id
 
+    def __str__(self):
+        return {
+            self.username: {
+                "hcp_id": self.hcp_id
+            }
+        }
+
 
 def authenticate_user(username, password):
-    client_id = "5bl2caob065vqodmm3sobp3k7d"
-    user_pool_id = "eu-west-1_mQ0D78123"
     try:
         u = Cognito(client_id=client_id, user_pool_id=user_pool_id, username=username, user_pool_region='eu-west-1')
         u.authenticate(password=password)
         user = u.get_user(attr_map={"user_id": "sub"})
         user_id = user.sub
+
     except Exception as e:
-        print("incorrect username or password, please try again" + str(e))
+        print("Incorrect username or password, please try again" + str(e))
         return False
 
     user_data = {

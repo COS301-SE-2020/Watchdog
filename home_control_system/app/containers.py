@@ -11,7 +11,6 @@ from PyQt5.QtWidgets import (
     QLabel,
     QWidget,
     QMainWindow,
-    QPushButton,
     QVBoxLayout,
     QHBoxLayout,
     QSpacerItem,
@@ -19,20 +18,23 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QGraphicsDropShadowEffect
 )
+from .component import Component
+from .style import Style
 from .widgets import (
     StreamGrid,
     ButtonList,
-    PopupButton,
-    SettingsPopup,
-    LoginPopup,
     PanelToggle,
     CenterToggle,
-    QVSeperationLine,
-    QHSeperationLine
 )
-from .component import Component
-from .style import Style
-
+from .popups import (
+    PopupButton,
+    SettingsPopup,
+    LoginPopup
+)
+from .spacers import (
+    QHSeperationLine,
+    QVSeperationLine
+)
 
 ###############################
 # MAIN WINDOW
@@ -197,24 +199,49 @@ class SideListToggleContainer(QVBoxLayout, Component):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
-        self.list_toggle = PanelToggle(self, 'Rooms', 'Logs')
+        self.list_toggle = PanelToggle(self, 'Rooms', 'Alerts')
 
         self.button_list = ButtonList(self)
+        self.log_list = ButtonList(self)
 
-        contain_list = QWidget()
-        contain_list.setLayout(self.button_list)
+        self.location_list = QWidget()
+        self.location_list.setLayout(self.button_list)
+
+        self.alert_list = QWidget()
+        self.alert_list.setLayout(self.log_list)
+
+        list_container = QHBoxLayout()
+        list_container.addWidget(self.location_list)
+        list_container.addWidget(self.alert_list)
+
+        container_widget = QWidget()
+        container_widget.setLayout(list_container)
+
+        self.location_view = False
+        self.toggle()
 
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setAlignment(Qt.AlignTop)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(contain_list)
+        self.scroll.setWidget(container_widget)
         self.scroll.setMinimumHeight(self.height - (Style.unit / 4))
 
         self.addWidget(self.list_toggle)
         self.addWidget(self.scroll)
         self.addStretch(2)
+
+    def toggle(self):
+        if self.location_view:
+            self.location_view = False
+            self.location_list.hide()
+            self.alert_list.show()
+        else:
+            self.location_view = True
+            self.alert_list.hide()
+            self.location_list.show()
+        self.update()
 
     def add_button(self, label):
         self.button_list.add_button(label)
@@ -294,24 +321,41 @@ class ViewGridContainer(QVBoxLayout, Component):
 
         spacer = QSpacerItem(self.width, int(Style.unit / 8), QSizePolicy.Fixed)
         self.view_toggle = CenterToggle(self, 'Live', 'Clips')
-
         layout_above = QVBoxLayout()
         layout_above.setAlignment(Qt.AlignCenter)
         layout_above.addSpacerItem(spacer)
         layout_above.addWidget(self.view_toggle)
 
         self.viewer = StreamGrid(self)
+        self.retriever = StreamGrid(self)
 
-        center_viewer = QVBoxLayout()
-        center_viewer.setAlignment(Qt.AlignLeft)
-        center_viewer.addLayout(self.viewer)
-        center_viewer.addStretch()
+        contain_live = QVBoxLayout()
+        contain_live.setAlignment(Qt.AlignLeft)
+        contain_live.addLayout(self.viewer)
+        contain_live.addStretch()
+
+        contain_historical = QVBoxLayout()
+        contain_historical.setAlignment(Qt.AlignLeft)
+        contain_historical.addLayout(self.retriever)
+        contain_historical.addStretch()
+
+        self.live_viewer = QWidget()
+        self.live_viewer.setLayout(contain_live)
+
+        self.historical_viewer = QWidget()
+        self.historical_viewer.setLayout(contain_historical)
+
+        contain_both = QVBoxLayout()
+        contain_both.addWidget(self.live_viewer)
+        contain_both.addWidget(self.historical_viewer)
+        self.live_view = False
+        self.toggle()
+
         # Widget that contains the collection of Vertical Box
         self.contain_viewer = QWidget()
-        self.contain_viewer.setLayout(center_viewer)
+        self.contain_viewer.setLayout(contain_both)
         self.contain_viewer.setStyleSheet(Style.replace_variables('border: @None; \
                                                             background-color: @LightColor;'))
-
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -325,6 +369,17 @@ class ViewGridContainer(QVBoxLayout, Component):
                                                             background-color: @LightColor;'))
         self.addLayout(layout_above)
         self.addWidget(self.scroll)
+
+    def toggle(self):
+        if self.live_view:
+            self.live_view = False
+            self.live_viewer.hide()
+            self.historical_viewer.show()
+        else:
+            self.live_view = True
+            self.historical_viewer.hide()
+            self.live_viewer.show()
+        self.update()
 
     def set_stream_views(self, cameras):
         self.viewer.reset(cameras)

@@ -2,56 +2,16 @@ import json
 import copy
 import threading
 import time
-from enum import Enum
-from imutils import grab_contours
 from cv2 import (
-    resize,
     imwrite,
-    absdiff,
-    cvtColor,
-    dilate,
-    erode,
-    threshold,
-    contourArea,
-    THRESH_BINARY,
-    findContours,
-    COLOR_BGR2GRAY,
-    RETR_EXTERNAL,
-    CHAIN_APPROX_SIMPLE
+    resize
 )
-
-
-# 1 = periodically saved frames (user defined length & frequency)
-# 2 = live intruder alert capture frame (a face is present in the scene)
-class Tag(Enum):
-    DEFAULT = 0
-    PERIODIC = 1
-    ACTIVITY = 2
-    ALERT = 3
-
-
-class Image:
-    def __init__(self, frame, address, tag=Tag.DEFAULT):
-        self.frame = frame
-        self.tag = tag
-        self.time = time_now()
-        self.address = address
-        self.id = hash_id(self.time, self.address)
-
-    def reframe(self, width, height):
-        resize(self.frame, (width, height))
-
-    def export(self):
-        return imwrite("data/temp/image/%s.jpg" % self.id, self.frame)
-
-    def get_metadata(self):
-        meta_data = {
-            "frame_id": self.id,
-            "timestamp": str(self.time)[0:19],
-            "address": self.address,
-            "tag": self.tag
-        }
-        return json.dumps(meta_data)
+from .collector import (
+    Tag,
+    time_now,
+    hash_id,
+    distinct_frames
+)
 
 
 class ImageCollector(threading.Thread):
@@ -99,41 +59,26 @@ class ImageCollector(threading.Thread):
             return image_list
         return self.images
 
-# Determines if two frames are distinct from one another
-#   Use Pixels, Location, Time, etc...
-def distinct_frames(frame_x, frame_y):
-    (width, height) = (30, 30)
-    difference = cvtColor(absdiff(
-        resize(
-            frame_x,
-            (width, height)
-        ),
-        resize(
-            frame_y,
-            (width, height)
-        )
-    ), COLOR_BGR2GRAY)
-    thresh = erode(
-        dilate(
-            threshold(difference, 70, 255, THRESH_BINARY)[1],
-            None,
-            iterations=2
-        ), None, iterations=1
-    )
-    contours = grab_contours(
-        findContours(
-            thresh,
-            RETR_EXTERNAL,
-            CHAIN_APPROX_SIMPLE
-        )
-    )
-    current_surface_area = 0.0
-    for contour in contours:
-        current_surface_area += contourArea(contour)
-    return current_surface_area > 1000.0
 
-def time_now():
-    return int(round(time.time() * 1000))  # milliseconds
+class Image:
+    def __init__(self, frame, address, tag=Tag.DEFAULT):
+        self.frame = frame
+        self.tag = tag
+        self.time = time_now()
+        self.address = address
+        self.id = hash_id(self.time, self.address)
 
-def hash_id(time, address=''):
-    return str(time) + str(hash(address))
+    def reframe(self, width, height):
+        resize(self.frame, (width, height))
+
+    def export(self):
+        return imwrite("data/temp/image/%s.jpg" % self.id, self.frame)
+
+    def get_metadata(self):
+        meta_data = {
+            "frame_id": self.id,
+            "timestamp": str(self.time)[0:19],
+            "address": self.address,
+            "tag": self.tag
+        }
+        return json.dumps(meta_data)

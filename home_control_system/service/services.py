@@ -3,24 +3,31 @@ import json
 import datetime
 import requests
 from hashlib import sha256
-from warrant.aws_srp import AWSSRP
+# from warrant.aws_srp import AWSSRP
 from .user import User, authenticate_user
 
 
-BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
+# BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
+# BUCKET_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload"
+conf = json.loads(os.environ['config'])  # I am aware that this isnt too secure but its good enough for now
+BASE_URL = conf['services']['endpoint_url']
+BUCKET_URL = conf['services']['bucket_url']
 
 
-def detect_intruder_integration():
-    path = "data/temp/images"
-    file_name = "test.jpeg"
-    tag = "detected"
-    response = upload_to_s3(path, file_name, tag)
-    print(response)
+# TODO: [NEEDED]
+#   get_location_setup() - returns a list of the location metadata
+#   get_camera_setup() - returns a list of the camera metadata (all cameras for all locations)
+#   upload_location() - this is for the locations within the hcp i.e. Kitchen, bedroom... metadata: {id, location}
+#   NOTE: We (kind of) need to change the 'room' name in the camera metadata to instead be 'location', to be consistent with the program
 
 
-def get_token():
-    client_id = "5bl2caob065vqodmm3sobp3k7d"
-    user_pool_id = "eu-west-1_mQ0D78123"
+# def get_location_setup():
+
+
+# def get_camera_setup():
+
+
+# def upload_location(location_id, location_label):
 
 
 def login(username, password, post_site=True):
@@ -107,14 +114,11 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
     possible_tags = ['detected', 'periodic', 'movement', 'intruder']
     if os.path.exists(path):
         if tag in possible_tags:
-            # get S3 url to post image to
-            # api_endpoint = BASE_URL+'/storage/upload'
-            api_endpoint = 'https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload'
-            uuid = 'demo1'  # TODO: include confidential pyPi to store global variables
-            token = get_token()
+            # api_endpoint = BASE_URL +'/storage/upload'
+            api_endpoint = BUCKET_URL
+            # TODO: include confidential pyPi to store global variables
             response = requests.post(
-                api_endpoint, params=
-                {
+                api_endpoint, params={
                     "file_name": file_name,
                     "tag": tag,
                     "user_id": user.user_id,
@@ -137,6 +141,6 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
                   "\nIf you want to upload videos: tag must be either movement, periodic, or intruder"
                   "\nIf you want to upload a detected image: tag must be detected")
     else:
-        print("File not found! Please ensure that the file path is correct!, current path provided: " + path +
-              "\nNOTE: the first parameter is the path to the resource without a leading backslash")
+        print("File not found! Please ensure that the file path is correct!, current path provided: \
+              " + path +"\nNOTE: the first parameter is the path to the resource without a leading backslash")
     return 500

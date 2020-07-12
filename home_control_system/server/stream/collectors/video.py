@@ -1,72 +1,19 @@
+import time
 import json
 import threading
-import time
-from enum import Enum
 from cv2 import (
     VideoWriter,
     VideoWriter_fourcc,
     resize
 )
-
-
-fps = 15
-clip_length = 60
-recording_ratio = 0.5
-
-
-# 1 = periodically saved frames (user defined length & frequency)
-# 2 = live intruder alert capture frame (a face is present in the scene)
-class Tag(Enum):
-    DEFAULT = 0
-    PERIODIC = 1
-    ACTIVITY = 2
-    ALERT = 3
-
-
-class Video:
-    def __init__(self, address, tag=Tag.DEFAULT):
-        self.frames = []
-        self.tag = tag
-        self.time_start = time_now()
-        self.time_end = time_now()
-        self.address = address
-        self.id = hash_id(self.time_start, self.address)
-
-    def resize(self, width, height):
-        for index in range(len(self.frames)):
-            resize(self.frames[index], (width, height))
-
-    def add_frame(self, frame):
-        if frame is not None:
-            self.frames.append(frame)
-        self.time_end = time_now()
-
-    def set_frames(self, frames):
-        for index in range(len(frames)):
-            self.add_frame(frames[index])
-        self.time_end = time_now()
-
-    def export(self):
-        if len(self.frames) > 0:
-            name = 'data/temp/video/' + self.id + '.mp4'
-            (h, w) = self.frames[0].shape[:2]
-            file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
-            print("Exporting Video [" + name + "]")
-            for index in range(len(self.frames)):
-                if self.frames[index] is not None:
-                    file.write(self.frames[index])
-            file.release()
-
-    def get_metadata(self):
-        meta_data = {
-            "clip_id": self.id,
-            "time_start": str(self.time_start)[0:19],
-            "time_end": str(self.time_end)[0:19],
-            "address": self.address,
-            "tag": self.tag
-        }
-        return json.dumps(meta_data)
-
+from .collector import (
+    Tag,
+    time_now,
+    hash_id,
+    fps,
+    clip_length,
+    recording_ratio
+)
 
 #################################################
 # FrameCollector
@@ -203,14 +150,47 @@ class FrameCollector(threading.Thread):
 
         return video
 
-# Determines if two frames are distinct from one another
-#   Use Pixels, Location, Time, etc...
-def distinct_frames(frame_x, frame_y):
-    return False
 
+class Video:
+    def __init__(self, address, tag=Tag.DEFAULT):
+        self.frames = []
+        self.tag = tag
+        self.time_start = time_now()
+        self.time_end = time_now()
+        self.address = address
+        self.id = hash_id(self.time_start, self.address)
 
-def time_now():
-    return int(round(time.time() * 1000))  # milliseconds
+    def resize(self, width, height):
+        for index in range(len(self.frames)):
+            resize(self.frames[index], (width, height))
 
-def hash_id(time, address=''):
-    return str(time) + str(hash(address))
+    def add_frame(self, frame):
+        if frame is not None:
+            self.frames.append(frame)
+        self.time_end = time_now()
+
+    def set_frames(self, frames):
+        for index in range(len(frames)):
+            self.add_frame(frames[index])
+        self.time_end = time_now()
+
+    def export(self):
+        if len(self.frames) > 0:
+            name = 'data/temp/video/' + self.id + '.mp4'
+            (h, w) = self.frames[0].shape[:2]
+            file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
+            print("Exporting Video [" + name + "]")
+            for index in range(len(self.frames)):
+                if self.frames[index] is not None:
+                    file.write(self.frames[index])
+            file.release()
+
+    def get_metadata(self):
+        meta_data = {
+            "clip_id": self.id,
+            "time_start": str(self.time_start)[0:19],
+            "time_end": str(self.time_end)[0:19],
+            "address": self.address,
+            "tag": self.tag
+        }
+        return json.dumps(meta_data)
