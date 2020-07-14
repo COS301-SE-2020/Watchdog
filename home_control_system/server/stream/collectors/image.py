@@ -46,7 +46,7 @@ class ImageCollector(threading.Thread):
             image = Image(
                 self.queue[index],
                 self.address,
-                Tag.ALERT
+                Tag.INTRUDER
             )
             images.append(image)
             image.export()

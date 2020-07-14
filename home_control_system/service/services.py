@@ -7,11 +7,10 @@ from hashlib import sha256
 from .user import User, authenticate_user
 
 
-# BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
+BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
 # BUCKET_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload"
-conf = json.loads(os.environ['config'])  # I am aware that this isnt too secure but its good enough for now
-BASE_URL = conf['services']['endpoint_url']
-BUCKET_URL = conf['services']['bucket_url']
+# conf = json.loads(os.environ['config']) 
+# BASE_URL = conf['services']['base_url']
 
 
 # TODO: [NEEDED]
@@ -100,6 +99,7 @@ def upload_camera(camera_id, metadata):
         },
         headers={'Authorization': token}
     )
+    print(str(response.text))
     return response
 
 
@@ -114,8 +114,8 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
     possible_tags = ['detected', 'periodic', 'movement', 'intruder']
     if os.path.exists(path):
         if tag in possible_tags:
-            # api_endpoint = BASE_URL +'/storage/upload'
-            api_endpoint = BUCKET_URL
+            # api_endpoint = BASE_URL + '/storage/upload'
+            api_endpoint = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload"
             # TODO: include confidential pyPi to store global variables
             response = requests.post(
                 api_endpoint, params={

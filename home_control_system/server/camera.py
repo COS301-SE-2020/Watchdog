@@ -18,9 +18,9 @@ FPS = conf['video']['frames_per_second']
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, id, server, protocol, address, port, path, location):
+    def __init__(self, server, protocol, address, port, path, location):
         threading.Thread.__init__(self)
-        self.id = str(id) + str(sha256((str(time_now())).encode('ascii')).hexdigest())
+        self.id = 'c' + str(sha256((str(time_now())).encode('ascii')).hexdigest())
         # Camera Physical Location
         self.location = location
         # Camera IP Address
@@ -42,7 +42,7 @@ class Camera(threading.Thread):
         # Stream View GUI Object
         self.stream_view = None
         # Stream Management Object
-        self.stream = Stream(self.address, (RES_X, RES_Y))
+        self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
         # Connect to Camera
         self.connect()
 
@@ -133,7 +133,7 @@ class Camera(threading.Thread):
             "address": self.address,
             "port": self.port,
             "path": self.path,
-            "location": self.location,
+            "room": self.location,
             "protocol": self.protocol
         }
 

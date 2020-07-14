@@ -55,6 +55,7 @@ from service import services
 class FrameCollector(threading.Thread):
     def __init__(self, address):
         threading.Thread.__init__(self)
+        self.camera_id = 0
         self.alert_queue = []
         self.move_queue = []
         self.period_queue = []
@@ -71,12 +72,12 @@ class FrameCollector(threading.Thread):
                 time.sleep(clip_length * (1.0 - progress))
 
     def collect(self, frame, tag=Tag.DEFAULT):
-        if tag == Tag.ALERT:
+        if tag == Tag.INTRUDER:
             self.alert_queue.append(frame)
         else:
             self.alert_queue.append(None)
 
-        if tag == Tag.ACTIVITY:
+        if tag == Tag.MOVEMENT:
             self.move_queue.append(frame)
         else:
             self.move_queue.append(None)
@@ -98,7 +99,7 @@ class FrameCollector(threading.Thread):
             if self.alert_queue[index] is not None:
                 cons_queue[index] = self.alert_queue[index]
                 frame_count += 1
-                tag = Tag.ALERT
+                tag = Tag.INTRUDER
 
         for index in range(len(self.move_queue)):
             if frame_count > max_frames:
@@ -107,7 +108,7 @@ class FrameCollector(threading.Thread):
                 cons_queue[index] = self.move_queue[index]
                 frame_count += 1
                 if tag == Tag.DEFAULT:
-                    tag = Tag.ACTIVITY
+                    tag = Tag.MOVEMENT
 
         for index in range(int(len(self.period_queue) / 2)):
             if frame_count > max_frames:
@@ -147,7 +148,7 @@ class FrameCollector(threading.Thread):
 
         video = Video(self.address, tag)
         video.set_frames(cons_queue)
-        video.export()
+        video.export(self.camera_id)
 
         return video
 
@@ -175,7 +176,7 @@ class Video:
             self.add_frame(frames[index])
         self.time_end = time_now()
 
-    def export(self):
+    def export(self, camera_id):
         if len(self.frames) > 0:
             name = 'data/temp/video/' + self.id + '.mp4'
             (h, w) = self.frames[0].shape[:2]
@@ -185,7 +186,18 @@ class Video:
                 if self.frames[index] is not None:
                     file.write(self.frames[index])
             file.release()
-            # services.upload_to_s3()
+
+            if self.tag == Tag.PERIODIC:
+                tag_label = 'periodic'
+            elif self.tag == Tag.MOVEMENT:
+                tag_label = 'movement'
+            elif self.tag == Tag.DETECTED:
+                tag_label = 'detected'
+            elif self.tag == Tag.INTRUDER:
+                tag_label = 'intruder'
+
+            services.upload_to_s3('data/temp/video', str(self.id + '.mp4'), tag_label, camera_id)
+
             return True
         return False
 

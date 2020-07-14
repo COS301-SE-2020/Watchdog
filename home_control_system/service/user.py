@@ -6,8 +6,6 @@ import traceback
 import sys
 
 
-# client_id = "5bl2caob065vqodmm3sobp3k7d"
-# user_pool_id = "eu-west-1_mQ0D78123"
 conf = json.loads(os.environ['config'])
 client_id = conf['services']['client']['id']
 user_pool_id = conf['services']['client']['pool']

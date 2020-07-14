@@ -12,10 +12,10 @@ class Server(threading.Thread):
         self.cameras = {}
 
     # adds a ip camera client to an allocated port on the server
-    def add_camera(self, id, address, port='', path='', location='Room', protocol=''):
+    def add_camera(self, address, port='', path='', location='Room', protocol=''):
         if not self.check_address(address):
             print("Adding camera " + str(address) + " - " + location)
-            client = Camera(id, self, protocol, address, port, path, location)
+            client = Camera(self, protocol, address, port, path, location)
             if client.is_connected:
                 self.cameras[address] = client
             if self.live:

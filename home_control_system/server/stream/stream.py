@@ -36,8 +36,9 @@ from .collectors.video import FrameCollector
 #      Handles Intruder Alert Frames then Adds to ImageCollector which Exports the Result Image
 #   Upload the Result Videos and Images to S3 Bucket
 class Stream:
-    def __init__(self, address, dimensions):
+    def __init__(self, camera_id, address, dimensions):
         self.size(dimensions[0], dimensions[1])
+        self.camera_id = camera_id
         self.current_frame = None
         self.address = address
         self.stack = []
@@ -72,6 +73,7 @@ class Stream:
         # Collectors
         self.image_collector = ImageCollector(self.address)
         self.frame_collector = FrameCollector(self.address)
+        self.frame_collector.camera_id = self.camera_id
         self.image_collector.start()
         self.frame_collector.start()
 
@@ -108,10 +110,10 @@ class Stream:
             if self.detect_person():
                 self.triggers.is_person = True
                 await self.feedback_person()
-                self.frame_collector.collect(frame, Tag.ALERT)
+                self.frame_collector.collect(frame, Tag.INTRUDER)
                 self.image_collector.collect(frame)
             elif self.detect_movement:
-                self.frame_collector.collect(frame, Tag.ACTIVITY)
+                self.frame_collector.collect(frame, Tag.MOVEMENT)
             await self.feedback_movement()
         else:
             self.frame_collector.collect(frame, Tag.PERIODIC)

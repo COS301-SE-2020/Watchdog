@@ -30,8 +30,9 @@ recording_ratio = conf['video']['recording_ratio']
 class Tag(Enum):
     DEFAULT = 0
     PERIODIC = 1
-    ACTIVITY = 2
-    ALERT = 3
+    MOVEMENT = 2
+    DETECTED = 3
+    INTRUDER = 4
 
 
 # Determines if two frames are distinct from one another

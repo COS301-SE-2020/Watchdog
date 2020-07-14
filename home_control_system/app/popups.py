@@ -144,10 +144,13 @@ class LoginPopup(Popup):
         self.lbl_pass.setStyleSheet(Style.replace_variables('border: @None;'))
         self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
 
+        self.input_username = QLineEdit('')
+        self.input_password = QLineEdit('')
+
         self.layout = QFormLayout()
         self.layout.setAlignment(Qt.AlignRight)
-        self.layout.addRow(self.lbl_user, QLineEdit(''))
-        self.layout.addRow(self.lbl_pass, QLineEdit(''))
+        self.layout.addRow(self.lbl_user, self.input_username)
+        self.layout.addRow(self.lbl_pass, self.input_password)
         self.layout.addRow(self.lbl_empty, hbox_click)
 
         layout_center = QVBoxLayout()
@@ -171,6 +174,18 @@ class LoginPopup(Popup):
 
         self.setLayout(layout_form)
 
+    def submit(self):
+        self.complete()
+        self.hide()
+
+    def cancel(self):
+        self.hide()
+
+    def complete(self):
+        Component.root.user_login(
+            self.input_username.text(),
+            self.input_password.text(),
+        )
 
 class CameraPopup(Popup):
     def __init__(self, ascendent):

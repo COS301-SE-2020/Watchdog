@@ -15,7 +15,6 @@ class HomeControlPanel(QApplication, Component):
         self.setApplicationName("Watchdog Control Panel")
         self.setStyle('Fusion')
         self.list = None
-        self.credentials = None
         self.server = server
         self.window = Window(self)
         self.list = LocationList(self.window)
@@ -25,8 +24,6 @@ class HomeControlPanel(QApplication, Component):
         print('Logging in...')
         # TODO: Perform login here (which one was the correct one?) ~INTEGRATION~
         services.login(username, password)
-        # services.authenticate_user(username, password)
-        self.credentials = (username, password)
 
     def setup_environment(self):
         print('Loading Environment...')
@@ -75,8 +72,8 @@ class Location:
         self.label = location
         self.cameras = []
 
-    def add_camera(self, id, address, port='', path='', location='', protocol=''):
-        camera = Component.root.server.add_camera(id, address, port, path, location, protocol)
+    def add_camera(self, address, port='', path='', location='', protocol=''):
+        camera = Component.root.server.add_camera(address, port, path, location, protocol)
         self.cameras.append(camera)
         return camera
 
@@ -112,11 +109,6 @@ class LocationList(threading.Thread):
         if self.view is not None:
             self.view.home.sidepanel.list.add_button(label)
 
-        # TODO: Update location in database ~INTEGRATION~
-        # response = services.upload_location(location.id, location.get_metadata())
-        # if response is not good:
-        #   return None
-
         return location
 
     def add_camera(self, address, port='', path='', location='', protocol=''):
@@ -124,7 +116,6 @@ class LocationList(threading.Thread):
             return None
 
         camera = self.locations[self.index].add_camera(
-            (self.index * 100) + len(self.locations[self.index].cameras),  # 100 ports
             address,
             port,
             path,
@@ -136,10 +127,9 @@ class LocationList(threading.Thread):
             self.view.home.view.grid.set_stream_views(self.locations[self.index].cameras)
 
         # TODO: Update camera in database ~INTEGRATION~
-        # response = services.upload_camera(camera.id, camera.get_metadata())
-        # if response is not good:
-        #   return None
-
+        response = services.upload_camera(camera.id, camera.get_metadata())
+        if response.status_code != 200:
+            return None
         return camera
 
     def changeActive(self, index):
