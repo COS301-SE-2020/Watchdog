@@ -11,6 +11,7 @@ home_controller_system.egg-info
 tests/__pycache__
 home_control_system/__pycache__
 home_control_system/server/stream/__pycache__
+home_control_system/server/stream/collectors/__pycache__
 home_control_system/service/__pycache__
 home_control_system/server/__pycache__
 home_control_system/app/__pycache__
