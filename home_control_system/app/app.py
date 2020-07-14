@@ -34,8 +34,8 @@ class HomeControlPanel(QApplication, Component):
         #         if camera.location equals location:
         #             self.add_camera()
 
-    def add_camera(self, address, port='', path='', location='', protocol=''):
-        return self.list.add_camera(address, port, path, location, protocol)
+    def add_camera(self, address, port='', path='', protocol=''):
+        return self.list.add_camera(address, port, path, protocol)
 
     def add_location(self, location):
         return self.list.add_location(location)
@@ -70,8 +70,8 @@ class Location:
         self.label = location
         self.cameras = []
 
-    def add_camera(self, address, port='', path='', location='', protocol=''):
-        camera = Component.root.server.add_camera(address, port, path, location, protocol)
+    def add_camera(self, address, port='', path='', protocol=''):
+        camera = Component.root.server.add_camera(address, port, path, self.label, protocol)
         self.cameras.append(camera)
         return camera
 
@@ -109,7 +109,7 @@ class LocationList(threading.Thread):
 
         return location
 
-    def add_camera(self, address, port='', path='', location='', protocol=''):
+    def add_camera(self, address, port='', path='', protocol=''):
         if self.index > len(self.locations):
             return None
 
@@ -117,7 +117,6 @@ class LocationList(threading.Thread):
             address,
             port,
             path,
-            location,
             protocol
         )
 

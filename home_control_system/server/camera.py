@@ -116,8 +116,8 @@ class Camera(threading.Thread):
 
     # Return Camera URL
     def get_url(self, print_protocol=False):
-        if(self.address is int):
-            return self.address
+        if(self.address.isnumeric()):
+            return int(self.address)
         url = self.address
         if self.port != '':
             url += ":" + self.port

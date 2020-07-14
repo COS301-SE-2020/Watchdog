@@ -48,7 +48,7 @@ class Window(QMainWindow, Component):
 
         self.setWindowTitle('Home Control Panel')
         self.setWindowIcon(QIcon('assets/icons/watchdog_white.png'))
-        self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint))
+        # self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint))
 
         self.home = HomeContainer(self)
 

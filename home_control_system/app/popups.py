@@ -1,3 +1,4 @@
+import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QLabel,
@@ -26,7 +27,8 @@ class PopupButton(QPushButton, Component):
 class Popup(QWidget, Component):
     def __init__(self, ascendent):
         super(Popup, self).__init__(ascendent=ascendent)
-        self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint))
+        if os.name == 'nt':
+            self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint))
         self.setStyleSheet(Style.replace_variables(Style.light))
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
@@ -121,7 +123,8 @@ class LoginPopup(Popup):
         popup_width = int(Style.unit * 2)
 
         self.setGeometry(left_margin + (main_width) - (popup_width / 1.8), top_margin + (main_height / 2) - (popup_width / 2), popup_width, (popup_width / 2))
-        self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint))
+        if os.name == 'nt':
+            self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint))
         
         self.btn_submit = QPushButton('Login')
         self.btn_cancel = QPushButton('Cancel')
@@ -214,14 +217,14 @@ class CameraPopup(Popup):
         hbox_click.addWidget(self.btn_cancel)
         hbox_click.addStretch()
 
-        self.lbl_location = QLabel('Location')
+        self.lbl_name = QLabel('Camera')
         self.lbl_address = QLabel('IP Address')
         self.lbl_port = QLabel('Port')
         self.lbl_protocol = QLabel('Protocol')
         self.lbl_path = QLabel('Path (Optional)')
         self.lbl_empty = QLabel()
 
-        self.lbl_location.setStyleSheet(Style.replace_variables('border: @None'))
+        self.lbl_name.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_address.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_port.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_protocol.setStyleSheet(Style.replace_variables('border: @None'))
@@ -236,7 +239,7 @@ class CameraPopup(Popup):
 
         self.layout = QFormLayout()
         self.layout.setAlignment(Qt.AlignRight)
-        self.layout.addRow(self.lbl_location, self.input_location)
+        self.layout.addRow(self.lbl_name, self.input_location)
         self.layout.addRow(self.lbl_address, self.input_address)
         self.layout.addRow(self.lbl_port, self.input_port)
         self.layout.addRow(self.lbl_protocol, self.input_protocol)
@@ -258,7 +261,6 @@ class CameraPopup(Popup):
                                     color: @LightTextColor; \
                                     font: @ButtonTextSize @TextFont; \
                                     font-weight: 30;'))
-
         layout_form = QHBoxLayout()
         layout_form.addStretch()
         layout_form.addWidget(contain_form)
@@ -278,7 +280,6 @@ class CameraPopup(Popup):
             self.input_address.text(),
             self.input_port.text(),
             self.input_path.text(),
-            self.input_location.text(),
             self.input_protocol.text()
         )
 
