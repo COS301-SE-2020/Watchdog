@@ -74,6 +74,7 @@ class Stream:
         self.image_collector = ImageCollector(self.address)
         self.frame_collector = FrameCollector(self.address)
         self.frame_collector.camera_id = self.camera_id
+        self.image_collector.camera_id = self.camera_id
         self.image_collector.start()
         self.frame_collector.start()
 
@@ -110,7 +111,7 @@ class Stream:
             if self.detect_person():
                 self.triggers.is_person = True
                 await self.feedback_person()
-                self.frame_collector.collect(frame, Tag.INTRUDER)
+                self.frame_collector.collect(frame, Tag.DETECTED)
                 self.image_collector.collect(frame)
             elif self.detect_movement:
                 self.frame_collector.collect(frame, Tag.MOVEMENT)

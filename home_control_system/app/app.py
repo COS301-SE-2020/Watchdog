@@ -12,17 +12,16 @@ from service import (
 class HomeControlPanel(QApplication, Component):
     def __init__(self, server):
         super(HomeControlPanel, self).__init__([])
-        self.setApplicationName("Watchdog Control Panel")
-        self.setStyle('Fusion')
         self.list = None
         self.server = server
         self.window = Window(self)
         self.list = LocationList(self.window)
-        # self.setup_environment()
+        self.setApplicationName("Watchdog Control Panel")
+        self.setStyle('Fusion')
+        self.setup_environment()
 
     def user_login(self, username, password):
         print('Logging in...')
-        # TODO: Perform login here (which one was the correct one?) ~INTEGRATION~
         services.login(username, password)
 
     def setup_environment(self):
@@ -60,7 +59,6 @@ class HomeControlPanel(QApplication, Component):
     def start(self):
         print(self.server)
         self.server.start()
-        time.sleep(1)
         self.window.show()
         self.list.start()
         self.exec_()

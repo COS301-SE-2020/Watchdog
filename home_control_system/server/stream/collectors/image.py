@@ -18,6 +18,7 @@ from service import services
 class ImageCollector(threading.Thread):
     def __init__(self, address):
         threading.Thread.__init__(self)
+        self.camera_id = 0
         self.queue = []
         self.live = False
         self.address = address
@@ -42,14 +43,19 @@ class ImageCollector(threading.Thread):
         if len(self.queue) == 0:
             return None
         images = []
+        count = 0
         for index in range(len(self.queue)):
+            if count > 5:
+                break
             image = Image(
+                self.camera_id,
                 self.queue[index],
                 self.address,
-                Tag.INTRUDER
+                Tag.DETECTED
             )
             images.append(image)
             image.export()
+            count += 1
         self.queue.clear()
         return images
 
@@ -62,7 +68,8 @@ class ImageCollector(threading.Thread):
 
 
 class Image:
-    def __init__(self, frame, address, tag=Tag.DEFAULT):
+    def __init__(self, camera_id, frame, address, tag=Tag.DEFAULT):
+        self.camera_id = camera_id
         self.frame = frame
         self.tag = tag
         self.time = time_now()
@@ -73,8 +80,17 @@ class Image:
         resize(self.frame, (width, height))
 
     def export(self):
+        if self.tag == Tag.DEFAULT:
+            return
+
         imwrite("data/temp/image/%s.jpg" % self.id, self.frame)
-        # services.upload_to_s3()
+
+        if self.tag == Tag.DETECTED:
+            tag_label = 'detected'
+        elif self.tag == Tag.INTRUDER:
+            tag_label = 'intruder'
+
+        services.upload_to_s3('data/temp/image', str(self.id + '.jpg'), tag_label, self.camera_id)
         return True
 
     def get_metadata(self):

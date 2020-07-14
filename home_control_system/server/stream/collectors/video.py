@@ -146,15 +146,16 @@ class FrameCollector(threading.Thread):
         self.move_queue.clear()
         self.period_queue.clear()
 
-        video = Video(self.address, tag)
+        video = Video(self.camera_id, self.address, tag)
         video.set_frames(cons_queue)
-        video.export(self.camera_id)
+        video.export()
 
         return video
 
 
 class Video:
-    def __init__(self, address, tag=Tag.DEFAULT):
+    def __init__(self, camera_id, address, tag=Tag.DEFAULT):
+        self.camera_id = camera_id
         self.frames = []
         self.tag = tag
         self.time_start = time_now()
@@ -176,7 +177,9 @@ class Video:
             self.add_frame(frames[index])
         self.time_end = time_now()
 
-    def export(self, camera_id):
+    def export(self):
+        if self.tag == Tag.DEFAULT:
+            return
         if len(self.frames) > 0:
             name = 'data/temp/video/' + self.id + '.mp4'
             (h, w) = self.frames[0].shape[:2]
@@ -196,7 +199,7 @@ class Video:
             elif self.tag == Tag.INTRUDER:
                 tag_label = 'intruder'
 
-            services.upload_to_s3('data/temp/video', str(self.id + '.mp4'), tag_label, camera_id)
+            services.upload_to_s3('data/temp/video', str(self.id + '.mp4'), tag_label, self.camera_id)
 
             return True
         return False

@@ -325,7 +325,6 @@ class StreamView(QWidget):
 
     def set_frame(self):
         if self.camera.stream.current_frame is not None:
-            # del self.image
             frame = resize(self.camera.stream.current_frame, self.dimensions)
             height, width, bpc = frame.shape
             bpl = bpc * width
