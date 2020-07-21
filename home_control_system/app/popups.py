@@ -231,11 +231,12 @@ class CameraPopup(Popup):
         self.lbl_path.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None'))
 
-        self.input_location = QLineEdit('Sample Video')
-        self.input_address = QLineEdit('data/sample/surveillance1.mp4')
-        self.input_port = QLineEdit('')
-        self.input_protocol = QLineEdit('')
-        self.input_path = QLineEdit('')
+        self.input_location = QLineEdit('Android Camera')
+        # self.input_address = QLineEdit('data/sample/surveillance1.mp4')
+        self.input_address = QLineEdit('10.0.0.101')
+        self.input_port = QLineEdit('8080')
+        self.input_protocol = QLineEdit('rtsp')
+        self.input_path = QLineEdit('h264_ulaw.sdp')
 
         self.layout = QFormLayout()
         self.layout.setAlignment(Qt.AlignRight)

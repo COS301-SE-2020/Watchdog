@@ -163,9 +163,10 @@ class Video:
         self.address = address
         self.id = hash_id(self.time_start, self.address)
 
-    def resize(self, width, height):
+    def resize(self, dimensions):
+        (width, height) = dimensions
         for index in range(len(self.frames)):
-            resize(self.frames[index], (width, height))
+            self.frames[index] = resize(self.frames[index], (width, height))
 
     def add_frame(self, frame):
         if frame is not None:
@@ -181,9 +182,14 @@ class Video:
         if self.tag == Tag.DEFAULT:
             return
         if len(self.frames) > 0:
-            name = 'data/temp/video/' + self.id + '.mp4'
-            (h, w) = self.frames[0].shape[:2]
-            file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
+            ext = '.mp4'
+            name = 'data/temp/video/' + str(self.id) + ext
+            # (h, w) = self.frames[0].shape[:2]
+            (w, h) = (640, 480)
+            self.resize((w, h))
+            file = VideoWriter(name, -1, fps, (w, h), True)
+            # file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
+            # file = VideoWriter(name, VideoWriter_fourcc('D', 'I', 'V', 'X'), fps, (w, h), True)
             print("Exporting Video [" + name + "]")
             for index in range(len(self.frames)):
                 if self.frames[index] is not None:
@@ -199,7 +205,7 @@ class Video:
             elif self.tag == Tag.INTRUDER:
                 tag_label = 'intruder'
 
-            services.upload_to_s3('data/temp/video', str(self.id + '.mp4'), tag_label, self.camera_id)
+            services.upload_to_s3('data/temp/video', str(self.id) + ext, tag_label, self.camera_id)
 
             return True
         return False

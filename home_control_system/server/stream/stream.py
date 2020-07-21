@@ -27,7 +27,7 @@ from .collectors.image import (
     time_now
 )
 from .collectors.video import FrameCollector
-
+from service import services
 
 # Stream
 #   In-Out Frame Processing Pipe
@@ -100,6 +100,7 @@ class Stream:
         self.triggers.is_person = False
 
         self.current_frame = resize(frame, (self.width, self.height))
+        services.livestream(self.current_frame)
 
         # Detect Movement in Current Frame
         if self.detect_movement():

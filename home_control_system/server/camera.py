@@ -18,7 +18,7 @@ FPS = conf['video']['frames_per_second']
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, server, protocol, address, port, path, location):
+    def __init__(self, server, protocol='', address='', port='', path='', location=''):
         threading.Thread.__init__(self)
         self.id = 'c' + str(sha256((str(time_now())).encode('ascii')).hexdigest())
         # Camera Physical Location
