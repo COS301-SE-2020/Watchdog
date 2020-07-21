@@ -1,13 +1,23 @@
+import os
+import sys
+import json
+import traceback
 from warrant import AWSSRP, Cognito
 from datetime import datetime, timedelta
-import traceback
-import sys
+from .connection import socket_client
+from .client import Producer
+from .config import configure
+
+configure()
+conf = json.loads(os.environ['config'])
+client_id = conf['services']['client']['id']
+user_pool_id = conf['services']['client']['pool']
 
 
-# Singleton User of HCP
 class User:
     __instance = None
 
+    # Singleton User of HCP
     @staticmethod
     def get_instance(metadata=None):
         if User.__instance is None:
@@ -22,12 +32,10 @@ class User:
     def __init__(self, metadata):
         if User.__instance is None:
             User.__instance = self
-
         if metadata is None:
-            raise Exception("You need to authenticate your account by providing respective metadata as a map!")
+            raise Exception("Metadata map not provided for user...")
 
         self.hcp_id = None
-
         self.user_id = metadata['user_id']
         self.username = metadata['username']
         self.password = metadata['password']
@@ -35,18 +43,10 @@ class User:
             'token': '',
             'expiration': ''
         }
+        # self.client = Producer(self.user_id, socket_client)
         self.generate_token()
 
-    def __str__(self):
-        return {
-            self.username: {
-                "hcp_id": self.hcp_id,
-            },
-        }
-
     def generate_token(self):
-        client_id = "5bl2caob065vqodmm3sobp3k7d"
-        user_pool_id = "eu-west-1_mQ0D78123"
         aws = AWSSRP(
             username=self.username,
             password=self.password,
@@ -55,7 +55,6 @@ class User:
             pool_region='eu-west-1'
         )
         token = aws.authenticate_user()
-
         expires_in = int(token["AuthenticationResult"]['ExpiresIn'])
         expires_in = datetime.now() + timedelta(seconds=expires_in)
         self.token['token'] = token["AuthenticationResult"]["IdToken"]
@@ -70,17 +69,22 @@ class User:
     def set_hcp_id(self, hcp_id):
         self.hcp_id = hcp_id
 
+    def __str__(self):
+        return {
+            self.username: {
+                "hcp_id": self.hcp_id
+            }
+        }
+
 
 def authenticate_user(username, password):
-    client_id = "5bl2caob065vqodmm3sobp3k7d"
-    user_pool_id = "eu-west-1_mQ0D78123"
     try:
         u = Cognito(client_id=client_id, user_pool_id=user_pool_id, username=username, user_pool_region='eu-west-1')
         u.authenticate(password=password)
         user = u.get_user(attr_map={"user_id": "sub"})
         user_id = user.sub
     except Exception as e:
-        print("incorrect username or password, please try again")
+        print("Incorrect username or password, please try again" + str(e))
         return False
 
     user_data = {

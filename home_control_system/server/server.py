@@ -1,6 +1,5 @@
 import threading
 from .camera import Camera
-from .stream.stream import collector
 
 
 class Server(threading.Thread):
@@ -19,6 +18,8 @@ class Server(threading.Thread):
             client = Camera(self, protocol, address, port, path, location)
             if client.is_connected:
                 self.cameras[address] = client
+            if self.live:
+                client.start()
             return client  # successfully added client
         return self.cameras[address]
 
@@ -34,17 +35,18 @@ class Server(threading.Thread):
 
     # starts the server
     def run(self):
+        self.live = True
         if self.cameras.__len__() == 0:
-            print("Error: There are currently no ip cameras detected.")
+            print("There are currently no ip cameras detected...")
         # Start Streams
         for address, client in self.cameras.items():
             client.start()
 
     # stops the server
     def stops(self):
+        self.live = False
         for address, client in self.cameras.items():
             client.stop()
-        collector.live = False
 
     def client_stats(self, address):
         stats = {}

@@ -1,12 +1,8 @@
-import copy
-import cv2 as cv
 from numpy import array
 from imutils import grab_contours
 from types import SimpleNamespace
 from cv2 import (
     CascadeClassifier,
-    VideoWriter,
-    VideoWriter_fourcc,
     drawContours,
     accumulateWeighted,
     findContours,
@@ -18,27 +14,31 @@ from cv2 import (
     erode,
     rectangle,
     absdiff,
-    resize
+    resize,
+    data,
+    COLOR_BGR2GRAY,
+    THRESH_BINARY,
+    RETR_EXTERNAL,
+    CHAIN_APPROX_SIMPLE
 )
-from .collector import FrameCollector
-from .image import (
-    time_now,
-    hash_id
+from .collectors.image import (
+    ImageCollector,
+    Tag,
+    time_now
 )
-
-collector = FrameCollector()
-collector.start()
-
+from .collectors.video import FrameCollector
+from service import services
 
 # Stream
 #   In-Out Frame Processing Pipe
 #      Does Movement Detection & Face Detection
 #      Periodically Stacks frames then Exports Result Video
-#      Handles Intruder Alert Frames then Adds to FrameCollector which Exports the Result Image
+#      Handles Intruder Alert Frames then Adds to ImageCollector which Exports the Result Image
 #   Upload the Result Videos and Images to S3 Bucket
 class Stream:
-    def __init__(self, address, dimensions):
+    def __init__(self, camera_id, address, dimensions):
         self.size(dimensions[0], dimensions[1])
+        self.camera_id = camera_id
         self.current_frame = None
         self.address = address
         self.stack = []
@@ -56,6 +56,7 @@ class Stream:
         self.feedback.contours = None
         self.feedback.faces = None
         self.feedback.irides = None
+        self.feedback.bodies = None
         # Checks
         self.triggers = SimpleNamespace()
         self.triggers.is_movement = False
@@ -66,16 +67,21 @@ class Stream:
         self.indicators.average = None
         self.indicators.weight = 0.1
         self.indicators.ceil = 1.0
-        self.indicators.face_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        self.indicators.iris_cascade = CascadeClassifier(cv.data.haarcascades + 'haarcascade_eye.xml')
-
-    def add_stream_view(self, stream_view, dimensions):
-        self.stream_views.append((stream_view, (int(dimensions[0]), int(dimensions[1]))))
+        self.indicators.face_cascade = CascadeClassifier(data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.indicators.iris_cascade = CascadeClassifier(data.haarcascades + 'haarcascade_eye.xml')
+        self.indicators.body_cascade = CascadeClassifier(data.haarcascades + 'haarcascade_upperbody.xml')
+        # Collectors
+        self.image_collector = ImageCollector(self.address)
+        self.frame_collector = FrameCollector(self.address)
+        self.frame_collector.camera_id = self.camera_id
+        self.image_collector.camera_id = self.camera_id
+        self.image_collector.start()
+        self.frame_collector.start()
 
     # 0 : Add frame to stream
     #   i : If movement_detected
     #       i : If face_detected
-    #           i : Add Frame to FrameCollector
+    #           i : Add Frame to ImageCollector
     #   ii : Push to Stack
     # 1 : Output Feedback to Frame
     # 2 : Export Stack to Video
@@ -94,6 +100,7 @@ class Stream:
         self.triggers.is_person = False
 
         self.current_frame = resize(frame, (self.width, self.height))
+        services.livestream(self.current_frame)
 
         # Detect Movement in Current Frame
         if self.detect_movement():
@@ -105,11 +112,13 @@ class Stream:
             if self.detect_person():
                 self.triggers.is_person = True
                 await self.feedback_person()
-                collector.collect(self.current_frame, self.address)
+                self.frame_collector.collect(frame, Tag.DETECTED)
+                self.image_collector.collect(frame)
+            elif self.detect_movement:
+                self.frame_collector.collect(frame, Tag.MOVEMENT)
             await self.feedback_movement()
-
-        for (stream_view, (width, height)) in self.stream_views:
-            stream_view.set_frame(resize(self.current_frame, (width, height)))
+        else:
+            self.frame_collector.collect(frame, Tag.PERIODIC)
 
         # Within Clip Record Timeframe
         if self.config.start_time < now:
@@ -118,7 +127,6 @@ class Stream:
             if self.config.stop_time < now:
                 self.config.start_time = self.config.stop_time + self.config.gap_length
                 self.config.stop_time = self.config.start_time + self.config.clip_length
-                await self.export_video()
 
     # Detects Movement in Frame
     #   Returns True if Movement
@@ -134,10 +142,10 @@ class Stream:
         difference = cvtColor(absdiff(
             self.current_frame,
             convertScaleAbs(self.indicators.average)
-        ), cv.COLOR_BGR2GRAY)
+        ), COLOR_BGR2GRAY)
         thresh = erode(
             dilate(
-                threshold(difference, 70, 255, cv.THRESH_BINARY)[1],
+                threshold(difference, 70, 255, THRESH_BINARY)[1],
                 None,
                 iterations=2
             ), None, iterations=1
@@ -145,8 +153,8 @@ class Stream:
         self.feedback.contours = grab_contours(
             findContours(
                 thresh,
-                cv.RETR_EXTERNAL,
-                cv.CHAIN_APPROX_SIMPLE
+                RETR_EXTERNAL,
+                CHAIN_APPROX_SIMPLE
             )
         )
         current_surface_area = 0.0
@@ -163,27 +171,35 @@ class Stream:
     #   Returns True if Face Present
     #   Fills Feedback Buffer for Faces
     def detect_person(self):
-        grey = cvtColor(self.current_frame, cv.COLOR_BGR2GRAY)
+        grey = cvtColor(self.current_frame, COLOR_BGR2GRAY)
 
         self.feedback.faces = self.indicators.face_cascade.detectMultiScale(
             grey,
-            scaleFactor=1.3,
-            minNeighbors=6,
-            minSize=(int(self.width * 0.1), int(self.height * 0.1))  # square must be 10% of screens size
+            scaleFactor=1.1,
+            minNeighbors=4,
+            minSize=(int(self.width * 0.05), int(self.height * 0.05))  # square must be 10% of screens size
         )
 
         for (x, y, w, h) in self.feedback.faces:
             self.feedback.irides = self.indicators.iris_cascade.detectMultiScale(
                 grey[y:y+h, x:x+w],
-                scaleFactor=1.2,
+                scaleFactor=1.3,
                 minNeighbors=5,
                 minSize=(int(self.width * 0.01), int(self.height * 0.01))
             )
 
-        if self.feedback.faces is None or self.feedback.irides is None:
+        if len(self.feedback.faces) < 1 or len(self.feedback.irides) < 2:
             return False
-
-        return len(self.feedback.faces) >= 1 and len(self.feedback.irides) >= 2  # Return True if List Not Empty
+            # self.feedback.faces = []
+            # self.feedback.irides = []
+            # self.feedback.bodies = self.indicators.body_cascade.detectMultiScale(
+            #     grey,
+            #     scaleFactor=1.05,
+            #     minNeighbors=8,
+            #     minSize=(int(self.width * 0.1), int(self.height * 0.1))  # square must be 10% of screens size
+            # )
+            # return len(self.feedback.bodies) > 0
+        return True
 
     # Draws Movement Feedback to Frame
     async def feedback_movement(self):
@@ -191,29 +207,15 @@ class Stream:
 
     # Draws Persons Face Feedback to Frame
     async def feedback_person(self):
-        for (x, y, w, h) in self.feedback.faces:
-            rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            for (ex, ey, ew, eh) in self.feedback.irides:
-                rectangle(self.current_frame[y:y+h, x:x+w], (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
-
-    async def export_video(self):
-        name = 'data/temp/video/' + hash_id(time_now(), self.address) + '.avi'
-        print("Exporting Video [" + name + "]")
-
-        (h, w) = self.current_frame.shape[:2]
-        stack = copy.deepcopy(self.stack)
-        self.stack.clear()
-
-        file = VideoWriter(name, VideoWriter_fourcc(*"MJPG"), self.config.frames_per_second, (w, h), True)
-        for index in range(len(stack)):
-            file.write(stack[index])
-        file.release()
-        # send to s3
-
-    async def export_image(self, image):
-        name = 'data/temp/image/' + hash_id(time_now(), self.address) + '.jpg'
-        print("Exporting Video [" + name + "]")
-        # send to s3
+        if len(self.feedback.faces) > 0:
+            for (x, y, w, h) in self.feedback.faces:
+                rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 1)
+                for (ex, ey, ew, eh) in self.feedback.irides:
+                    if ey + (eh / 2) < y + (h / 2):
+                        rectangle(self.current_frame[y:y+h, x:x+w], (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+        # elif len(self.feedback.bodies) > 0:
+        #     for (x, y, w, h) in self.feedback.bodies:
+        #         rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 1)
 
     def size(self, width, height):
         (self.width, self.height) = (int(width), int(height))

@@ -1,18 +1,26 @@
+import os
+import json
 import cv2
 import threading
 import asyncio
-import base64
-import zmq
+from hashlib import sha256
+# import base64
+# import zmq
 from .stream.stream import Stream
+from .stream.collectors.collector import time_now
 
+
+conf = json.loads(os.environ['config'])
 PROTOCOLS = ['', 'rstp', 'http', 'https']
-(RES_X, RES_Y) = (900, 500)
-FPS = 15
+FPS = conf['video']['frames_per_second']
+(RES_X, RES_Y) = (conf['video']['resolution']['width'], conf['video']['resolution']['height'])
+
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, server, protocol, address, port, path, location):
+    def __init__(self, server, protocol='', address='', port='', path='', location=''):
         threading.Thread.__init__(self)
+        self.id = 'c' + str(sha256((str(time_now())).encode('ascii')).hexdigest())
         # Camera Physical Location
         self.location = location
         # Camera IP Address
@@ -34,15 +42,14 @@ class Camera(threading.Thread):
         # Stream View GUI Object
         self.stream_view = None
         # Stream Management Object
-        self.stream = Stream(self.address, (RES_X, RES_Y))
-        # Camera Stream Serving
-        self.socket = zmq.Context().socket(zmq.PUB)
-        # Establish Socket Server
-        socket = server.port + len(server.cameras)
-        print("Serving on socket " + str(socket))
-        self.socket.connect('tcp://' + server.address + ':' + str(socket))
+        self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
         # Connect to Camera
         self.connect()
+
+        # Camera Stream Serving
+        # self.socket = zmq.Context().socket(zmq.PUB)
+        # Establish Socket Server
+        # self.socket.connect('tcp://' + server.address + ':' + str(server.port + len(server.cameras)))
 
     # Start thread
     def run(self):
@@ -65,9 +72,8 @@ class Camera(threading.Thread):
         (grabbed, frame) = self.connection.read()
         if grabbed:
             asyncio.run(self.stream.put(frame))
-            encoded, buffer = cv2.imencode('.jpg', frame)
+            # encoded, buffer = cv2.imencode('.jpg', frame)
             # self.socket.send(base64.b64encode(buffer))
-            self.socket.send(buffer)
         else:
             self.check_connection()
 
@@ -91,6 +97,7 @@ class Camera(threading.Thread):
             else:
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = False
+                self.live = False
                 # after a few tries, change protocol before retrying
         return self.is_connected
 
@@ -109,8 +116,8 @@ class Camera(threading.Thread):
 
     # Return Camera URL
     def get_url(self, print_protocol=False):
-        if(self.address is int):
-            return self.address
+        if(self.address.isnumeric()):
+            return int(self.address)
         url = self.address
         if self.port != '':
             url += ":" + self.port
@@ -120,6 +127,15 @@ class Camera(threading.Thread):
             if self.protocol != '':
                 url = self.protocol + '://' + url
         return url
+
+    def get_metadata(self):
+        return {
+            "address": self.address,
+            "port": self.port,
+            "path": self.path,
+            "room": self.location,
+            "protocol": self.protocol
+        }
 
     def __str__(self):
         camera = '[address:' + self.get_url() + ']'
