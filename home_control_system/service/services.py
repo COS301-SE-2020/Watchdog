@@ -5,7 +5,6 @@ import requests
 from hashlib import sha256
 from .user import User, authenticate_user
 
-
 CONNECT = False
 
 # BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
@@ -23,24 +22,53 @@ def livestream(frame):
 
 
 # TODO: [NEEDED]
-#   get_location_setup() - returns a list of the location metadata
-#   get_camera_setup() - returns a list of the camera metadata (all cameras for all locations)
 #   upload_location() - this is for the locations within the hcp i.e. Kitchen, bedroom... metadata: {id, location}
-#   NOTE: We should to change the 'room' name in the camera metadata to instead be 'location', to be consistent with the program
 
 def get_location_setup():
     if not CONNECT:
-        return ['Test Room']
+        user = User.get_instance()
+        api_endpoint = BASE_URL + '/sites'
+        if user.hcp_id is not None:
+            response = requests.get(
+                url=api_endpoint,
+                params={
+                    "site_id": user.hcp_id
+                },
+                headers={'Authorization': user.get_token()}
+            )
+            response = json.loads(response.text)
+            if len(response['data']) > 0:  # if the current control panel has cameras
+                locations = []
+                cameras = response['data']['control_panel'].get(user.hcp_id)['cameras']
+                for camera in cameras:
+                    locations.append(cameras.get(camera)['room'])
+                locations = list(set(locations))  # get list of no duplicate rooms
+                locations = [empty_room for empty_room in locations if
+                             empty_room is not ""]  # remove cameras that are not part of a room
+                locations.sort()  # sort the list in alphabetical order in ascending order
+                return locations
+    return None  # hcp has no cameras or site is not in the db
+
 
 def get_camera_setup():
     if not CONNECT:
-        example_camera = {}
-        example_camera['location'] = 'Test Room'
-        example_camera['address'] = '10.0.0.117'
-        example_camera['port'] = '8080'
-        example_camera['path'] = 'h264_ulaw.sdp'
-        example_camera['protocol'] = 'rtsp'
-        return [example_camera]
+        user = User.get_instance()
+        api_endpoint = BASE_URL + '/sites'
+        if user.hcp_id is not None:
+            response = requests.get(
+                url=api_endpoint,
+                params={
+                    "site_id": user.hcp_id
+                },
+                headers={'Authorization': user.get_token()}
+            )
+            response = json.loads(response.text)
+            if len(response['data']) > 0:  # HCP id is assigned for this user
+                response = response['data']['control_panel']
+                response = response.get(user.hcp_id)['cameras']
+                return response
+    return None  # hcp has no cameras or site is not in the db
+
 
 def login(username, password, post_site=True):
     if not CONNECT:
@@ -52,21 +80,21 @@ def login(username, password, post_site=True):
         user = User.get_instance()
         if user is None:
             return False
-        hcp_id = "s"+sha256((str(datetime.datetime.now().timestamp()) + user.user_id).encode('ascii')).hexdigest()
+        hcp_id = "s" + sha256((str(datetime.datetime.now().timestamp()) + user.user_id).encode('ascii')).hexdigest()
 
         user_logged_in_before = False
         user_details = {}
         hash_file = 'data/.hash'
-        if os.path.exists(hash_file):     # at least one user has logged on this computer before
+        if os.path.exists(hash_file):  # at least one user has logged on this computer before
             f = open(hash_file, 'r')
             user_details = json.loads(f.read())
             f.close()
-            if user.username in user_details:     # new user logging into the HCP on this computer
+            if user.username in user_details:  # new user logging into the HCP on this computer
                 user_logged_in_before = True
                 hcp_id = user_details[user.username]['hcp_id']
 
         user.set_hcp_id(hcp_id)
-        if not user_logged_in_before:   # persistently store the HCP id of the new user.
+        if not user_logged_in_before:  # persistently store the HCP id of the new user.
             user_details.update(user.__str__())
             f = open(hash_file, 'w')
             f.write(json.dumps(user_details))
@@ -99,7 +127,7 @@ def upload_site():
 def upload_camera(camera_id, metadata):
     if not CONNECT:
         return None
-    api_endpoint = BASE_URL+"/cameras"
+    api_endpoint = BASE_URL + "/cameras"
     user = User.get_instance()
     if user is None:
         print(f"\033[31mCould not Upload {camera_id} because you have not authenticated a valid user!")
@@ -115,7 +143,8 @@ def upload_camera(camera_id, metadata):
             "address": metadata['address'],
             "port": metadata['port'],
             "room": metadata['room'],
-            "protocol": metadata['protocol']
+            "protocol": metadata['protocol'],
+            "path": metadata['path']
         },
         headers={'Authorization': token}
     )

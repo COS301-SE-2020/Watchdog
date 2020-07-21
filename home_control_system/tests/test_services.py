@@ -4,6 +4,9 @@ from hashlib import sha256
 from service.user import User
 
 
+# TODO: integrate the Deletion of the post methods so that I can do testing of elements being added to the db!
+
+
 def test_valid_login():
     client_id = "5bl2caob065vqodmm3sobp3k7d"
     user_pool_id = "eu-west-1_mQ0D78123"
@@ -32,7 +35,8 @@ def test_upload_camera():
         "address": '127.0.0.1',
         "port": '5000',
         "room": 'backyard',
-        "protocol": 'http'
+        "protocol": 'http',
+        'path':''
     }
 
     camera_id = "c" + sha256((str(datetime.datetime.now().timestamp())).encode('ascii')).hexdigest()
@@ -76,3 +80,29 @@ def test_upload_image():
 
     assert is_valid == True
     assert response == 200
+
+
+def test_get_camera_config():
+    username = 'Foo'
+    password = 'Test@123'
+    is_valid = authenticate_user(username=username, password=password)
+
+    user = User.get_instance()
+    user.set_hcp_id('sd185c3eebe4248c0be902500f37b98858df09791847cd8ecf33d3a34ae3ef5ae')
+    response = get_camera_setup()
+
+    assert len(response) > 0
+    assert is_valid == True
+
+
+def test_get_locations():
+    username = 'Foo'
+    password = 'Test@123'
+    is_valid = authenticate_user(username=username, password=password)
+
+    user = User.get_instance()
+    user.set_hcp_id('sd185c3eebe4248c0be902500f37b98858df09791847cd8ecf33d3a34ae3ef5ae')
+    response = get_location_setup()
+
+    assert 'backyard' in response
+    assert is_valid == True

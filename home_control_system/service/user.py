@@ -6,7 +6,9 @@ from warrant import AWSSRP, Cognito
 from datetime import datetime, timedelta
 from .connection import socket_client
 from .client import Producer
+from .config import configure
 
+configure()
 conf = json.loads(os.environ['config'])
 client_id = conf['services']['client']['id']
 user_pool_id = conf['services']['client']['pool']
@@ -43,7 +45,7 @@ class User:
             'expiration': ''
         }
 
-        self.client = Producer(self.user_id, socket_client)
+        # self.client = Producer(self.user_id, socket_client)
         self.generate_token()
 
     def generate_token(self):
