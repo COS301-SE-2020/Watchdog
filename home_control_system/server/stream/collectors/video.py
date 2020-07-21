@@ -3,7 +3,6 @@ import json
 import threading
 from cv2 import (
     VideoWriter,
-    VideoWriter_fourcc,
     resize
 )
 from .collector import (
@@ -97,9 +96,15 @@ class FrameCollector(threading.Thread):
             if frame_count > max_frames:
                 break
             if self.alert_queue[index] is not None:
+                tag = Tag.INTRUDER
+                if index > 0:
+                    cons_queue[index - 1] = self.period_queue[index - 1]
+                    frame_count += 1
                 cons_queue[index] = self.alert_queue[index]
                 frame_count += 1
-                tag = Tag.INTRUDER
+                if index < len(self.period_queue) - 2:
+                    cons_queue[index + 1] = self.period_queue[index + 1]
+                    frame_count += 1
 
         for index in range(len(self.move_queue)):
             if frame_count > max_frames:
@@ -110,7 +115,8 @@ class FrameCollector(threading.Thread):
                 if tag == Tag.DEFAULT:
                     tag = Tag.MOVEMENT
 
-        for index in range(int(len(self.period_queue) / 2)):
+        size = int(len(self.period_queue) / 4)
+        for index in range(size):
             if frame_count > max_frames:
                 break
             if cons_queue[index] is None and self.period_queue[index] is not None:
@@ -118,29 +124,22 @@ class FrameCollector(threading.Thread):
                 frame_count += 1
                 if tag == Tag.DEFAULT:
                     tag = Tag.PERIODIC
+            if cons_queue[index + size] is None and self.period_queue[index + size] is not None:
+                cons_queue[index + size] = self.period_queue[index + size]
+                frame_count += 1
+                if tag == Tag.DEFAULT:
+                    tag = Tag.PERIODIC
             alt_index = len(self.period_queue) - index - 1
+            if cons_queue[alt_index - size] is None and self.period_queue[alt_index - size] is not None:
+                cons_queue[alt_index - size] = self.period_queue[alt_index - size]
+                frame_count += 1
+                if tag == Tag.DEFAULT:
+                    tag = Tag.PERIODIC
             if cons_queue[alt_index] is None and self.period_queue[alt_index] is not None:
                 cons_queue[alt_index] = self.period_queue[alt_index]
                 frame_count += 1
                 if tag == Tag.DEFAULT:
                     tag = Tag.PERIODIC
-
-        # while frame_count > max_frames:
-        #     index += randint(1, int(len(self.period_queue) / 10))
-        #     if cons_queue[index] is None and self.period_queue[index] is not None:
-        #         for step in range(fps / 2):
-        #             cons_queue[index - step] = self.period_queue[index - step]
-        #         for step in range(fps / 2):
-        #             cons_queue[index + step] = self.period_queue[index + step]
-        #         # cons_queue[index] = self.period_queue[index]
-        #         frame_count += 1
-        #         tag = Tag.PERIODIC
-        #     if index >= len(self.period_queue):
-        #         index = 0
-
-        # videoxx = Video('xxxx', tag)
-        # videoxx.set_frames(self.period_queue)
-        # videoxx.export()
 
         self.alert_queue.clear()
         self.move_queue.clear()
@@ -184,7 +183,6 @@ class Video:
         if len(self.frames) > 0:
             ext = '.mp4'
             name = 'data/temp/video/' + str(self.id) + ext
-            # (h, w) = self.frames[0].shape[:2]
             (w, h) = (640, 480)
             self.resize((w, h))
             file = VideoWriter(name, -1, fps, (w, h), True)

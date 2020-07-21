@@ -23,6 +23,7 @@ conf = json.loads(os.environ['config'])
 fps = conf['video']['frames_per_second']
 clip_length = conf['video']['clip_length']
 recording_ratio = conf['video']['recording_ratio']
+capture_limit = conf['image']['capture_limit']
 
 
 # 1 = periodically saved frames (user defined length & frequency)

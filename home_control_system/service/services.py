@@ -21,13 +21,6 @@ def livestream(frame):
     user = User.get_instance()
     user.client.produce(frame)
 
-
-# TODO: [NEEDED]
-#   get_location_setup() - returns a list of the location metadata
-#   get_camera_setup() - returns a list of the camera metadata (all cameras for all locations)
-#   upload_location() - this is for the locations within the hcp i.e. Kitchen, bedroom... metadata: {id, location}
-#   NOTE: We should to change the 'room' name in the camera metadata to instead be 'location', to be consistent with the program
-
 def get_location_setup():
     if not CONNECT:
         return ['Test Room']

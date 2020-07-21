@@ -4,13 +4,13 @@ import json
 import traceback
 from warrant import AWSSRP, Cognito
 from datetime import datetime, timedelta
-from .connection import socket_client
-from .client import Producer
+# from .connection import socket_client
+# from .client import Producer
 
 conf = json.loads(os.environ['config'])
 client_id = conf['services']['client']['id']
 user_pool_id = conf['services']['client']['pool']
-
+# live = False
 
 class User:
     __instance = None
@@ -43,7 +43,9 @@ class User:
             'expiration': ''
         }
 
-        self.client = Producer(self.user_id, socket_client)
+        # if live:
+        #     self.client = Producer(self.user_id, socket_client, 'http://127.0.0.1:8008')
+
         self.generate_token()
 
     def generate_token(self):
