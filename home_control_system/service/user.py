@@ -1,10 +1,11 @@
 import os
+import sys
 import json
+import traceback
 from warrant import AWSSRP, Cognito
 from datetime import datetime, timedelta
-import traceback
-import sys
-
+from .connection import socket_client
+from .client import Producer
 
 conf = json.loads(os.environ['config'])
 client_id = conf['services']['client']['id']
@@ -13,6 +14,7 @@ user_pool_id = conf['services']['client']['pool']
 
 class User:
     __instance = None
+
     # Singleton User of HCP
     @staticmethod
     def get_instance(metadata=None):
@@ -29,12 +31,10 @@ class User:
     def __init__(self, metadata):
         if User.__instance is None:
             User.__instance = self
-
         if metadata is None:
-            raise Exception("You need to authenticate your account by providing respective metadata as a map!")
+            raise Exception("Metadata map not provided for user...")
 
         self.hcp_id = None
-
         self.user_id = metadata['user_id']
         self.username = metadata['username']
         self.password = metadata['password']
@@ -42,6 +42,8 @@ class User:
             'token': '',
             'expiration': ''
         }
+
+        self.client = Producer(self.user_id, socket_client)
         self.generate_token()
 
     def generate_token(self):

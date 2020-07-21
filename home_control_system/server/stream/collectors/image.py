@@ -83,14 +83,14 @@ class Image:
         if self.tag == Tag.DEFAULT:
             return
 
-        imwrite("data/temp/image/%s.jpg" % self.id, self.frame)
+        imwrite("data/temp/image/%s.jpg" % str(self.id), self.frame)
 
         if self.tag == Tag.DETECTED:
             tag_label = 'detected'
         elif self.tag == Tag.INTRUDER:
             tag_label = 'intruder'
 
-        services.upload_to_s3('data/temp/image', str(self.id + '.jpg'), tag_label, self.camera_id)
+        services.upload_to_s3('data/temp/image', str(self.id) + '.jpg', tag_label, self.camera_id)
         return True
 
     def get_metadata(self):

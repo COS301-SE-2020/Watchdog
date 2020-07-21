@@ -74,4 +74,4 @@ def time_now():
 
 
 def hash_id(time, address=''):
-    return str(time) + str(hash(address))
+    return abs(int(hash(str(time) + str(address))))

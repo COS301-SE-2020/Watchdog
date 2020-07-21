@@ -26,13 +26,13 @@ class HomeControlPanel(QApplication, Component):
 
     def setup_environment(self):
         print('Loading Environment...')
-        # locations = services.get_location_setup()
-        # cameras = services.get_camera_setup()
-        # for location in locations:
-        #     self.add_location()
-        #     for camera in cameras:
-        #         if camera.location equals location:
-        #             self.add_camera()
+        locations = services.get_location_setup()
+        cameras = services.get_camera_setup()
+        for location in locations:
+            self.add_location(location)
+            for camera in cameras:
+                if camera['location'] == location:
+                    self.add_camera(camera['address'], camera['port'], camera['path'], camera['protocol'])
 
     def add_camera(self, address, port='', path='', protocol=''):
         return self.list.add_camera(address, port, path, protocol)
@@ -125,7 +125,7 @@ class LocationList(threading.Thread):
 
         # TODO: Update camera in database ~INTEGRATION~
         response = services.upload_camera(camera.id, camera.get_metadata())
-        if response.status_code != 200:
+        if response is not None and response.status_code != 200:
             return None
         return camera
 
