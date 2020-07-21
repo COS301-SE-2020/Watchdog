@@ -8,7 +8,7 @@ from .user import User, authenticate_user
 
 CONNECT = False
 
-BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
+# BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
 # BUCKET_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload"
 conf = json.loads(os.environ['config'])
 URL = conf['services']['base_url']
