@@ -1,7 +1,8 @@
-from service.services import *
 from warrant import Cognito
 from hashlib import sha256
+from service.services import *
 from service.user import User
+from service import config
 
 
 def test_valid_login():

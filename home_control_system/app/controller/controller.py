@@ -1,21 +1,24 @@
+import os
+import json
 import threading
 from .camera import Camera
 
 
-class Server(threading.Thread):
-    def __init__(self, address, location='Home', port=5000):
+conf = json.loads(os.environ['config'])
+site_label = conf['settings']['site']
+
+
+class CameraController(threading.Thread):
+    def __init__(self):
         threading.Thread.__init__(self)
         self.live = False
-        self.address = address
-        self.location = location
-        self.port = port
         self.cameras = {}
 
-    # adds a ip camera client to an allocated port on the server
+    # adds a ip camera client to an allocated port on the controller
     def add_camera(self, address, port='', path='', location='Room', protocol=''):
         if not self.check_address(address):
             print("Adding camera " + str(address) + " - " + location)
-            client = Camera(self, protocol, address, port, path, location)
+            client = Camera(protocol, address, port, path, location)
             if client.is_connected:
                 self.cameras[address] = client
             if self.live:
@@ -25,7 +28,7 @@ class Server(threading.Thread):
 
     def check_address(self, address):
         # quick check
-        if f"{self.address}" in self.cameras:
+        if f"{address}" in self.cameras:
             return True
         # double check
         for camera_address, camera_client in self.cameras.items():
@@ -33,7 +36,7 @@ class Server(threading.Thread):
                 return True
         return False
 
-    # starts the server
+    # starts the controller
     def run(self):
         self.live = True
         if self.cameras.__len__() == 0:
@@ -42,8 +45,8 @@ class Server(threading.Thread):
         for address, client in self.cameras.items():
             client.start()
 
-    # stops the server
-    def stops(self):
+    # stops the controller
+    def stop(self):
         self.live = False
         for address, client in self.cameras.items():
             client.stop()
@@ -51,16 +54,15 @@ class Server(threading.Thread):
     def client_stats(self, address):
         stats = {}
         stats['is_connected'] = self.cameras[address].is_connected
-        stats['is_movement'] = self.cameras[address].is_movement
-        stats['is_person'] = self.cameras[address].is_person
-        stats['is_frames'] = self.cameras[address].current_frame is not None
+        stats['is_movement'] = self.cameras[address].stream.triggers.is_movement
+        stats['is_person'] = self.cameras[address].stream.triggers.is_person
+        stats['is_frames'] = self.cameras[address].stream.current_frame is not None
         return stats
 
     def __str__(self):
-        server = 'Home Control Panel Server' + '\n'
-        server += '\t' + 'Located @ [label:' + self.location + ']' + '\n'
-        server += '\t' + 'Serving @ [url:' + self.address + ':' + str(self.port) + ']' + '\n'
-        server += '\t' + 'Hosting [' + str(len(self.cameras)) + ' IP Camera(s)]' + '\n'
+        controller = 'Home Control Panel' + '\n'
+        controller += '\t' + 'Site @ [label:' + site_label + ']' + '\n'
+        controller += '\t' + 'Hosting [' + str(len(self.cameras)) + ' IP Camera(s)]' + '\n'
         for address, client in self.cameras.items():
-            server += '\t\t' + str(client) + '\n'
-        return server
+            controller += '\t\t' + str(client) + '\n'
+        return controller

@@ -50,10 +50,6 @@ class SettingsPopup(Popup):
     def __init__(self, ascendent):
         super(SettingsPopup, self).__init__(ascendent=ascendent)
 
-        vbox = QVBoxLayout()
-        vbox.addWidget(QLineEdit())
-        vbox.addWidget(QLineEdit())
-
         hbox = QHBoxLayout()
         hbox.addWidget(QRadioButton('Broadcast'))
         hbox.addWidget(QRadioButton('Network'))
@@ -83,17 +79,20 @@ class SettingsPopup(Popup):
         self.lbl_streaming.setStyleSheet(Style.replace_variables('border: @None;'))
         self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
 
+        self.input_location = QLineEdit(Component.root.settings.site)
+        self.input_address = QLineEdit(Component.root.settings.address)
+
         self.layout = QFormLayout()
         self.layout.setAlignment(Qt.AlignRight)
-        self.layout.addRow(self.lbl_location, QLineEdit('Home'))
-        self.layout.addRow(self.lbl_address, vbox)
+        self.layout.addRow(self.lbl_location, self.input_location)
+        self.layout.addRow(self.lbl_address, self.input_address)
         self.layout.addRow(self.lbl_streaming, hbox)
         self.layout.addRow(self.lbl_empty, hbox_click)
 
         layout_center = QVBoxLayout()
         layout_center.setAlignment(Qt.AlignCenter)
         layout_center.addLayout(self.layout)
-        
+
         contain_form = QWidget()
         contain_form.setLayout(layout_center)
         contain_form.setMinimumHeight(int(Style.unit * 2))
@@ -121,6 +120,9 @@ class SettingsPopup(Popup):
 
     def complete(self):
         print("Settings updated")
+        Component.root.settings.site = self.input_location.text()
+        Component.root.settings.address = self.input_address.text()
+        Component.root.window.home.sidepanel.header.lbl_location.setText(Component.root.settings.site)
 
 class LoginPopup(Popup):
     def __init__(self, ascendent):

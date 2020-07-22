@@ -3,18 +3,20 @@ import time
 from PyQt5.QtWidgets import QApplication
 from .containers import Window
 from .component import Component
+from .settings import Settings
+from .controller.controller import CameraController
 from service import services
 
 
 class HomeControlPanel(QApplication, Component):
-    def __init__(self, server):
+    def __init__(self):
         super(HomeControlPanel, self).__init__([])
+        self.settings = Settings()
         self.list = None
-        self.server = server
+        self.controller = CameraController()
         self.window = Window(self)
         self.list = LocationList(self.window)
         self.setApplicationName("Watchdog Control Panel")
-        self.setStyle('Fusion')
 
     def user_login(self, username, password):
         print('Logging in...')
@@ -61,8 +63,8 @@ class HomeControlPanel(QApplication, Component):
         return (screen_resolution.width(), screen_resolution.height())
 
     def start(self):
-        print(self.server)
-        self.server.start()
+        print(self.controller)
+        self.controller.start()
         self.window.show()
         self.list.start()
         self.exec_()
@@ -78,7 +80,7 @@ class Location:
         Location.count += 1
 
     def add_camera(self, address, port='', path='', protocol=''):
-        camera = Component.root.server.add_camera(address, port, path, self.label, protocol)
+        camera = Component.root.controller.add_camera(address, port, path, self.label, protocol)
         if camera is not None:
             self.cameras.append(camera)
         return camera

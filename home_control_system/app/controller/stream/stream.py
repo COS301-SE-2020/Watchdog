@@ -188,6 +188,8 @@ class Stream:
 
         if len(self.feedback.faces) < 1 or len(self.feedback.irides) < 2:
             return False
+
+            # HUMAN BODY DETECTION (TOO MUCH LATENCY)
             # self.feedback.faces = []
             # self.feedback.irides = []
             # self.feedback.bodies = self.indicators.body_cascade.detectMultiScale(
@@ -197,6 +199,7 @@ class Stream:
             #     minSize=(int(self.width * 0.1), int(self.height * 0.1))  # square must be 10% of screens size
             # )
             # return len(self.feedback.bodies) > 0
+
         return True
 
     # Draws Movement Feedback to Frame
@@ -211,6 +214,8 @@ class Stream:
                 for (ex, ey, ew, eh) in self.feedback.irides:
                     if ey + (eh / 2) < y + (h / 2):
                         rectangle(self.current_frame[y:y+h, x:x+w], (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+
+        # HUMAN BODY DETECTION (TOO MUCH LATENCY)
         # elif len(self.feedback.bodies) > 0:
         #     for (x, y, w, h) in self.feedback.bodies:
         #         rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 1)

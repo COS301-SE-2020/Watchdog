@@ -8,15 +8,16 @@
 home_controller_system.egg-info
 # Python-Cache
 .pytest_cache
-tests/__pycache__
+home_control_system/.pytest_cache
+home_control_system/tests/__pycache__
 home_control_system/__pycache__
-home_control_system/server/stream/__pycache__
-home_control_system/server/stream/collectors/__pycache__
+home_control_system/app/controller/__pycache__
+home_control_system/app/controller/stream/__pycache__
+home_control_system/app/controller/stream/collectors/__pycache__
 home_control_system/service/__pycache__
-home_control_system/server/__pycache__
 home_control_system/app/__pycache__
 # Generated Content
 data/temp/image/*
 data/temp/video/*
+# Other
 poetry.lock
-*.bat

@@ -4,8 +4,6 @@ import cv2
 import threading
 import asyncio
 from hashlib import sha256
-# import base64
-# import zmq
 from .stream.stream import Stream
 from .stream.collectors.collector import time_now
 
@@ -18,7 +16,7 @@ FPS = conf['video']['frames_per_second']
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, server, protocol='', address='', port='', path='', location=''):
+    def __init__(self, protocol='', address='', port='', path='', location=''):
         threading.Thread.__init__(self)
         self.id = 'c' + str(sha256((str(time_now())).encode('ascii')).hexdigest())
         # Camera Physical Location
@@ -35,21 +33,12 @@ class Camera(threading.Thread):
         self.live = False
         # Is IP Camera Connected
         self.is_connected = False
-        # Is Movement Detected in Current Frame
-        self.is_movement = False
-        # Is Person Detected in Current Frame
-        self.is_person = False
         # Stream View GUI Object
         self.stream_view = None
         # Stream Management Object
         self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
         # Connect to Camera
         self.connect()
-
-        # Camera Stream Serving
-        # self.socket = zmq.Context().socket(zmq.PUB)
-        # Establish Socket Server
-        # self.socket.connect('tcp://' + server.address + ':' + str(server.port + len(server.cameras)))
 
     # Start thread
     def run(self):
@@ -63,7 +52,6 @@ class Camera(threading.Thread):
             self.update()
         # Disconnect after the stream has been stopped
         self.disconnect()
-        print("Camera Client Stopped " + str(self))
 
     # Update Camera Connection
     def update(self):
@@ -72,8 +60,6 @@ class Camera(threading.Thread):
         (grabbed, frame) = self.connection.read()
         if grabbed:
             asyncio.run(self.stream.put(frame))
-            # encoded, buffer = cv2.imencode('.jpg', frame)
-            # self.socket.send(base64.b64encode(buffer))
         else:
             self.check_connection()
 

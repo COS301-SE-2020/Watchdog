@@ -175,7 +175,7 @@ class SideHeaderContainer(QHBoxLayout, Component):
 
         map_home = QPixmap('assets/icons/home.png')
         self.icon_home.setPixmap(map_home.scaled(Style.sizes.icon_medium, Style.sizes.icon_medium, Qt.KeepAspectRatio, Qt.FastTransformation))
-        self.lbl_location.setText('Home')
+        self.lbl_location.setText(Component.root.settings.site)
         map_settings = QPixmap('assets/icons/settings.png')
         self.btn_settings.setIcon(QIcon(map_settings))
         self.btn_settings.setIconSize(QSize(Style.sizes.icon_medium, Style.sizes.icon_medium))
