@@ -100,7 +100,6 @@ class Stream:
         self.triggers.is_person = False
 
         self.current_frame = resize(frame, (self.width, self.height))
-        services.livestream(self.current_frame)
 
         # Detect Movement in Current Frame
         if self.detect_movement():

@@ -21,7 +21,7 @@ class Server(threading.Thread):
             if self.live:
                 client.start()
             return client  # successfully added client
-        return self.cameras[address]
+        return None
 
     def check_address(self, address):
         # quick check

@@ -211,6 +211,15 @@ class PanelToggle(QWidget, Component):
         self.update()
 
 
+class ListButton(QPushButton, Component):
+    def __init__(self, index, ascendent=None):
+        super(ListButton, self).__init__(ascendent=ascendent)
+        self.index = index
+        self.clicked.connect(self.toggle_handler)
+
+    def toggle_handler(self):
+        self.ascendent.toggle_handler(self.index)
+
 class ButtonList(QVBoxLayout, Component):
     def __init__(self, ascendent):
         super(ButtonList, self).__init__(ascendent=ascendent)
@@ -227,7 +236,7 @@ class ButtonList(QVBoxLayout, Component):
             self.buttons[index].deleteLater()
             del self.buttons[index]
 
-        btn = QPushButton()
+        btn = ListButton(len(self.highlights), self)
         btn.setText(label)
         btn.setFixedHeight(Style.unit / 4 * 0.8)
         btn.setMinimumWidth(self.width * 0.9)
@@ -244,14 +253,14 @@ class ButtonList(QVBoxLayout, Component):
 
         self.buttons.append(btn)
         self.highlights.append(seperator)
-        btn.clicked.connect(lambda: self.toggle_handler(self.buttons.index(btn)))
 
         self.addWidget(btn)
+        
         self.addWidget(seperator)
 
-        self.toggle_handler(0)
-
         self.append_plus()
+
+        self.toggle_handler(0)
 
     def append_plus(self):
         btn = PlusButton(self, LocationPopup)
@@ -285,25 +294,26 @@ class ButtonList(QVBoxLayout, Component):
         self.addWidget(layout_container)
 
     def toggle_handler(self, btn_index):
-        self.buttons[self.active_index].setStyleSheet(Style.replace_variables('margin-left: @LargeMargin; \
-                                                        font: @ButtonTextSize @TextFont; \
-                                                        font-weight: 15; \
-                                                        color: @LightTextColor;'))
-        if self.highlights[self.active_index] is not None:
-            self.highlights[self.active_index].setStyleSheet(Style.replace_variables('padding-left: @MediumPadding; \
-                                                        padding-right: @MediumPadding; \
-                                                        background-color: @DarkColor;'))
+        if len(self.buttons) > 0:
+            self.buttons[self.active_index].setStyleSheet(Style.replace_variables('margin-left: @LargeMargin; \
+                                                            font: @ButtonTextSize @TextFont; \
+                                                            font-weight: 15; \
+                                                            color: @LightTextColor;'))
+            if self.highlights[self.active_index] is not None:
+                self.highlights[self.active_index].setStyleSheet(Style.replace_variables('padding-left: @MediumPadding; \
+                                                            padding-right: @MediumPadding; \
+                                                            background-color: @DarkColor;'))
 
-        self.buttons[btn_index].setStyleSheet(Style.replace_variables('margin-left: @LargeMargin; \
-                                                        font: @ButtonTextSize @TextFont; \
-                                                        font-weight: 15; \
-                                                        color: @HighlightColor;'))
-        if self.highlights[btn_index] is not None:
-            self.highlights[btn_index].setStyleSheet(Style.replace_variables('padding-left: @MediumPadding; \
-                                                        padding-right: @MediumPadding; \
-                                                        background-color: @HighlightColor;'))
-        self.active_index = btn_index
-        Component.root.list.changeActive(self.active_index)
+            self.buttons[btn_index].setStyleSheet(Style.replace_variables('margin-left: @LargeMargin; \
+                                                            font: @ButtonTextSize @TextFont; \
+                                                            font-weight: 15; \
+                                                            color: @HighlightColor;'))
+            if self.highlights[btn_index] is not None:
+                self.highlights[btn_index].setStyleSheet(Style.replace_variables('padding-left: @MediumPadding; \
+                                                            padding-right: @MediumPadding; \
+                                                            background-color: @HighlightColor;'))
+            self.active_index = btn_index
+            Component.root.list.changeActive(self.active_index)
 
 
 class StreamView(QWidget):

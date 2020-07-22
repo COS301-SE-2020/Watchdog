@@ -5,70 +5,61 @@ import requests
 from hashlib import sha256
 from .user import User, authenticate_user
 
-CONNECT = False
 
 # BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
 # BUCKET_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload"
 conf = json.loads(os.environ['config'])
+CONNECT = conf['services']['live']
 URL = conf['services']['base_url']
 BASE_URL = URL + '/testing'
-
-
-def livestream(frame):
-    if not CONNECT:
-        return
-    user = User.get_instance()
-    user.client.produce(frame)
 
 
 # TODO: [NEEDED]
 #   upload_location() - this is for the locations within the hcp i.e. Kitchen, bedroom... metadata: {id, location}
 
+
 def get_location_setup():
     if not CONNECT:
-        user = User.get_instance()
-        api_endpoint = BASE_URL + '/sites'
-        if user.hcp_id is not None:
-            response = requests.get(
-                url=api_endpoint,
-                params={
-                    "site_id": user.hcp_id
-                },
-                headers={'Authorization': user.get_token()}
-            )
-            response = json.loads(response.text)
-            if len(response['data']) > 0:  # if the current control panel has cameras
-                locations = []
-                cameras = response['data']['control_panel'].get(user.hcp_id)['cameras']
-                for camera in cameras:
-                    locations.append(cameras.get(camera)['room'])
-                locations = list(set(locations))  # get list of no duplicate rooms
-                locations = [empty_room for empty_room in locations if
-                             empty_room is not ""]  # remove cameras that are not part of a room
-                locations.sort()  # sort the list in alphabetical order in ascending order
-                return locations
-    return None  # hcp has no cameras or site is not in the db
-
+        return None  # hcp has no cameras or site is not in the db
+    user = User.get_instance()
+    api_endpoint = BASE_URL + '/sites'
+    if user.hcp_id is not None:
+        response = requests.get(
+            url=api_endpoint,
+            params={
+                "site_id": user.hcp_id
+            },
+            headers={'Authorization': user.get_token()}
+        )
+        response = json.loads(response.text)
+        if len(response['data']) > 0:  # if the current control panel has cameras
+            locations = []
+            cameras = response['data']['control_panel'].get(user.hcp_id)['cameras']
+            for camera in cameras:
+                locations.append(cameras.get(camera)['room'])
+            locations = list(set(locations))  # get list of no duplicate rooms
+            locations = [empty_room for empty_room in locations if empty_room != ""]  # remove cameras that are not part of a room
+            locations.sort()  # sort the list in alphabetical order in ascending order
+            return locations
 
 def get_camera_setup():
     if not CONNECT:
-        user = User.get_instance()
-        api_endpoint = BASE_URL + '/sites'
-        if user.hcp_id is not None:
-            response = requests.get(
-                url=api_endpoint,
-                params={
-                    "site_id": user.hcp_id
-                },
-                headers={'Authorization': user.get_token()}
-            )
-            response = json.loads(response.text)
-            if len(response['data']) > 0:  # HCP id is assigned for this user
-                response = response['data']['control_panel']
-                response = response.get(user.hcp_id)['cameras']
-                return response
-    return None  # hcp has no cameras or site is not in the db
-
+        return None  # hcp has no cameras or site is not in the db
+    user = User.get_instance()
+    api_endpoint = BASE_URL + '/sites'
+    if user.hcp_id is not None:
+        response = requests.get(
+            url=api_endpoint,
+            params={
+                "site_id": user.hcp_id
+            },
+            headers={'Authorization': user.get_token()}
+        )
+        response = json.loads(response.text)
+        if len(response['data']) > 0:  # HCP id is assigned for this user
+            response = response['data']['control_panel']
+            response = response.get(user.hcp_id)['cameras']
+            return response
 
 def login(username, password, post_site=True):
     if not CONNECT:

@@ -18,21 +18,28 @@ class HomeControlPanel(QApplication, Component):
         self.list = LocationList(self.window)
         self.setApplicationName("Watchdog Control Panel")
         self.setStyle('Fusion')
-        self.setup_environment()
 
     def user_login(self, username, password):
         print('Logging in...')
         services.login(username, password)
+        self.setup_environment()
 
     def setup_environment(self):
         print('Loading Environment...')
         locations = services.get_location_setup()
         cameras = services.get_camera_setup()
-        for location in locations:
-            self.add_location(location)
-            for camera in cameras:
-                if camera['location'] == location:
-                    self.add_camera(camera['address'], camera['port'], camera['path'], camera['protocol'])
+        count = 0
+        if locations is not None:
+            for location in locations:
+                self.list.add_location(location)
+                if cameras is not None:
+                    for camera_id in cameras:
+                        camera = cameras[camera_id]
+                        if camera['room'] == location:
+                            camera = self.list.add_camera(camera['address'], camera['port'], camera['path'], camera['protocol'], upload=False, index=count)
+                            if camera is not None:
+                                camera.id = camera_id
+                count += 1
 
     def add_camera(self, address, port='', path='', protocol=''):
         return self.list.add_camera(address, port, path, protocol)
@@ -65,14 +72,18 @@ class HomeControlPanel(QApplication, Component):
 
 
 class Location:
-    def __init__(self, id, location):
-        self.id = id
+    count = 0
+
+    def __init__(self, location):
+        self.id = Location.count
         self.label = location
         self.cameras = []
+        Location.count += 1
 
     def add_camera(self, address, port='', path='', protocol=''):
         camera = Component.root.server.add_camera(address, port, path, self.label, protocol)
-        self.cameras.append(camera)
+        if camera is not None:
+            self.cameras.append(camera)
         return camera
 
     def get_metadata(self):
@@ -98,9 +109,9 @@ class LocationList(threading.Thread):
             time.sleep(1 / 30)  # 30 fps
 
     def add_location(self, label):
-        self.index = len(self.locations)
+        location = Location(label)
 
-        location = Location(self.index, label)
+        self.index = Location.count
 
         self.locations.append(location)
 
@@ -109,10 +120,12 @@ class LocationList(threading.Thread):
 
         return location
 
-    def add_camera(self, address, port='', path='', protocol=''):
-        if self.index > len(self.locations):
+    def add_camera(self, address, port='', path='', protocol='', upload=True, index=-1):
+        if self.index > len(self.locations) - 1:
             return None
 
+        if index != -1:
+            self.index = index
         camera = self.locations[self.index].add_camera(
             address,
             port,
@@ -120,14 +133,17 @@ class LocationList(threading.Thread):
             protocol
         )
 
-        if self.view is not None:
-            self.view.home.view.grid.set_stream_views(self.locations[self.index].cameras)
+        if camera is not None and camera.is_connected:
+            if self.view is not None:
+                self.view.home.view.grid.set_stream_views(self.locations[self.index].cameras)
 
-        # TODO: Update camera in database ~INTEGRATION~
-        response = services.upload_camera(camera.id, camera.get_metadata())
-        if response is not None and response.status_code != 200:
-            return None
-        return camera
+            if upload:
+                response = services.upload_camera(camera.id, camera.get_metadata())
+                if response is not None and response.status_code != 200:
+                    return None
+
+            return camera
+        return None
 
     def changeActive(self, index):
         self.index = index

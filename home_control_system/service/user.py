@@ -4,9 +4,8 @@ import json
 import traceback
 from warrant import AWSSRP, Cognito
 from datetime import datetime, timedelta
-from .connection import socket_client
-from .client import Producer
 from .config import configure
+
 
 configure()
 conf = json.loads(os.environ['config'])
@@ -23,7 +22,7 @@ class User:
         if User.__instance is None:
             try:
                 User(metadata)
-            except Exception as e:
+            except Exception:
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb)
                 return None
@@ -43,7 +42,6 @@ class User:
             'token': '',
             'expiration': ''
         }
-        # self.client = Producer(self.user_id, socket_client)
         self.generate_token()
 
     def generate_token(self):
