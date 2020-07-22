@@ -21,7 +21,7 @@ For the South African household who need an efficient way to ensure their safety
 
 |Member|Student #|Page|LinkedIn|
 |------|---------|----|--------|
-|Luqmaan Badat|17088519|<https://github.com/luqmaanbadat>|<https://www.linkedin.com/in/luqmaan-badat/>|
+|Luqmaan Badat|u17088519|<https://github.com/luqmaanbadat>|<https://www.linkedin.com/in/luqmaan-badat/>|
 |Aboobakr Kharbai|u18037306|<https://abubakrk.github.io>|<https://www.linkedin.com/in/aboobacker-kharbai-7a94961a9/>|
 |Jordan Manas|u17080534|<https://u17080534.github.io>|<https://www.linkedin.com/in/jordan-manas-b822651aa/>|
 |Ushir Raval|u16013604|<https://urishiraval.github.io>| <https://www.linkedin.com/in/unraval/>|
