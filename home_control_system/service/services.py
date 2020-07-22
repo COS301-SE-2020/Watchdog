@@ -6,8 +6,6 @@ from hashlib import sha256
 from .user import User, authenticate_user
 
 
-# BASE_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/testing"
-# BUCKET_URL = "https://aprebrte8g.execute-api.af-south-1.amazonaws.com/beta/storage/upload"
 conf = json.loads(os.environ['config'])
 CONNECT = conf['services']['live']
 URL = conf['services']['base_url']
@@ -42,6 +40,7 @@ def get_location_setup():
             locations.sort()  # sort the list in alphabetical order in ascending order
             return locations
 
+
 def get_camera_setup():
     if not CONNECT:
         return None  # hcp has no cameras or site is not in the db
@@ -60,6 +59,7 @@ def get_camera_setup():
             response = response['data']['control_panel']
             response = response.get(user.hcp_id)['cameras']
             return response
+
 
 def login(username, password, post_site=True):
     if not CONNECT:

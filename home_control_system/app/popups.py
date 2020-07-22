@@ -112,6 +112,15 @@ class SettingsPopup(Popup):
 
         self.setLayout(layout_form)
 
+    def submit(self):
+        self.complete()
+        self.hide()
+
+    def cancel(self):
+        self.hide()
+
+    def complete(self):
+        print("Settings updated")
 
 class LoginPopup(Popup):
     def __init__(self, ascendent):

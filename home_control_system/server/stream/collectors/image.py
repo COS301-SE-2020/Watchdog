@@ -10,7 +10,8 @@ from .collector import (
     Tag,
     time_now,
     hash_id,
-    distinct_frames
+    distinct_frames,
+    capture_limit
 )
 from service import services
 
@@ -26,7 +27,7 @@ class ImageCollector(threading.Thread):
     def run(self):
         self.live = True
         while(self.live):
-            time.sleep(5)
+            time.sleep(capture_limit)
             self.flush()
 
     def collect(self, frame):
@@ -45,7 +46,8 @@ class ImageCollector(threading.Thread):
         images = []
         count = 0
         for index in range(len(self.queue)):
-            if count > 5:
+            start = time_now()
+            if count > 3:
                 break
             image = Image(
                 self.camera_id,
@@ -55,7 +57,11 @@ class ImageCollector(threading.Thread):
             )
             images.append(image)
             image.export()
-            count += 1
+            diff = time_now() - start
+            wait = max((capture_limit / 2) - diff, 0.0)
+            if wait > 0.0:
+                count += 1
+                time.sleep(wait)
         self.queue.clear()
         return images
 

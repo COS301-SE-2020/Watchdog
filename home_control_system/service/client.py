@@ -2,11 +2,11 @@
 class Client:
     users = {}
 
-    def __init__(self, user_id, socket):
+    def __init__(self, user_id, socket, url):
         self.id = self.generate_id(self)
         self.user_id = user_id
         self.socket = socket
-        self.socket.connect('http://127.0.0.1:8008')
+        self.socket.connect(url)
 
     @staticmethod
     def generate_id(user):

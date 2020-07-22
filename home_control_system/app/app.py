@@ -18,6 +18,7 @@ class HomeControlPanel(QApplication, Component):
         self.list = LocationList(self.window)
         self.setApplicationName("Watchdog Control Panel")
         self.setStyle('Fusion')
+        self.setup_environment()
 
     def user_login(self, username, password):
         print('Logging in...')
@@ -40,6 +41,7 @@ class HomeControlPanel(QApplication, Component):
                             if camera is not None:
                                 camera.id = camera_id
                 count += 1
+
 
     def add_camera(self, address, port='', path='', protocol=''):
         return self.list.add_camera(address, port, path, protocol)
