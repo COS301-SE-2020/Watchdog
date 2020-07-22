@@ -17,7 +17,8 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QPushButton,
-    QGraphicsDropShadowEffect
+    QGraphicsDropShadowEffect,
+    QAction
 )
 from .component import Component
 from .style import Style
@@ -322,6 +323,11 @@ class StreamView(QWidget):
         self.setMinimumWidth(Style.unit)
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
         StreamView.count += 1
+
+        self.setContextMenuPolicy(Qt.ActionsContextMenu)
+        quitAction = QAction("Remove", self)
+        # quitAction.triggered.connect(qApp.quit)
+        self.addAction(quitAction)
 
     def set_frame(self):
         if self.camera.stream.current_frame is not None:

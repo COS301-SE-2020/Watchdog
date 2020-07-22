@@ -15,12 +15,6 @@ URL = conf['services']['base_url']
 BASE_URL = URL + '/testing'
 
 
-def livestream(frame):
-    if not CONNECT:
-        return
-    user = User.get_instance()
-    user.client.produce(frame)
-
 def get_location_setup():
     if not CONNECT:
         return ['Test Room']
