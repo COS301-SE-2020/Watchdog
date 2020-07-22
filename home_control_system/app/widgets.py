@@ -181,7 +181,7 @@ class CenterToggle(QWidget, Component):
 class PanelToggle(QWidget, Component):
     def __init__(self, ascendent, left_label, right_label):
         super(PanelToggle, self).__init__(ascendent=ascendent)
-        self.setMinimumWidth(self.width)
+        # self.setMinimumWidth(self.width)
         self.setContentsMargins(0, 0, 0, 0)
         self.setStyleSheet(Style.replace_variables('background-color: @LightColor; \
                                                     margin: @None; \
@@ -204,7 +204,26 @@ class PanelToggle(QWidget, Component):
         self.toggle.spacer.setStyleSheet(Style.replace_variables('background-color: black; \
                                                     margin: @None; \
                                                     padding: @None;'))
-        self.setLayout(self.toggle)
+
+        contain_toggle = QHBoxLayout()
+        contain_toggle.addStretch(1)
+        contain_toggle.addLayout(self.toggle)
+        contain_toggle.addStretch(1)
+        contain_toggle.setContentsMargins(0, 0, 0, 0)
+        contain_toggle.setSpacing(0)
+
+        widget_contain = QWidget()
+        widget_contain.setStyleSheet(Style.replace_variables('background-color: @LightColor; \
+                                                        margin: @None; \
+                                                        padding: @None;'))
+        widget_contain.setLayout(contain_toggle)
+
+        contain_layout = QHBoxLayout()
+        contain_layout.addWidget(widget_contain)
+        contain_layout.setSpacing(0)
+        contain_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.setLayout(contain_layout)
 
     def toggle_handler(self):
         Component.root.window.home.sidepanel.list.toggle()

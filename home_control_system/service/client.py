@@ -38,6 +38,7 @@ class Producer(Client):
         if self.active:
             self.socket.emit('broadcast', {'frame': frame})
 
+
 def start_broadcast(user_id):
     for id, user in Producer.producers.items():
         if user.user_id == user_id:
@@ -47,8 +48,3 @@ def stop_broadcast(user_id):
     for id, user in Producer.producers.items():
         if user.user_id == user_id:
             user.deactivate()
-
-def display_stream(user_id, image):
-    for id, user in Consumer.consumers.items():
-        if user.user_id == user_id:
-            user.consume(image)

@@ -6,6 +6,7 @@ def configure():
     with open('data/settings.conf') as config_file:
         data = json.load(config_file)
         os.environ['config'] = json.dumps(data)
+    return json.loads(os.environ['config'])
 
 def update_config(key, value):
     conf = json.loads(os.environ['config'])

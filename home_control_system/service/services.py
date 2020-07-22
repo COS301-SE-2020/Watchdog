@@ -3,10 +3,11 @@ import json
 import datetime
 import requests
 from hashlib import sha256
+from service import config
 from .user import User, authenticate_user
 
 
-conf = json.loads(os.environ['config'])
+conf = config.configure()
 CONNECT = conf['services']['live']
 URL = conf['services']['base_url']
 BASE_URL = URL + '/testing'
@@ -169,15 +170,16 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
                 },
                 headers={'Authorization': user.get_token()}
             )
-            response = json.loads(response.text)
-            # Upload video/image to bucket
-            with open(path, 'rb') as binary_object:
-                files = {
-                    'file': (file_name, binary_object)
-                }
-                response = requests.post(response['url'], data=response['fields'], files=files)
-                print("POST response" + str(response))
-            return 200
+            if 'url' in response:
+                response = json.loads(response.text)
+                # Upload video/image to bucket
+                with open(path, 'rb') as binary_object:
+                    files = {
+                        'file': (file_name, binary_object)
+                    }
+                    response = requests.post(response['url'], data=response['fields'], files=files)
+                    print("POST response" + str(response))
+                return 200
         else:
             print("The tag that you provided is invalid!"
                   "\nIf you want to upload videos: tag must be either movement, periodic, or intruder"

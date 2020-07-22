@@ -4,14 +4,12 @@ import json
 import traceback
 from warrant import AWSSRP, Cognito
 from datetime import datetime, timedelta
-from .config import configure
 
 
-configure()
 conf = json.loads(os.environ['config'])
 client_id = conf['services']['client']['id']
 user_pool_id = conf['services']['client']['pool']
-# live = False
+
 
 class User:
     __instance = None
@@ -24,7 +22,6 @@ class User:
                 User(metadata)
             except Exception:
                 exc_type, exc_value, exc_tb = sys.exc_info()
-                print(str(e))
                 traceback.print_exception(exc_type, exc_value, exc_tb)
                 return None
         return User.__instance
@@ -43,9 +40,6 @@ class User:
             'token': '',
             'expiration': ''
         }
-
-        # if live:
-        #     self.client = Producer(self.user_id, socket_client, 'http://127.0.0.1:8008')
 
         self.generate_token()
 
