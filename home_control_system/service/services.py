@@ -166,20 +166,20 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
                     "tag": tag,
                     "user_id": user.user_id,
                     "camera_id": camera_id,
-                    "timestamp": timestamp
+                    "timestamp": timestamp,
+                    "token": user.get_token()
                 },
                 headers={'Authorization': user.get_token()}
             )
-            if 'url' in response:
-                response = json.loads(response.text)
+            response = json.loads(response.text)
                 # Upload video/image to bucket
-                with open(path, 'rb') as binary_object:
-                    files = {
-                        'file': (file_name, binary_object)
-                    }
-                    response = requests.post(response['url'], data=response['fields'], files=files)
-                    print("POST response" + str(response))
-                return 200
+            with open(path, 'rb') as binary_object:
+                files = {
+                    'file': (file_name, binary_object)
+                }
+                response = requests.post(response['url'], data=response['fields'], files=files)
+                print("POST response" + str(response))
+            return 200
         else:
             print("The tag that you provided is invalid!"
                   "\nIf you want to upload videos: tag must be either movement, periodic, or intruder"
