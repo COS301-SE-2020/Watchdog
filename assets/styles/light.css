@@ -1,0 +1,37 @@
+QWidget
+{
+    border-radius: 0px;
+    background-color: @LightColor;
+}
+
+QHBoxLayout
+{
+    border: 15px solid black;
+    border-radius: 0px;
+    padding: 5px;
+    margin: 0px;
+    background-color: @LightColor;
+}
+
+QVBoxLayout
+{
+    border: 15px solid black;
+    border-radius: 0px;
+    padding: 0px;
+    margin: 0px;
+    background-color: @LightColor;
+}
+
+QPushButton
+{
+    background-color: transparent;
+    border: 0px;
+    font: @SubTextSize Corbel, sans-serif;
+}
+
+QLabel
+{
+    font-weight: 8;
+    color: @LightTextColor;
+    font: @SubTextSize Corbel, sans-serif;
+}
