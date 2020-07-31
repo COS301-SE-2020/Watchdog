@@ -85,14 +85,3 @@ def test_get_camera_config():
 
     assert len(response) > 0
     assert is_valid == True
-
-
-def test_get_locations():
-    is_valid = authenticate_user(username=username, password=password)
-
-    user = User.get_instance()
-    user.set_hcp_id(hcp_id)
-    response = get_location_setup()
-
-    assert 'backyard' in response
-    assert is_valid == True

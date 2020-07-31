@@ -25,6 +25,8 @@ class HomeControlPanel(QApplication, Component):
 
     def setup_environment(self):
         print('Loading Environment...')
+        # TODO: change this function to accept a dict such as:
+        # {'My Backyard': {'cad489214e688d3d4643b5a1b474f0b39455904737e7749a16cebe7d0b82063c5': {'path': '', 'protocol': 'http', 'address': '127.0.0.1', 'port': '5000'}}}
         locations = services.get_location_setup()
         cameras = services.get_camera_setup()
         count = 0
