@@ -62,7 +62,7 @@ def get_camera_setup():
             return response
 
 
-def login(username, password, post_site=True):
+def login(username, password):
     if not CONNECT:
         return True
     # authenticate user
@@ -91,29 +91,8 @@ def login(username, password, post_site=True):
             f = open(hash_file, 'w')
             f.write(json.dumps(user_details))
             f.close()
-            if post_site:
-                upload_site()
 
     return is_valid
-
-
-def upload_site():
-    if not CONNECT:
-        return None
-    api_endpoint = BASE_URL + '/sites'
-    user = User.get_instance()
-    if user is None:
-        print("\033[31mCould not Upload site because you have not authenticated a valid user!")
-        return 400
-    response = requests.post(
-        url=api_endpoint,
-        params={
-            "site_id": user.hcp_id
-        },
-        json={},
-        headers={'Authorization': user.get_token()}
-    )
-    return response
 
 
 def upload_camera(camera_id, metadata):
@@ -129,12 +108,12 @@ def upload_camera(camera_id, metadata):
         url=api_endpoint,
         params={
             "site_id": user.hcp_id,
-            "camera_id": camera_id
+            "camera_id": camera_id,
+            "location": metadata['location']
         },
         json={
             "address": metadata['address'],
             "port": metadata['port'],
-            "room": metadata['room'],
             "protocol": metadata['protocol'],
             "path": metadata['path']
         },

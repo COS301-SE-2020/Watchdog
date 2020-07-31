@@ -119,7 +119,7 @@ class Camera(threading.Thread):
             "address": self.address,
             "port": self.port,
             "path": self.path,
-            "room": self.location,
+            "location": self.location,
             "protocol": self.protocol
         }
 
