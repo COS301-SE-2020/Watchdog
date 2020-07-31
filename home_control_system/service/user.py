@@ -31,7 +31,6 @@ class User:
             User.__instance = self
         if metadata is None:
             raise Exception("Metadata map not provided for user...")
-
         self.hcp_id = None
         self.user_id = metadata['user_id']
         self.username = metadata['username']
@@ -40,7 +39,6 @@ class User:
             'token': '',
             'expiration': ''
         }
-
         self.generate_token()
 
     def generate_token(self):
@@ -93,7 +91,3 @@ def authenticate_user(username, password):
 
     User.get_instance(user_data)  # instantiate singleton object
     return True
-
-
-
-

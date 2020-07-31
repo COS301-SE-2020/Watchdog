@@ -134,9 +134,10 @@ class LoginPopup(Popup):
         popup_width = int(Style.unit * 2)
 
         self.setGeometry(left_margin + (main_width) - (popup_width / 1.8), top_margin + (main_height / 2) - (popup_width / 2), popup_width, (popup_width / 2))
+
         if os.name == 'nt':
             self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint))
-        
+
         self.btn_submit = QPushButton('Login')
         self.btn_cancel = QPushButton('Cancel')
 
@@ -210,9 +211,9 @@ class CameraPopup(Popup):
         vbox.addWidget(QLineEdit())
 
         hbox = QHBoxLayout()
-        hbox.addWidget(QRadioButton('Broadcast'))
-        hbox.addWidget(QRadioButton('Network'))
-        hbox.addWidget(QRadioButton('Off'))
+        hbox.addWidget(QRadioButton('Intuder Alarm'))
+        hbox.addWidget(QRadioButton('Home Surveillance'))
+        hbox.addWidget(QRadioButton('Offline'))
         hbox.addStretch()
 
         self.btn_submit = QPushButton('Submit')
@@ -309,9 +310,8 @@ class LocationPopup(Popup):
         self.btn_cancel.clicked.connect(self.cancel)
 
         hbox = QHBoxLayout()
-        hbox.addWidget(QRadioButton('Broadcast'))
-        hbox.addWidget(QRadioButton('Network'))
-        hbox.addWidget(QRadioButton('Off'))
+        hbox.addWidget(QRadioButton('Live'))
+        hbox.addWidget(QRadioButton('Offline'))
         hbox.addStretch()
 
         hbox_click = QHBoxLayout()
@@ -347,7 +347,7 @@ class LocationPopup(Popup):
         layout_center = QVBoxLayout()
         layout_center.setAlignment(Qt.AlignCenter)
         layout_center.addLayout(self.layout)
-        
+
         contain_form = QWidget()
         contain_form.setLayout(layout_center)
         contain_form.setMinimumHeight(int(Style.unit * 2))
@@ -377,4 +377,3 @@ class LocationPopup(Popup):
         Component.root.add_location(
             self.input_location.text()
         )
-

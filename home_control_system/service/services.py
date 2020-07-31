@@ -46,11 +46,12 @@ def login(username, password):
         user = User.get_instance()
         if user is None:
             return False
-        hcp_id = "s" + sha256((str(datetime.datetime.now().timestamp()) + user.user_id).encode('ascii')).hexdigest()
 
+        hcp_id = "s" + sha256((str(datetime.datetime.now().timestamp()) + user.user_id).encode('ascii')).hexdigest()
         user_logged_in_before = False
         user_details = {}
         hash_file = 'data/.hash'
+
         if os.path.exists(hash_file):  # at least one user has logged on this computer before
             f = open(hash_file, 'r')
             user_details = json.loads(f.read())
@@ -60,6 +61,7 @@ def login(username, password):
                 hcp_id = user_details[user.username]['hcp_id']
 
         user.set_hcp_id(hcp_id)
+
         if not user_logged_in_before:  # persistently store the HCP id of the new user.
             user_details.update(user.__str__())
             f = open(hash_file, 'w')
@@ -125,7 +127,7 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
                 headers={'Authorization': user.get_token()}
             )
             response = json.loads(response.text)
-                # Upload video/image to bucket
+            # Upload video/image to bucket
             with open(path, 'rb') as binary_object:
                 files = {
                     'file': (file_name, binary_object)

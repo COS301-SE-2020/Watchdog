@@ -36,6 +36,7 @@ from .spacers import (
     QVSeperationLine
 )
 
+
 ###############################
 # MAIN WINDOW
 class Window(QMainWindow, Component):

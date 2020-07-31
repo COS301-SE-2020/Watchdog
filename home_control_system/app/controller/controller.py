@@ -15,10 +15,10 @@ class CameraController(threading.Thread):
         self.cameras = {}
 
     # adds a ip camera client to an allocated port on the controller
-    def add_camera(self, address, port='', path='', location='Room', protocol=''):
+    def add_camera(self, camera_id, address, port='', path='', location='Room', protocol=''):
         if not self.check_address(address):
             print("Adding camera " + str(address) + " - " + location)
-            client = Camera(protocol, address, port, path, location)
+            client = Camera(camera_id, protocol, address, port, path, location)
             if client.is_connected:
                 self.cameras[address] = client
             if self.live:
