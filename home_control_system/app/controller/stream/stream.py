@@ -41,6 +41,7 @@ class Stream:
         self.current_frame = None
         self.address = address
         self.stack = []
+        self.stream_connection = None
         # Stream View
         self.stream_views = []
         # Config for Periodic Video
@@ -125,6 +126,9 @@ class Stream:
             if self.config.stop_time < now:
                 self.config.start_time = self.config.stop_time + self.config.gap_length
                 self.config.stop_time = self.config.start_time + self.config.clip_length
+
+        if self.stream_connection is not None:
+            self.stream_connection.produce(self.camera_id, self.current_frame)
 
     # Detects Movement in Frame
     #   Returns True if Movement

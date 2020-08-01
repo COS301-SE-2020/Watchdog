@@ -11,6 +11,7 @@ site_label = conf['settings']['site']
 class CameraController(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
+        self.client = None
         self.live = False
         self.cameras = {}
 
@@ -38,6 +39,7 @@ class CameraController(threading.Thread):
 
     # starts the controller
     def run(self):
+        # self.client = Producer()
         self.live = True
         if self.cameras.__len__() == 0:
             print("There are currently no ip cameras detected...")

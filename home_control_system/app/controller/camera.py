@@ -67,6 +67,12 @@ class Camera(threading.Thread):
         self.live = False
         self.disconnect()
 
+    def start_stream(self, connect):
+        self.stream.stream_connection = connect
+
+    def stop_stream(self):
+        self.stream.stream_connection = None
+
     # Connect to IP Camera
     def connect(self):
         # check not already connected
