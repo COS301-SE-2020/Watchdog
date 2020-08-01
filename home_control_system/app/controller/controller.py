@@ -1,6 +1,8 @@
 import os
 import json
 import threading
+from service import user
+from service import connection
 from .camera import Camera
 
 
@@ -39,7 +41,8 @@ class CameraController(threading.Thread):
 
     # starts the controller
     def run(self):
-        # self.client = Producer()
+        user_id = user.User.get_instance().user_id
+        self.client = connection.Producer(user_id, self)
         self.live = True
         if self.cameras.__len__() == 0:
             print("There are currently no ip cameras detected...")
@@ -52,6 +55,18 @@ class CameraController(threading.Thread):
         self.live = False
         for address, client in self.cameras.items():
             client.stop()
+
+    def start_streams(self, camera_list):
+        if self.client is not None:
+            for address, camera in self.cameras.items():
+                if camera.id in camera_list:
+                    camera.start_stream(self.client)
+                else:
+                    camera.stop_stream()
+
+    def stop_streams(self):
+        for address, camera in self.cameras.items():
+            camera.stop_stream()
 
     def client_stats(self, address):
         stats = {}
