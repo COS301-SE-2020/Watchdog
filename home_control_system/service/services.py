@@ -112,8 +112,7 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
     possible_tags = ['detected', 'periodic', 'movement', 'intruder']
     if os.path.exists(path):
         if tag in possible_tags:
-            api_endpoint = URL + '/beta/storage/upload'
-            # TODO: include confidential pyPi to store global variables
+            api_endpoint = BASE_URL + '/storage/upload'
             response = requests.post(
                 url=api_endpoint,
                 params={

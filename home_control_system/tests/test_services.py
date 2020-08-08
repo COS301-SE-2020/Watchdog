@@ -2,9 +2,23 @@ from warrant import Cognito
 from service.services import *
 from service.user import User
 
+"""
+Test functions for integration with the API
+"""
+
+# Debug user valid hard coded values for testing
 username = 'debug'
 password = 'Test@123'
-hcp_id = 'v97d00136e2f532355e85291689d7e16138cb95cbe769ff5b8b2fab5c83132a09'
+camera_id = "cad489214e688d3d4643b5a1b474f0b39455904737e7749a16cebe7d0b82063c5"
+
+
+def initialize_user():
+    hcp_id = 'v97d00136e2f532355e85291689d7e16138cb95cbe769ff5b8b2fab5c83132a09'
+    is_valid = authenticate_user(username=username, password=password)
+    user = User.get_instance()
+    user.set_hcp_id(hcp_id)
+
+    return is_valid
 
 
 def test_valid_login():
@@ -24,10 +38,7 @@ def test_valid_login():
 
 
 def test_upload_camera():
-    is_valid = authenticate_user(username=username, password=password)
-    user = User.get_instance()
-    # this is a valid site_id - in case the .hash file was deleted
-    user.set_hcp_id(hcp_id)
+    is_valid = initialize_user()
 
     metadata = {
         "address": '127.0.0.1',
@@ -44,15 +55,9 @@ def test_upload_camera():
     assert is_valid == True
 
 
+# upload a sample video with the tag periodic
 def test_upload_video():
-    # upload a sample video with the tag periodic
-    # hard coded valid camera id in the DB - this process is automated in the HCP
-    camera_id = "c544bae2687c592981070dd0bddd6ab68c49727b4a03041e59880d4f7b8fff455"
-
-    is_valid = authenticate_user(username=username, password=password)
-    user = User.get_instance()
-    # this is a valid site_id - in case the .hash file was deleted
-    user.set_hcp_id(hcp_id)
+    is_valid = initialize_user()
 
     response = upload_to_s3(path_to_resource='data/sample', file_name='still_grey.mp4', tag='periodic', camera_id=camera_id)
 
@@ -60,15 +65,9 @@ def test_upload_video():
     assert response == 200
 
 
+# upload a detected image
 def test_upload_image():
-    # upload a sample video with the tag periodic
-    # hard coded valid camera id in the DB - this process is automated in the HCP
-    camera_id = "c544bae2687c592981070dd0bddd6ab68c49727b4a03041e59880d4f7b8fff455"
-
-    is_valid = authenticate_user(username=username, password=password)
-    user = User.get_instance()
-    # this is a valid site_id - in case the .hash file was deleted
-    user.set_hcp_id(hcp_id)
+    is_valid = initialize_user()
 
     response = upload_to_s3(path_to_resource='data', file_name='IMG_5047.JPG', tag='detected', camera_id=camera_id)
 
@@ -77,10 +76,7 @@ def test_upload_image():
 
 
 def test_get_camera_config():
-    is_valid = authenticate_user(username=username, password=password)
-
-    user = User.get_instance()
-    user.set_hcp_id(hcp_id)
+    is_valid = initialize_user()
     response = get_camera_setup()
 
     assert len(response) > 0
