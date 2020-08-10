@@ -42,7 +42,12 @@ class CameraController(threading.Thread):
     # starts the controller
     def run(self):
         user_id = user.User.get_instance().user_id
-        self.client = connection.Producer(user_id, self)
+        producer_id = user.User.get_instance().hcp_id
+
+        camera_ids = []
+        for address, camera in self.cameras.items():
+            camera_ids.append(camera.id)
+        self.client = connection.Producer(user_id, producer_id, camera_ids, self)
         self.live = True
         if self.cameras.__len__() == 0:
             print("There are currently no ip cameras detected...")

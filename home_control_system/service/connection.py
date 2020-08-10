@@ -2,6 +2,7 @@ import cv2
 import base64
 import random
 import socketio
+from .user import User
 
 CLIENT_KEY = 'supersecure'
 
@@ -12,7 +13,7 @@ class Connection:
         self.id = self.generate_id(self)
         self.user_id = user_id
         self.socket = socketio.Client()
-        self.socket.connect('http://127.0.0.1:8008')
+        self.socket.connect('http://ec2-13-245-35-130.af-south-1.compute.amazonaws.com:8080')
 
         # Data : { user_id : string, camera_list : string }
         @self.socket.on('activate-broadcast')
@@ -41,12 +42,14 @@ class Connection:
 
 # Front-End Producer Client
 class Producer(Connection):
-    def __init__(self, user_id, controller):
+    def __init__(self, user_id, producer_id, camera_ids, controller):
         super(Producer, self).__init__(user_id)
         self.active = False
         self.camera_list = []
         self.controller = controller
-        self.socket.emit('authorize', {'user_id': self.user_id, 'client_type': 'producer', 'client_key': CLIENT_KEY})
+        self.producer_id = producer_id
+        self.available_camera_ids = camera_ids
+        self.socket.emit('authorize', {'user_id': self.user_id, 'client_type': 'producer', 'producer_id': self.producer_id, 'available_cameras': self.available_camera_ids, 'client_key': CLIENT_KEY})
 
     # Start HCP Client Producer
     def activate(self, camera_list):

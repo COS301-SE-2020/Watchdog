@@ -185,8 +185,8 @@ class Video:
             name = 'data/temp/video/' + str(self.id) + ext
             (w, h) = (480, 360)
             self.resize((w, h))
-            # file = VideoWriter(name, -1, fps, (w, h), True)
-            file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
+            file = VideoWriter(name, -1, fps, (w, h), True)
+            # file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
             print("Exporting Video [" + name + "]")
             for index in range(len(self.frames)):
                 if self.frames[index] is not None:
