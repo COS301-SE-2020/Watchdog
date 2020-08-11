@@ -85,3 +85,14 @@ def test_get_camera_config():
 
     assert len(response) > 0
     assert is_valid == True
+
+
+def test_update_location_already_exists():
+    is_valid = authenticate_user(username=username, password=password)
+
+    user = User.get_instance()
+    user.set_hcp_id(hcp_id)
+    response = update_location(old_location="backyard", new_location="backyard")
+
+    assert is_valid == True
+    assert response.status_code == 202
