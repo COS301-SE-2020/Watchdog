@@ -166,3 +166,24 @@ def update_location(old_location, new_location):
     if response.status_code is 202:
         print("the current location already exists, please try and use a location that is not in the current Site")
     return response
+
+
+def remove_camera(location, camera_id):
+    if not CONNECT:
+        return None
+    api_endpoint = BASE_URL + "/cameras"
+    user = User.get_instance()
+    if user is None:
+        print(f"\033[31mCould not remove camera {camera_id} from location {location} because you have not authenticated a valid user!")
+        return 400
+    token = user.get_token()
+    response = requests.delete(
+        url=api_endpoint,
+        params={
+            "site_id": user.hcp_id,
+            "location": location,
+            "camera_id": camera_id
+        },
+        headers={'Authorization': token}
+    )
+    return response
