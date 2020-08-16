@@ -142,3 +142,47 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
         print("File not found! Please ensure that the file path is correct!, current path provided: \
               " + path + "\nNOTE: the first parameter is the path to the resource without a leading backslash")
     return 500
+
+
+def update_location(old_location, new_location):
+    if not CONNECT:
+        return None
+    api_endpoint = BASE_URL + "/cameras"
+    user = User.get_instance()
+    if user is None:
+        print(f"\033[31mCould not update location {old_location} because you have not authenticated a valid user!")
+        return 400
+    token = user.get_token()
+    response = requests.put(
+        url=api_endpoint,
+        params={
+            "site_id": user.hcp_id,
+            "old_location": old_location,
+            "new_location": new_location
+        },
+        headers={'Authorization': token}
+    )
+    if response.status_code is 202:
+        print("the current location already exists, please try and use a location that is not in the current Site")
+    return response
+
+
+def remove_camera(location, camera_id):
+    if not CONNECT:
+        return None
+    api_endpoint = BASE_URL + "/cameras"
+    user = User.get_instance()
+    if user is None:
+        print(f"\033[31mCould not remove camera {camera_id} from location {location} because you have not authenticated a valid user!")
+        return 400
+    token = user.get_token()
+    response = requests.delete(
+        url=api_endpoint,
+        params={
+            "site_id": user.hcp_id,
+            "location": location,
+            "camera_id": camera_id
+        },
+        headers={'Authorization': token}
+    )
+    return response

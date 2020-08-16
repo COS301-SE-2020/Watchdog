@@ -48,8 +48,8 @@ def test_upload_camera():
         'path': ''
     }
 
-    camera_id = "c" + sha256((str(datetime.datetime.now().timestamp())).encode('ascii')).hexdigest()
-    response = upload_camera(camera_id, metadata)
+    cam_id = "c" + sha256((str(datetime.datetime.now().timestamp())).encode('ascii')).hexdigest()
+    response = upload_camera(cam_id, metadata)
 
     assert response.status_code == 200
     assert is_valid == True
@@ -81,3 +81,36 @@ def test_get_camera_config():
 
     assert len(response) > 0
     assert is_valid == True
+
+
+def test_update_location_already_exists():
+    is_valid = initialize_user()
+
+    response = update_location(old_location="backyard", new_location="backyard")
+
+    assert is_valid == True
+    assert response.status_code == 202
+
+
+def test_remove_camera():
+    is_valid = initialize_user()
+    location = 'Testing Bedroom'
+    # upload dummy camera to be deleted
+    metadata = {
+        "address": '0.0.0.0',
+        "port": '25',
+        "location": location,
+        "protocol": 'http',
+        'path': ''
+    }
+
+    cam_id = "c" + sha256((str(datetime.datetime.now().timestamp())).encode('ascii')).hexdigest()
+    upload_camera_response = upload_camera(camera_id=cam_id, metadata=metadata)
+    print("camera id:" +cam_id)
+    print("dummy camera upload response:\n"+str(upload_camera_response.text))
+    response = remove_camera(location=location, camera_id=cam_id)
+    print("-----------------\ndelete dummy camera upload response:\n"+str(response.text))
+    # check that the dummy camera was successfully inserted
+    assert upload_camera_response.status_code == 200
+    # check that the
+    assert response.status_code == 200
