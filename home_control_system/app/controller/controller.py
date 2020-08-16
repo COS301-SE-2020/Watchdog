@@ -44,16 +44,20 @@ class CameraController(threading.Thread):
         user_id = user.User.get_instance().user_id
         producer_id = user.User.get_instance().hcp_id
 
-        camera_ids = []
-        for address, camera in self.cameras.items():
-            camera_ids.append(camera.id)
-        self.client = connection.Producer(user_id, producer_id, camera_ids, self)
         self.live = True
         if self.cameras.__len__() == 0:
             print("There are currently no ip cameras detected...")
         # Start Streams
         for address, client in self.cameras.items():
             client.start()
+
+        camera_ids = []
+
+        for address, camera in self.cameras.items():
+            camera_ids.append(camera.id)
+
+        print('sending... ', camera_ids)
+        self.client = connection.Producer(user_id, producer_id, camera_ids, self)
 
     # stops the controller
     def stop(self):

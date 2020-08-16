@@ -22,9 +22,10 @@ class HomeControlPanel(QApplication, Component):
     def user_login(self, username, password):
         print('Logging in...')
         if services.login(username, password):
-            self.controller.start()
+            # self.controller.start()
             self.list.start()
             self.setup_environment()
+            self.controller.start()
         else:
             print('Incorrect Login Details')
 
