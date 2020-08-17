@@ -3,37 +3,14 @@ import json
 import datetime
 import requests
 from hashlib import sha256
-from service import config
+from . import config
 from .user import User, authenticate_user
 
 
 conf = config.configure()
-CONNECT = conf['services']['live']
+CONNECT = conf['services']['connect']
 URL = conf['services']['base_url']
 BASE_URL = URL + '/testing'
-
-
-def get_camera_setup():
-    if not CONNECT:
-        return None
-    user = User.get_instance()
-    api_endpoint = BASE_URL + '/sites'
-    if user.hcp_id is not None:
-        response = requests.get(
-            url=api_endpoint,
-            params={
-                "site_id": user.hcp_id
-            },
-            headers={'Authorization': user.get_token()}
-        )
-        response = json.loads(response.text)
-        if len(response['data']) > 0:  # if the current control panel has cameras
-            response = response['data']['control_panel'].get(user.hcp_id)
-            try:
-                response.pop('metadata')
-            except KeyError:
-                pass
-            return response
 
 
 def login(username, password):
@@ -95,7 +72,7 @@ def upload_camera(camera_id, metadata):
         },
         headers={'Authorization': token}
     )
-    print(str(response.text))
+    # print(str(response.text))
     return response
 
 
@@ -162,7 +139,7 @@ def update_location(old_location, new_location):
         },
         headers={'Authorization': token}
     )
-    if response.status_code is 202:
+    if response.status_code == 202:
         print("the current location already exists, please try and use a location that is not in the current Site")
     return response
 
@@ -186,3 +163,26 @@ def remove_camera(location, camera_id):
         headers={'Authorization': token}
     )
     return response
+
+
+def get_camera_setup():
+    if not CONNECT:
+        return None
+    user = User.get_instance()
+    api_endpoint = BASE_URL + '/sites'
+    if user.hcp_id is not None:
+        response = requests.get(
+            url=api_endpoint,
+            params={
+                "site_id": user.hcp_id
+            },
+            headers={'Authorization': user.get_token()}
+        )
+        response = json.loads(response.text)
+        if len(response['data']) > 0:  # if the current control panel has cameras
+            response = response['data']['control_panel'].get(user.hcp_id)
+            try:
+                response.pop('metadata')
+            except KeyError:
+                pass
+            return response

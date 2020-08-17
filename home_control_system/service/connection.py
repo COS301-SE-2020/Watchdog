@@ -2,9 +2,12 @@ import cv2
 import base64
 import random
 import socketio
-from .user import User
+from . import config
 
-CLIENT_KEY = 'supersecure'
+
+conf = config.configure()
+CLIENT_KEY = conf['services']['client']['key']
+SERVER_URL = conf['services']['stream_url']  # https://ec2-13-245-14-169.af-south-1.compute.amazonaws.com:8080
 
 
 # Front-End Client Asbtract Class
@@ -13,7 +16,13 @@ class Connection:
         self.id = self.generate_id(self)
         self.user_id = user_id
         self.socket = socketio.Client()
-        self.socket.connect('http://ec2-13-245-14-169.af-south-1.compute.amazonaws.com:8080')
+
+        try:
+            self.socket.connect(SERVER_URL)
+            self.connect = True
+        except socketio.exceptions.ConnectionError:
+            print("Failed to connect to stream server")
+            self.connect = False
 
         # Data : { user_id : string, camera_list : string }
         @self.socket.on('activate-broadcast')
@@ -49,7 +58,15 @@ class Producer(Connection):
         self.controller = controller
         self.producer_id = producer_id
         self.available_camera_ids = camera_ids
-        self.socket.emit('authorize', {'user_id': self.user_id, 'client_type': 'producer', 'producer_id': self.producer_id, 'available_cameras': self.available_camera_ids, 'client_key': CLIENT_KEY})
+
+        if self.connect:
+            self.socket.emit('authorize', {
+                'user_id': self.user_id,
+                'client_type': 'producer',
+                'producer_id': self.producer_id,
+                'available_cameras': self.available_camera_ids,
+                'client_key': CLIENT_KEY
+            })
 
     # Start HCP Client Producer
     def activate(self, camera_list):
@@ -65,7 +82,8 @@ class Producer(Connection):
 
     # Send frame through to Server
     def produce(self, camera_id, frame_px):
-        if self.active and camera_id in self.camera_list:
-            retval, buffer = cv2.imencode('.jpg', frame_px)
-            frame = str(base64.b64encode(buffer))
-            self.socket.emit('produce-frame', {'camera_id': camera_id, 'frame': frame})
+        if self.connect:
+            if self.active and camera_id in self.camera_list:
+                retval, buffer = cv2.imencode('.jpg', frame_px)
+                frame = str(base64.b64encode(buffer))
+                self.socket.emit('produce-frame', {'camera_id': camera_id, 'frame': frame})

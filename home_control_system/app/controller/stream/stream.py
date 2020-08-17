@@ -110,12 +110,12 @@ class Stream:
             # Detect Face in Current Frame
             if self.detect_person():
                 self.triggers.is_person = True
-                await self.feedback_person()
+                # await self.feedback_person()
                 self.frame_collector.collect(frame, Tag.DETECTED)
                 self.image_collector.collect(frame)
             elif self.detect_movement:
                 self.frame_collector.collect(frame, Tag.MOVEMENT)
-            await self.feedback_movement()
+            # await self.feedback_movement()
         else:
             self.frame_collector.collect(frame, Tag.PERIODIC)
 

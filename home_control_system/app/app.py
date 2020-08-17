@@ -1,78 +1,59 @@
-import random
-from hashlib import sha256
 from PyQt5.QtWidgets import QApplication
-from .containers import Window
-from .component import Component
 from .settings import Settings
+from .components.component import Component
+from .components.layouts.window import Window
 from .controller.controller import CameraController
-from .controller.location import LocationList
 from service import services
 
 
-class HomeControlPanel(QApplication, Component):
+class ControlPanel(QApplication, Component):
     def __init__(self):
-        super(HomeControlPanel, self).__init__([])
-        self.list = None  # needed
+        super(ControlPanel, self).__init__([])
         self.settings = Settings()
-        self.controller = CameraController()
+        self.controller = CameraController(self)
         self.window = Window(self)
-        self.list = LocationList(self.window)
+        self.current_location = ''
         self.setApplicationName("Watchdog Control Panel")
 
     def user_login(self, username, password):
         print('Logging in...')
         if services.login(username, password):
-            # self.controller.start()
-            self.list.start()
-            self.setup_environment()
-            self.controller.start()
+            if self.controller.setup_environment():
+                self.controller.start()
         else:
             print('Incorrect Login Details')
 
-    def setup_environment(self):
-        print('Loading Environment...')
-        count = 0
-        locations = services.get_camera_setup()
-        if locations is not None:
-            for location, cameras in locations.items():
-                count += 1
-                self.list.add_location(location)
-                if cameras is not None:
-                    for camera_id, camera in cameras.items():
-                        print(camera)
-                        camera = self.list.add_camera(
-                            camera_id,
-                            camera['address'],
-                            camera['port'],
-                            camera['path'],
-                            camera['protocol'],
-                            upload=False
-                        )
-                        if camera is not None:
-                            camera.id = camera_id
+    def change_location(self, location):
+        self.current_location = location
+        self.window.home.sidepanel.list.button_list.toggle_handler(self.current_location)
+        self.window.set_cameras(self.controller.get_cameras(self.current_location))
 
-    def add_camera(self, address, port='', path='', protocol=''):
-        id = 'c' + str(sha256((str(random.getrandbits(128))).encode('ascii')).hexdigest())
-        return self.list.add_camera(id, address, port, path, protocol)
+    # UI Added New Camera
+    def add_camera(self, location, address, port='', path='', protocol=''):
+        return self.controller.add_camera(location, address, port, path, protocol)
 
+    # UI Added New Location
     def add_location(self, location):
-        return self.list.add_location(location)
+        return self.controller.add_location(location)
 
-    def get_cameras(self):
-        if self.list is None:
-            return None
-        if self.list.index >= len(self.list.locations):
-            return []
-        return self.list.locations[self.list.index].cameras
+    # Return Camera Info for UI
+    def get_cameras(self, location):
+        return self.controller.get_cameras(location)
 
+    # Return Location Info for UI
     def get_locations(self):
-        if self.list is not None:
-            return self.list.locations
-        return []
+        return self.controller.get_locations()
 
+    # Return Resolution Info for UI
     def get_resolution(self):
         screen_resolution = self.desktop().screenGeometry()
         return (screen_resolution.width(), screen_resolution.height())
+
+    def toggle_list(self):
+        self.window.home.sidepanel.list.toggle()
+
+    def toggle_grid(self):
+        self.window.home.view.grid.toggle()
 
     def start(self):
         print(self.controller)

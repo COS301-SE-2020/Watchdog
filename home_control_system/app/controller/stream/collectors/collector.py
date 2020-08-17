@@ -24,6 +24,7 @@ fps = conf['video']['frames_per_second']
 clip_length = conf['video']['clip_length']
 recording_ratio = conf['video']['recording_ratio']
 capture_limit = conf['image']['capture_limit']
+image_threshold = conf['image']['image_threshold']
 
 
 # 1 = periodically saved frames (user defined length & frequency)

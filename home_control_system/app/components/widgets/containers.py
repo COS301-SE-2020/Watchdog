@@ -1,11 +1,9 @@
 from cv2 import resize
 from PyQt5.QtCore import (
     Qt,
-    QSize,
     QPoint
 )
 from PyQt5.QtGui import (
-    QIcon,
     QImage,
     QPixmap,
     QPainter
@@ -16,252 +14,43 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
-    QPushButton,
     QGraphicsDropShadowEffect,
     QAction
 )
-from .component import Component
-from .style import Style
-from .popups import (
-    Popup,
-    PopupButton,
+from ..component import Component
+from ..style import Style
+from ..popups import (
     LocationPopup,
     CameraPopup
 )
-from .spacers import (
-    QHSeperationLine,
-    QVSeperationLine
+from .spacers import QHSeperationLine
+from .buttons import (
+    ListButton,
+    PlusButton
 )
 
-
-class PlusButton(PopupButton):
-    def __init__(self, ascendent, popup_class=Popup):
-        super(PlusButton, self).__init__(ascendent=ascendent, popup_class=popup_class)
-        map_plus = QPixmap('assets/icons/plus.png')
-        self.setIcon(QIcon(map_plus))
-        self.setIconSize(QSize(Style.sizes.icon_small, Style.sizes.icon_small))
-        self.setStyleSheet('border: @None; margin: @None; padding: @None;')
-
-
-class ButtonSwitch(QVBoxLayout, Component):
-    def __init__(self, ascendent, label):
-        super(ButtonSwitch, self).__init__(ascendent=ascendent)
-        self.active = False
-        self.marker = QHSeperationLine()
-        self.button = QPushButton()
-        self.button.setText(label)
-        self.button.setMinimumHeight(int(Style.unit / 12.8))
-        self.marker.setContentsMargins(0, 0, 0, 0)
-
-        self.button.setMinimumWidth(int(Style.unit / 4))
-
-        self.addWidget(self.button)
-        self.addWidget(self.marker)
-
-        self.off()
-
-    def draw(self):
-        if self.active:
-            self.button.setStyleSheet(Style.replace_variables('margin: @None; \
-                                        padding: @None; \
-                                        margin-top: @PaddingSmall; \
-                                        color: @HighlightColor;'))
-            self.marker.setStyleSheet(Style.replace_variables('background-color: @HighlightColor; \
-                                        margin: @None; \
-                                        padding: @None;'))
-        else:
-            self.button.setStyleSheet(Style.replace_variables(('margin: @None; \
-                                        padding: @None; \
-                                        margin-top: @PaddingSmall; \
-                                        color: @LightTextColor;')))
-            self.marker.setStyleSheet(Style.replace_variables(('background-color: @ColorDark; \
-                                        margin: @None; \
-                                        padding: @None; \
-                                        margin-top: @PaddingSmall;')))
-        self.update()
-
-    def on(self):
-        self.active = True
-        self.draw()
-
-    def off(self):
-        self.active = False
-        self.draw()
-
-    def toggle(self):
-        if self.active:
-            self.active = False
-        else:
-            self.active = True
-        self.draw()
-
-
-class ButtonToggle(QVBoxLayout, Component):
-    def __init__(self, ascendent, left_label, right_label):
-        super(ButtonToggle, self).__init__(ascendent=ascendent)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setSpacing(0)
-
-        self.toggle_layout = QHBoxLayout()
-        self.toggle_layout.setContentsMargins(0, 0, 0, 0)
-        self.toggle_layout.setSpacing(0)
-        self.toggle_layout.setAlignment(Qt.AlignCenter)
-
-        self.left_button = ButtonSwitch(self, left_label)
-        self.left_button.on()
-
-        self.right_button = ButtonSwitch(self, right_label)
-        self.right_button.off()
-
-        self.left_button.button.setStyleSheet(Style.replace_variables('border-radius: @PaddingSmall'))
-        self.right_button.button.setStyleSheet(Style.replace_variables('border-radius: @PaddingSmall'))
-
-        self.left_container = QWidget()
-        self.left_container.setLayout(self.left_button)
-
-        self.right_container = QWidget()
-        self.right_container.setLayout(self.right_button)
-
-        self.spacer = QVSeperationLine()
-
-        self.toggle_layout.addWidget(self.left_container)
-        self.toggle_layout.addWidget(self.spacer)
-        self.toggle_layout.addWidget(self.right_container)
-
-        self.contain_toggle = QWidget()
-        self.contain_toggle.setLayout(self.toggle_layout)
-        self.contain_toggle.setMinimumHeight(Style.unit / 8)
-
-        self.left_button.setContentsMargins(0, 0, 0, 0)
-        self.right_button.setContentsMargins(0, 0, 0, 0)
-
-        self.setAlignment(Qt.AlignCenter)
-        self.addWidget(self.contain_toggle)
-
-    def toggle_handler(self):
-        self.left_button.toggle()
-        self.right_button.toggle()
-
-
-class CenterToggle(QWidget, Component):
-    def __init__(self, ascendent, left_label, right_label):
-        super(CenterToggle, self).__init__(ascendent=ascendent)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setStyleSheet(Style.replace_variables('background-color: @LightColor; \
-                                                    border-radius: @MediumRadius; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle = ButtonToggle(ascendent, left_label, right_label)
-        self.toggle.left_button.button.clicked.connect(self.toggle_handler)
-        self.toggle.right_button.button.clicked.connect(self.toggle_handler)
-        self.toggle.contain_toggle.setMinimumWidth(Style.unit * 0.6)
-        self.toggle.contain_toggle.setMaximumWidth(Style.unit)
-        self.toggle.left_container.setStyleSheet(Style.replace_variables('text-align: center; \
-                                                    border-radius: @MediumRadius;'))
-        self.toggle.right_container.setStyleSheet(Style.replace_variables('text-align: center; \
-                                                    border-radius: @MediumRadius;'))
-        self.toggle.contain_toggle.setStyleSheet(Style.replace_variables('background-color: @LightColor; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle.spacer.setStyleSheet(Style.replace_variables('background-color: @LightTextColor; \
-                                                    margin: @None;'))
-        container_layout = QHBoxLayout()
-        container_layout.setAlignment(Qt.AlignCenter)
-        container_layout.addStretch()
-        container_layout.addLayout(self.toggle)
-        container_layout.addStretch()
-        self.setLayout(container_layout)
-
-    def toggle_handler(self):
-        Component.root.window.home.view.grid.toggle()
-        self.toggle.toggle_handler()
-        self.update()
-
-
-class PanelToggle(QWidget, Component):
-    def __init__(self, ascendent, left_label, right_label):
-        super(PanelToggle, self).__init__(ascendent=ascendent)
-        # self.setMinimumWidth(self.width)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setStyleSheet(Style.replace_variables('background-color: @LightColor; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle = ButtonToggle(ascendent, left_label, right_label)
-        self.toggle.left_button.button.clicked.connect(self.toggle_handler)
-        self.toggle.right_button.button.clicked.connect(self.toggle_handler)
-        self.toggle.contain_toggle.setMinimumWidth(self.width)
-        self.toggle.left_container.setMinimumWidth(self.width / 2)
-        self.toggle.right_container.setMinimumWidth(self.width / 2)
-        self.toggle.left_container.setStyleSheet(Style.replace_variables('text-align: center; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle.right_container.setStyleSheet(Style.replace_variables('text-align: center; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle.contain_toggle.setStyleSheet(Style.replace_variables('background-color: @LightColor; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle.spacer.setStyleSheet(Style.replace_variables('background-color: black; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-
-        contain_toggle = QHBoxLayout()
-        contain_toggle.addStretch(1)
-        contain_toggle.addLayout(self.toggle)
-        contain_toggle.addStretch(1)
-        contain_toggle.setContentsMargins(0, 0, 0, 0)
-        contain_toggle.setSpacing(0)
-
-        widget_contain = QWidget()
-        widget_contain.setStyleSheet(Style.replace_variables('background-color: @LightColor; \
-                                                        margin: @None; \
-                                                        padding: @None;'))
-        widget_contain.setLayout(contain_toggle)
-
-        contain_layout = QHBoxLayout()
-        contain_layout.addWidget(widget_contain)
-        contain_layout.setSpacing(0)
-        contain_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.setLayout(contain_layout)
-
-    def toggle_handler(self):
-        Component.root.window.home.sidepanel.list.toggle()
-        self.toggle.toggle_handler()
-        self.update()
-
-
-class ListButton(QPushButton, Component):
-    def __init__(self, index, ascendent=None):
-        super(ListButton, self).__init__(ascendent=ascendent)
-        self.index = index
-        self.clicked.connect(self.toggle_handler)
-
-    def toggle_handler(self):
-        self.ascendent.toggle_handler(self.index)
 
 class ButtonList(QVBoxLayout, Component):
     def __init__(self, ascendent):
         super(ButtonList, self).__init__(ascendent=ascendent)
         self.setAlignment(Qt.AlignTop)
-        self.buttons = []
-        self.highlights = []
-        self.active_index = 0
+        self.buttons = {}
+        self.highlights = {}
+        self.active_index = ''
         self.append_plus()
 
     def add_button(self, label):
-        if len(self.buttons) > 0:
-            index = len(self.buttons) - 1
-            self.removeWidget(self.buttons[index])
-            self.buttons[index].deleteLater()
-            del self.buttons[index]
+        seperator = QHSeperationLine()
 
-        btn = ListButton(len(self.highlights), self)
+        if len(self.buttons) > 0:
+            self.removeWidget(self.buttons[''])
+            self.buttons[''].deleteLater()
+            del self.buttons['']
+
+        btn = ListButton(label, self)
         btn.setText(label)
         btn.setFixedHeight(Style.unit / 4 * 0.8)
         btn.setMinimumWidth(self.width * 0.9)
-
-        seperator = QHSeperationLine()
 
         btn.setStyleSheet(Style.replace_variables('margin-left: @LargeMargin; \
                                 font: @ButtonTextSize @TextFont; \
@@ -271,22 +60,24 @@ class ButtonList(QVBoxLayout, Component):
                                 padding-right: @MediumPadding; \
                                 background-color: @DarkColor;'))
 
-        self.buttons.append(btn)
-        self.highlights.append(seperator)
+        self.buttons[label] = btn
+        self.highlights[label] = seperator
 
         self.addWidget(btn)
-        
         self.addWidget(seperator)
-
         self.append_plus()
-
-        self.toggle_handler(0)
+        self.toggle_handler(label)
 
     def append_plus(self):
         btn = PlusButton(self, LocationPopup)
+        btn_holder = QHBoxLayout()
+        btn_container = QWidget()
+        inner_layout = QHBoxLayout()
+        outer_layout = QVBoxLayout()
+        layout_container = QWidget()
+
         btn.setContentsMargins(0, 0, 0, 0)
 
-        btn_holder = QHBoxLayout()
         btn_holder.setAlignment(Qt.AlignCenter)
         btn_holder.addStretch()
         btn_holder.addWidget(btn)
@@ -294,23 +85,18 @@ class ButtonList(QVBoxLayout, Component):
         btn_holder.setContentsMargins(0, 0, 0, 0)
         btn_holder.setSpacing(0)
 
-        btn_container = QWidget()
         btn_container.setLayout(btn_holder)
 
-        inner_layout = QHBoxLayout()
         inner_layout.setAlignment(Qt.AlignCenter)
         inner_layout.addWidget(btn_container)
 
-        outer_layout = QVBoxLayout()
         outer_layout.setAlignment(Qt.AlignCenter)
         outer_layout.addLayout(inner_layout)
 
-        layout_container = QWidget()
         layout_container.setLayout(outer_layout)
-
         layout_container.setStyleSheet(Style.replace_variables('margin: @None; padding-top: @PaddingMedium;'))
 
-        self.buttons.append(layout_container)
+        self.buttons[''] = layout_container
         self.addWidget(layout_container)
 
     def toggle_handler(self, btn_index):
@@ -319,29 +105,29 @@ class ButtonList(QVBoxLayout, Component):
                                                             font: @ButtonTextSize @TextFont; \
                                                             font-weight: 15; \
                                                             color: @LightTextColor;'))
-            if self.highlights[self.active_index] is not None:
+            if self.active_index in self.highlights and self.highlights[self.active_index] is not None:
                 self.highlights[self.active_index].setStyleSheet(Style.replace_variables('padding-left: @MediumPadding; \
                                                             padding-right: @MediumPadding; \
                                                             background-color: @DarkColor;'))
+            if btn_index in self.buttons:
+                self.buttons[btn_index].setStyleSheet(Style.replace_variables('margin-left: @LargeMargin; \
+                                                                font: @ButtonTextSize @TextFont; \
+                                                                font-weight: 15; \
+                                                                color: @HighlightColor;'))
+                if self.highlights[btn_index] is not None:
+                    self.highlights[btn_index].setStyleSheet(Style.replace_variables('padding-left: @MediumPadding; \
+                                                                padding-right: @MediumPadding; \
+                                                                background-color: @HighlightColor;'))
+                self.active_index = btn_index
 
-            self.buttons[btn_index].setStyleSheet(Style.replace_variables('margin-left: @LargeMargin; \
-                                                            font: @ButtonTextSize @TextFont; \
-                                                            font-weight: 15; \
-                                                            color: @HighlightColor;'))
-            if self.highlights[btn_index] is not None:
-                self.highlights[btn_index].setStyleSheet(Style.replace_variables('padding-left: @MediumPadding; \
-                                                            padding-right: @MediumPadding; \
-                                                            background-color: @HighlightColor;'))
-            self.active_index = btn_index
-            Component.root.list.changeActive(self.active_index)
+    def clear_buttons(self):
+        for i in reversed(range(self.count())): 
+            self.itemAt(i).widget().deleteLater()
 
 
 class StreamView(QWidget):
-    count = 0
-
     def __init__(self, camera, parent=None):
         super(StreamView, self).__init__(parent)
-        self.id = StreamView.count
         self.qp = QPainter()
         self.image = QImage()
         self.camera = camera
@@ -351,7 +137,6 @@ class StreamView(QWidget):
         self.setContentsMargins(0, 0, 0, 0)
         self.setMinimumWidth(Style.unit)
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
-        StreamView.count += 1
 
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
         quitAction = QAction("Remove", self)

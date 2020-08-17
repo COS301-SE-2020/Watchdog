@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QFrame,
     QSizePolicy
 )
-from .style import Style
+from ..style import Style
 
 
 class QHSeperationLine(QFrame):

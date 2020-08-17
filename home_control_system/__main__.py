@@ -1,8 +1,7 @@
-from app.app import HomeControlPanel
+from app import home
 
 
 def main():
-    home = HomeControlPanel()  # change to pass in user object
     home.start()
 
 

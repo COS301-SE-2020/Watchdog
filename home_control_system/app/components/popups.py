@@ -14,16 +14,6 @@ from .component import Component
 from .style import Style
 
 
-class PopupButton(QPushButton, Component):
-    def __init__(self, ascendent, popup_class):
-        super(PopupButton, self).__init__(ascendent=ascendent)
-        self.clicked.connect(self.buildPopup)
-        self.popup = popup_class(ascendent=self)
-
-    def buildPopup(self):
-        self.popup.show()
-
-
 class Popup(QWidget, Component):
     def __init__(self, ascendent):
         super(Popup, self).__init__(ascendent=ascendent)
@@ -52,7 +42,6 @@ class SettingsPopup(Popup):
 
         hbox = QHBoxLayout()
         hbox.addWidget(QRadioButton('Broadcast'))
-        hbox.addWidget(QRadioButton('Network'))
         hbox.addWidget(QRadioButton('Off'))
         hbox.addStretch()
 
@@ -79,8 +68,8 @@ class SettingsPopup(Popup):
         self.lbl_streaming.setStyleSheet(Style.replace_variables('border: @None;'))
         self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
 
-        self.input_location = QLineEdit(Component.root.settings.site)
-        self.input_address = QLineEdit(Component.root.settings.address)
+        self.input_location = QLineEdit(Component.root.settings.settings['site'])
+        self.input_address = QLineEdit(Component.root.settings.settings['address'])
 
         self.layout = QFormLayout()
         self.layout.setAlignment(Qt.AlignRight)
@@ -120,9 +109,10 @@ class SettingsPopup(Popup):
 
     def complete(self):
         print("Settings updated")
-        Component.root.settings.site = self.input_location.text()
-        Component.root.settings.address = self.input_address.text()
-        Component.root.window.home.sidepanel.header.lbl_location.setText(Component.root.settings.site)
+        Component.root.settings.change_setting('site', value=self.input_location.text())
+        Component.root.settings.change_setting('address', value=self.input_address.text())
+        Component.root.window.home.sidepanel.header.lbl_location.setText(Component.root.settings.settings['site'])
+
 
 class LoginPopup(Popup):
     def __init__(self, ascendent):
@@ -202,8 +192,9 @@ class LoginPopup(Popup):
             self.input_password.text(),
         )
 
+
 class CameraPopup(Popup):
-    def __init__(self, ascendent):
+    def __init__(self, ascendent, label='', address='', port='', protocol='', path=''):
         super(CameraPopup, self).__init__(ascendent=ascendent)
 
         vbox = QVBoxLayout()
@@ -229,6 +220,7 @@ class CameraPopup(Popup):
         hbox_click.addWidget(self.btn_cancel)
         hbox_click.addStretch()
 
+        self.lbl_location = QLabel('Room')
         self.lbl_name = QLabel('Camera')
         self.lbl_address = QLabel('IP Address')
         self.lbl_port = QLabel('Port')
@@ -236,6 +228,7 @@ class CameraPopup(Popup):
         self.lbl_path = QLabel('Path (Optional)')
         self.lbl_empty = QLabel()
 
+        self.lbl_location.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_name.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_address.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_port.setStyleSheet(Style.replace_variables('border: @None'))
@@ -243,15 +236,16 @@ class CameraPopup(Popup):
         self.lbl_path.setStyleSheet(Style.replace_variables('border: @None'))
         self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None'))
 
-        self.input_location = QLineEdit('Android Camera')
-        # self.input_address = QLineEdit('data/sample/surveillance1.mp4')
-        self.input_address = QLineEdit('10.0.0.101')
-        self.input_port = QLineEdit('8080')
-        self.input_protocol = QLineEdit('rtsp')
-        self.input_path = QLineEdit('h264_ulaw.sdp')
+        self.lbl_current_location = QLabel(Component.root.current_location)
+        self.input_location = QLineEdit(label)
+        self.input_address = QLineEdit(address)
+        self.input_port = QLineEdit(port)
+        self.input_protocol = QLineEdit(protocol)
+        self.input_path = QLineEdit(path)
 
         self.layout = QFormLayout()
         self.layout.setAlignment(Qt.AlignRight)
+        self.layout.addRow(self.lbl_location, self.lbl_current_location)
         self.layout.addRow(self.lbl_name, self.input_location)
         self.layout.addRow(self.lbl_address, self.input_address)
         self.layout.addRow(self.lbl_port, self.input_port)
@@ -290,6 +284,7 @@ class CameraPopup(Popup):
 
     def complete(self):
         Component.root.add_camera(
+            self.lbl_current_location.text(),
             self.input_address.text(),
             self.input_port.text(),
             self.input_path.text(),
