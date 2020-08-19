@@ -1,1 +1,0 @@
-poetry run pytest home_control_system

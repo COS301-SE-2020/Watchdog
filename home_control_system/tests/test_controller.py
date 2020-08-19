@@ -16,8 +16,12 @@ from app.controller.controller import CameraController
 def test_add_client():
     controller = CameraController()
     address = 'data/sample/big_chungus.mp4'
-    response = controller.add_camera(address, '', '', 'Video', '')
+    controller.add_location('x')
+    response = controller.load_camera('x', 'q', address, '', '', '')
     stats = controller.client_stats(address)
+
+    print(response)
+    print(stats)
 
     assert response is not None
     assert stats['is_connected'] is True
@@ -26,8 +30,9 @@ def test_add_client():
 def test_test_add_client_same_address():
     controller = CameraController()
     address = 'data/sample/big_chungus.mp4'
-    response1 = controller.add_camera(address, '', '', 'Video', '')
-    response2 = controller.add_camera(address, '', '', 'Video', '')
+    controller.add_location('x')
+    response1 = controller.load_camera('x', 'q', address, '', '', '')
+    response2 = controller.load_camera('x', 'q', address, '', '', '')
 
     assert response1 is not None
     assert response2 is None
@@ -36,12 +41,14 @@ def test_test_add_client_same_address():
 def test_add_clients():
     controller = CameraController()
 
+    controller.add_location('x')
+
     address1 = 'data/sample/big_chungus.mp4'
-    response1 = controller.add_camera(address1, '', '', 'Video', '')
+    response1 = controller.load_camera('x', 'q', address1, '', '', '')
     stats1 = controller.client_stats(address1)
 
     address2 = 'data/sample/still_grey.mp4'
-    response2 = controller.add_camera(address2, '', '', 'Video', '')
+    response2 = controller.load_camera('x', 'q', address2, '', '', '')
     stats2 = controller.client_stats(address2)
 
     assert response1 is not None
@@ -54,7 +61,8 @@ def test_add_clients():
 def test_controller_receives_frames():
     controller = CameraController()
     address = 'data/sample/big_chungus.mp4'
-    response = controller.add_camera(address, '', '', 'Video', '')
+    controller.add_location('x')
+    response = controller.load_camera('x', 'q', address, '', '', '')
 
     controller.run()
     sleep(0.5)
@@ -69,7 +77,8 @@ def test_controller_receives_frames():
 def test_frames_without_movement():
     controller = CameraController()
     address = 'data/sample/still_grey.mp4'
-    response = controller.add_camera(address, '', '', 'Video', '')
+    controller.add_location('x')
+    response = controller.load_camera('x', 'q', address, '', '', '')
 
     controller.run()
     sleep(0.5)
@@ -85,7 +94,8 @@ def test_frames_without_movement():
 def test_frames_with_movement():
     controller = CameraController()
     address = 'data/sample/big_chungus.mp4'
-    response = controller.add_camera(address, '', '', 'Video', '')
+    controller.add_location('x')
+    response = controller.load_camera('x', 'q', address, '', '', '')
 
     controller.run()
     sleep(1.5)

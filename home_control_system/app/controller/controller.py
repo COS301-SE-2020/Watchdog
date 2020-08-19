@@ -14,7 +14,7 @@ site_label = conf['settings']['site']
 
 
 class CameraController(threading.Thread):
-    def __init__(self, app):
+    def __init__(self, app=None):
         threading.Thread.__init__(self)
         self.client = None
         self.live = False
@@ -40,15 +40,17 @@ class CameraController(threading.Thread):
                             camera['protocol']
                         )
                         if loaded_camera is None:
-                            self.app.window.fix_camera('', camera['address'], camera['port'], camera['protocol'], camera['path'])
+                            if self.app is not None:
+                                self.app.window.fix_camera('', camera['address'], camera['port'], camera['protocol'], camera['path'])
                             services.remove_camera(location, camera_id)
             self.update_widgets()
             return True
         return False
 
     def update_widgets(self):
-        self.app.window.set_locations(self.get_locations())
-        self.app.window.set_cameras(self.get_cameras(location=self.app.current_location))
+        if self.app is not None:
+            self.app.window.set_locations(self.get_locations())
+            self.app.window.set_cameras(self.get_cameras(location=self.app.current_location))
 
     def get_cameras(self, location):
         cameras = []
@@ -70,7 +72,8 @@ class CameraController(threading.Thread):
     def add_location(self, label):
         if label not in self.locations:
             self.locations[label] = Location(label, self)
-            self.app.change_location(label)
+            if self.app is not None:
+                self.app.change_location(label)
             self.update_widgets()
 
     def load_camera(self, location, camera_id, address, port, path, protocol):
@@ -108,9 +111,6 @@ class CameraController(threading.Thread):
 
     # starts the controller
     def run(self):
-        user_id = services.User.get_instance().user_id
-        producer_id = services.User.get_instance().hcp_id
-
         self.live = True
         if self.cameras.__len__() == 0:
             print("There are currently no ip cameras detected...")
@@ -124,12 +124,17 @@ class CameraController(threading.Thread):
         for address, camera in self.cameras.items():
             camera_ids.append(camera.id)
 
-        print('sending... ', camera_ids)
-        self.client = connection.Producer(user_id, producer_id, camera_ids, self)
+        # print('sending... ', camera_ids)
+        # self.client = connection.Producer(user_id, producer_id, camera_ids, self)
 
-        while(True):
-            self.app.window.home.view.grid.viewer.refresh()
-            time.sleep(1 / 30)
+        if self.app is not None:
+            user_id = services.User.get_instance().user_id
+            producer_id = services.User.get_instance().hcp_id
+            print('sending... ', camera_ids)
+            self.client = connection.Producer(user_id, producer_id, camera_ids, self)
+            while(True):
+                self.app.window.home.view.grid.viewer.refresh()
+                time.sleep(1 / 30)
 
     # stops the controller
     def stop(self):

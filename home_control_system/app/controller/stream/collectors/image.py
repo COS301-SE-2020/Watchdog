@@ -41,7 +41,7 @@ class ImageCollector(threading.Thread):
                     del self.queue[step]
 
     def flush(self):
-        start = time_now()
+        # start = time_now()
         self.sort()
         if len(self.queue) == 0:
             return None
@@ -58,8 +58,9 @@ class ImageCollector(threading.Thread):
             )
             images.append(image)
             image.export()
-            diff = time_now() - start
-            wait = max(capture_limit - diff, 0.0)
+            # diff = time_now() - start
+            # wait = max(capture_limit - diff, 0.0)
+            wait = capture_limit
             if wait > 0.0:
                 count += 1
                 time.sleep(wait)
