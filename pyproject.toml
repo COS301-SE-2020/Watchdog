@@ -16,6 +16,8 @@ opencv-python = "3.4.8.29"
 warrant = "^0.6.1"
 PyQt5 = "^5.15.0"
 python-socketio = "^4.6.0"
+pyinstaller = "^4.0"
+pywin32 = "^228"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
