@@ -38,20 +38,53 @@ redundant video storage our product utilizes machine learning and a modern cloud
 ### Build Instructions:
 
 **Prerequisites**:
-- Node
+- poetry
+- python
 
 
-**Intructions**:
-1. Clone this repo
+## How to run the code in this repo:
+1. Install [poetry](https://pypi.org/project/poetrify/). This is used to manage your Python version.
+2. Install all the dependencies by running the following:
+```
+poetry install
+```
+3. Run the HCP:
+```
+poetry run python home_control_system
+```
 
+## How do I set up my IDE?
 
-### Usage Instructions
+Poetry copies your Python interpreter (the one we specified with pyenv) to a special folder, and installs project dependencies into this folder. This is called a Virtual Environment. If there is a `poetry.lock` file then running `poetry install` will install _exactly_ these dependencies, or (if `poetry.lock` is missing) it will install the dependencies from `pyproject.toml` and "lock" them by creating a new `poetry.lock`.
 
+Running `poetry shell` or `poetry run` appends your project's Python interpreter to the front of your `PATH` variable to ensure that you don't use any others. But your IDE must know the path to this Python interpreter if you want it to correctly lint and provide intellisense for your code.
 
-Run the following command:
+You can get the path pretty easily:
 
+   ```bash
+   poetry run which python
+   ```
 
-- poetry run python home_control_system
+- If you're using **VSCode** you'll need to install the Python extension and provide the above path to the command `> Select Python Interpreter`.
+- If you're using **PyCharm**, then specify it under `Preferences > Project: Project Interpreter`. Future versions of [PyCharm may find it automatically](https://youtrack.jetbrains.com/issue/PY-30702).
+
+In order to point your IDE to PYTHONPATH in your IDE to fix import resolution problems, follow this link (https://stackoverflow.com/questions/17198319/how-to-configure-custom-pythonpath-with-vm-and-pycharm)
+
+On a deploy, it doesn't know anything about our dependencies in `pyproject.toml`—it's old school and looks for a `requirements.txt` instead. So we need to make sure that this file exists and contains the same dependencies as `pyproject.toml`:
+
+   ```bash
+   poetry run pip freeze > requirements.txt
+   ```
+
+OR
+
+we have installed a pyPi library called **poetrify** that is used to pipe the required dependencies to the requirements.txt. All you need to do is run the following command:
+
+   ```bash
+   poetry run poetrify generate -d -s requirements.txt
+   ```
+
+If you change dependencies, you'll need to remember to generate this file.
 
 
 ### Members
@@ -91,33 +124,3 @@ I have been exposed to an event-driven system that adopted modern cloud architec
 
 I have been involved in a multitude of projects inside and outside of the EBIT faculty. I have particular interest in front-end multimedia design to back-end REST API and hosting tasks. I have familiarity in databases both with and without SQ. I can use these skills in the request handling and data handling of our projects and ensure validated, clean and lightweight data.
 
-
-
- to the front of your `PATH` variable to ensure that you don't use any others. But your IDE must know the path to this Python interpreter if you want it to correctly lint and provide intellisense for your code.
-
-You can get the path pretty easily:
-
-   ```bash
-   poetry run which python
-   ```
-
-- If you're using **VSCode** you'll need to install the Python extension and provide the above path to the command `> Select Python Interpreter`.
-- If you're using **PyCharm**, then specify it under `Preferences > Project: Project Interpreter`. Future versions of [PyCharm may find it automatically](https://youtrack.jetbrains.com/issue/PY-30702).
-
-In order to point your IDE to PYTHONPATH in your IDE to fix import resolution problems, follow this link (https://stackoverflow.com/questions/17198319/how-to-configure-custom-pythonpath-with-vm-and-pycharm)
-
-On a deploy, it doesn't know anything about our dependencies in `pyproject.toml`—it's old school and looks for a `requirements.txt` instead. So we need to make sure that this file exists and contains the same dependencies as `pyproject.toml`:
-
-   ```bash
-   poetry run pip freeze > requirements.txt
-   ```
-
-OR
-
-we have installed a pyPi library called **poetrify** that is used to pipe the required dependencies to the requirements.txt. All you need to do is run the following command:
-
-   ```bash
-   poetry run poetrify generate -d -s requirements.txt
-   ```
-
-If you change dependencies, you'll need to remember to generate this file.
