@@ -2,7 +2,7 @@
 
 This repository contains all the code required to run the home control panel which is used to connect all the IP cameras on the user's local machine
 
-###Watchdog Repositories
+### Watchdog Repositories
 
 - [API](https://github.com/COS301-SE-2020/Watchdog)
 - [Home Control Panel](https://github.com/COS301-SE-2020/Watchdog-API)
@@ -16,13 +16,11 @@ This repository contains all the code required to run the home control panel whi
 
 
 ### Documentation
-- [SRS Document]()
-- [Technical Installation Manual]()
+- [SRS Document - version 3](https://drive.google.com/file/d/1dWVx8BrT0Nt8GKdyHLqmjKYzg1aGlRWS/view?usp=sharing)
+- [Technical Installation Manual](https://drive.google.com/file/d/1ouZquOIizf8omvOCnzMCG-wwS2qJyhzi/view?usp=sharing)
 - [Watchdog User Manual](https://drive.google.com/file/d/1gu36_44IbnKeGjC61VaDXLu3mLKEqTvr/view?usp=sharing)
 - [Coding Standards Document](https://drive.google.com/file/d/1X4IsmHWHwBjvmg1aaUua1HiC6rs6w5pO/view?usp=sharing)
-- [Architectural Designs Document]()
-- [Project Management Tool (Clubhouse)](https://app.clubhouse.io/lynksolutions/) (If you 
-require access please email a team member and we will add you to our workspace, since clubhouse does not allow external viewing)
+- [Project Management Tool (Clubhouse)](https://app.clubhouse.io/lynksolutions/stories) (If you require access please email a team member and we will add you to our workspace, since clubhouse does not allow external viewing)
 
 
 ### Deployed Website Link:

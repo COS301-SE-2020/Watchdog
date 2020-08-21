@@ -21,3 +21,4 @@ data/temp/image/*
 data/temp/video/*
 # Other
 poetry.lock
+*.cpython-37.pyc
