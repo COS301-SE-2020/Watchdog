@@ -41,6 +41,7 @@ class Stream:
         self.current_frame = None
         self.address = address
         self.stack = []
+        self.stream_connection = None
         # Stream View
         self.stream_views = []
         # Config for Periodic Video
@@ -109,12 +110,12 @@ class Stream:
             # Detect Face in Current Frame
             if self.detect_person():
                 self.triggers.is_person = True
-                await self.feedback_person()
+                # await self.feedback_person()
                 self.frame_collector.collect(frame, Tag.DETECTED)
                 self.image_collector.collect(frame)
             elif self.detect_movement:
                 self.frame_collector.collect(frame, Tag.MOVEMENT)
-            await self.feedback_movement()
+            # await self.feedback_movement()
         else:
             self.frame_collector.collect(frame, Tag.PERIODIC)
 
@@ -125,6 +126,9 @@ class Stream:
             if self.config.stop_time < now:
                 self.config.start_time = self.config.stop_time + self.config.gap_length
                 self.config.stop_time = self.config.start_time + self.config.clip_length
+
+        if self.stream_connection is not None:
+            self.stream_connection.produce(self.camera_id, self.current_frame)
 
     # Detects Movement in Frame
     #   Returns True if Movement

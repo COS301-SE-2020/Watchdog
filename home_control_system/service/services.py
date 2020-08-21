@@ -3,66 +3,17 @@ import json
 import datetime
 import requests
 from hashlib import sha256
-from service import config
+from . import config
 from .user import User, authenticate_user
 
 
 conf = config.configure()
-CONNECT = conf['services']['live']
+CONNECT = conf['services']['connect']
 URL = conf['services']['base_url']
 BASE_URL = URL + '/testing'
 
 
-# TODO: [NEEDED]
-#   upload_location() - this is for the locations within the hcp i.e. Kitchen, bedroom... metadata: {id, location}
-
-
-def get_location_setup():
-    if not CONNECT:
-        return None  # hcp has no cameras or site is not in the db
-    user = User.get_instance()
-    api_endpoint = BASE_URL + '/sites'
-    if user.hcp_id is not None:
-        response = requests.get(
-            url=api_endpoint,
-            params={
-                "site_id": user.hcp_id
-            },
-            headers={'Authorization': user.get_token()}
-        )
-        response = json.loads(response.text)
-        if len(response['data']) > 0:  # if the current control panel has cameras
-            locations = []
-            cameras = response['data']['control_panel'].get(user.hcp_id)['cameras']
-            for camera in cameras:
-                locations.append(cameras.get(camera)['room'])
-            locations = list(set(locations))  # get list of no duplicate rooms
-            locations = [empty_room for empty_room in locations if empty_room != ""]  # remove cameras that are not part of a room
-            locations.sort()  # sort the list in alphabetical order in ascending order
-            return locations
-
-
-def get_camera_setup():
-    if not CONNECT:
-        return None  # hcp has no cameras or site is not in the db
-    user = User.get_instance()
-    api_endpoint = BASE_URL + '/sites'
-    if user.hcp_id is not None:
-        response = requests.get(
-            url=api_endpoint,
-            params={
-                "site_id": user.hcp_id
-            },
-            headers={'Authorization': user.get_token()}
-        )
-        response = json.loads(response.text)
-        if len(response['data']) > 0:  # HCP id is assigned for this user
-            response = response['data']['control_panel']
-            response = response.get(user.hcp_id)['cameras']
-            return response
-
-
-def login(username, password, post_site=True):
+def login(username, password):
     if not CONNECT:
         return True
     # authenticate user
@@ -72,11 +23,12 @@ def login(username, password, post_site=True):
         user = User.get_instance()
         if user is None:
             return False
-        hcp_id = "s" + sha256((str(datetime.datetime.now().timestamp()) + user.user_id).encode('ascii')).hexdigest()
 
+        hcp_id = "s" + sha256((str(datetime.datetime.now().timestamp()) + user.user_id).encode('ascii')).hexdigest()
         user_logged_in_before = False
         user_details = {}
         hash_file = 'data/.hash'
+
         if os.path.exists(hash_file):  # at least one user has logged on this computer before
             f = open(hash_file, 'r')
             user_details = json.loads(f.read())
@@ -91,29 +43,8 @@ def login(username, password, post_site=True):
             f = open(hash_file, 'w')
             f.write(json.dumps(user_details))
             f.close()
-            if post_site:
-                upload_site()
 
     return is_valid
-
-
-def upload_site():
-    if not CONNECT:
-        return None
-    api_endpoint = BASE_URL + '/sites'
-    user = User.get_instance()
-    if user is None:
-        print("\033[31mCould not Upload site because you have not authenticated a valid user!")
-        return 400
-    response = requests.post(
-        url=api_endpoint,
-        params={
-            "site_id": user.hcp_id
-        },
-        json={},
-        headers={'Authorization': user.get_token()}
-    )
-    return response
 
 
 def upload_camera(camera_id, metadata):
@@ -129,18 +60,18 @@ def upload_camera(camera_id, metadata):
         url=api_endpoint,
         params={
             "site_id": user.hcp_id,
-            "camera_id": camera_id
+            "camera_id": camera_id,
+            "location": metadata['location']
         },
         json={
             "address": metadata['address'],
             "port": metadata['port'],
-            "room": metadata['room'],
             "protocol": metadata['protocol'],
             "path": metadata['path']
         },
         headers={'Authorization': token}
     )
-    print(str(response.text))
+    # print(str(response.text))
     return response
 
 
@@ -157,8 +88,7 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
     possible_tags = ['detected', 'periodic', 'movement', 'intruder']
     if os.path.exists(path):
         if tag in possible_tags:
-            api_endpoint = URL + '/beta/storage/upload'
-            # TODO: include confidential pyPi to store global variables
+            api_endpoint = BASE_URL + '/storage/upload'
             response = requests.post(
                 url=api_endpoint,
                 params={
@@ -172,7 +102,7 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
                 headers={'Authorization': user.get_token()}
             )
             response = json.loads(response.text)
-                # Upload video/image to bucket
+            # Upload video/image to bucket
             with open(path, 'rb') as binary_object:
                 files = {
                     'file': (file_name, binary_object)
@@ -188,3 +118,70 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
         print("File not found! Please ensure that the file path is correct!, current path provided: \
               " + path + "\nNOTE: the first parameter is the path to the resource without a leading backslash")
     return 500
+
+
+def update_location(old_location, new_location):
+    if not CONNECT:
+        return None
+    api_endpoint = BASE_URL + "/cameras"
+    user = User.get_instance()
+    if user is None:
+        print(f"\033[31mCould not update location {old_location} because you have not authenticated a valid user!")
+        return 400
+    token = user.get_token()
+    response = requests.put(
+        url=api_endpoint,
+        params={
+            "site_id": user.hcp_id,
+            "old_location": old_location,
+            "new_location": new_location
+        },
+        headers={'Authorization': token}
+    )
+    if response.status_code == 202:
+        print("the current location already exists, please try and use a location that is not in the current Site")
+    return response
+
+
+def remove_camera(location, camera_id):
+    if not CONNECT:
+        return None
+    api_endpoint = BASE_URL + "/cameras"
+    user = User.get_instance()
+    if user is None:
+        print(f"\033[31mCould not remove camera {camera_id} from location {location} because you have not authenticated a valid user!")
+        return 400
+    token = user.get_token()
+    response = requests.delete(
+        url=api_endpoint,
+        params={
+            "site_id": user.hcp_id,
+            "location": location,
+            "camera_id": camera_id
+        },
+        headers={'Authorization': token}
+    )
+    return response
+
+
+def get_camera_setup():
+    if not CONNECT:
+        return None
+    user = User.get_instance()
+    api_endpoint = BASE_URL + '/sites'
+    if user.hcp_id is not None:
+        response = requests.get(
+            url=api_endpoint,
+            params={
+                "site_id": user.hcp_id
+            },
+            headers={'Authorization': user.get_token()}
+        )
+        response = json.loads(response.text)
+        if len(response['data']) > 0:  # if the current control panel has cameras
+            response = response['data']['control_panel'].get(user.hcp_id)
+            try:
+                response.pop('metadata')
+            except KeyError:
+                pass
+            return response

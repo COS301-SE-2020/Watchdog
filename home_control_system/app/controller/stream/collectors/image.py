@@ -11,7 +11,8 @@ from .collector import (
     time_now,
     hash_id,
     distinct_frames,
-    capture_limit
+    capture_limit,
+    image_threshold
 )
 from service import services
 
@@ -27,8 +28,8 @@ class ImageCollector(threading.Thread):
     def run(self):
         self.live = True
         while(self.live):
-            time.sleep(capture_limit)
             self.flush()
+            time.sleep(1)
 
     def collect(self, frame):
         self.queue.append(frame)
@@ -40,14 +41,14 @@ class ImageCollector(threading.Thread):
                     del self.queue[step]
 
     def flush(self):
+        # start = time_now()
         self.sort()
         if len(self.queue) == 0:
             return None
         images = []
         count = 0
         for index in range(len(self.queue)):
-            start = time_now()
-            if count > 3:
+            if count > image_threshold:
                 break
             image = Image(
                 self.camera_id,
@@ -57,8 +58,9 @@ class ImageCollector(threading.Thread):
             )
             images.append(image)
             image.export()
-            diff = time_now() - start
-            wait = max((capture_limit / 2) - diff, 0.0)
+            # diff = time_now() - start
+            # wait = max(capture_limit - diff, 0.0)
+            wait = capture_limit
             if wait > 0.0:
                 count += 1
                 time.sleep(wait)

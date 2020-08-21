@@ -3,9 +3,8 @@ import json
 import cv2
 import threading
 import asyncio
-from hashlib import sha256
 from .stream.stream import Stream
-from .stream.collectors.collector import time_now
+# from .stream.collectors.collector import time_now
 
 
 conf = json.loads(os.environ['config'])
@@ -16,9 +15,9 @@ FPS = conf['video']['frames_per_second']
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, protocol='', address='', port='', path='', location=''):
+    def __init__(self, id, protocol='', address='', port='', path='', location=''):
         threading.Thread.__init__(self)
-        self.id = 'c' + str(sha256((str(time_now())).encode('ascii')).hexdigest())
+        self.id = id
         # Camera Physical Location
         self.location = location
         # Camera IP Address
@@ -67,6 +66,12 @@ class Camera(threading.Thread):
     def stop(self):
         self.live = False
         self.disconnect()
+
+    def start_stream(self, connect):
+        self.stream.stream_connection = connect
+
+    def stop_stream(self):
+        self.stream.stream_connection = None
 
     # Connect to IP Camera
     def connect(self):
@@ -119,7 +124,7 @@ class Camera(threading.Thread):
             "address": self.address,
             "port": self.port,
             "path": self.path,
-            "room": self.location,
+            "location": self.location,
             "protocol": self.protocol
         }
 

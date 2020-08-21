@@ -3,6 +3,7 @@ import json
 import threading
 from cv2 import (
     VideoWriter,
+    VideoWriter_fourcc,
     resize
 )
 from .collector import (
