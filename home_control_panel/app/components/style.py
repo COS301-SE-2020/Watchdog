@@ -86,7 +86,7 @@ class Style:
         Style.h_margin = int((Style.screen_width - Style.width) / 2)
         Style.v_margin = int((Style.screen_height - Style.height) / 2)
         Style.text.head = str(int(Style.unit / 8.4)) + 'px'  # 60px
-        Style.text.subhead = str(int(Style.unit / 10.67)) + 'px'  # 36px
+        Style.text.subhead = str(int(Style.unit / 12)) + 'px'  # 36px
         Style.text.button = str(int(Style.unit / 21.33)) + 'px'  # 18px
         Style.text.label = str(int(Style.unit / 21.33)) + 'px'  # 18px
         Style.text.small = str(int(Style.unit / 24.0)) + 'px'  # 18px

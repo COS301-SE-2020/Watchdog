@@ -66,9 +66,9 @@ class SideBar(QVBoxLayout, Component):
         holder_layout_bottom = QHBoxLayout()
         holder_layout_bottom.addWidget(contain_list)
 
-        self.addWidget(contain_location, 4)
+        self.addWidget(contain_location, 1)
         self.addWidget(line_h)
-        self.addWidget(contain_list, 22)
+        self.addWidget(contain_list, 9)
 # SIDE HEADER CONTAINER
 #   - Home Icon [WIDGET]
 #   - Location Label [WIDGET]
@@ -76,7 +76,7 @@ class SideBar(QVBoxLayout, Component):
 class HeaderLayout(QHBoxLayout, Component):
     def __init__(self, ascendent):
         super(HeaderLayout, self).__init__(ascendent=ascendent)
-        self.set_dimensions(self.width, (self.height / 28) * 4)
+        self.set_dimensions(self.width, (self.height * 0.1))
         self.setContentsMargins(0, 0, 0, 0)
 
         self.lbl_location = QLabel()
@@ -101,7 +101,7 @@ class HeaderLayout(QHBoxLayout, Component):
 class ToggleLayout(QVBoxLayout, Component):
     def __init__(self, ascendent):
         super(ToggleLayout, self).__init__(ascendent=ascendent)
-        self.set_dimensions(self.width, (self.height / 28) * 23)
+        self.set_dimensions(self.width, (self.height * 0.9))
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 

@@ -1,19 +1,19 @@
 import os
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import (
+    Qt
+)
 from PyQt5.QtWidgets import (
     QWidget,
     QMainWindow,
     QVBoxLayout,
     QHBoxLayout,
-    QSpacerItem,
-    QSizePolicy,
     QGraphicsDropShadowEffect
 )
 from ..component import Component
 from ..popups import CameraPopup
 from ..style import Style
 from ..widgets.spacers import (
-    QHSeperationLine,
     QVSeperationLine
 )
 from .sidebar import SideBar
@@ -39,13 +39,7 @@ class Window(QMainWindow, Component):
         home_container.setMinimumWidth(self.width)
         home_container.setLayout(self.home)
 
-        spacer = QSpacerItem(self.width, int(Style.unit / 16), QSizePolicy.Fixed)
-        line = QHSeperationLine()
-        line.setStyleSheet(Style.replace_variables(('background-color: @LightColor;')))
-
         layout = QVBoxLayout()
-        layout.addSpacerItem(spacer)
-        layout.addWidget(line)
         layout.addWidget(home_container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -80,6 +74,7 @@ class Window(QMainWindow, Component):
 class HomeLayout(QHBoxLayout, Component):
     def __init__(self, ascendent):
         super(HomeLayout, self).__init__(ascendent=ascendent)
+        self.setAlignment(Qt.AlignTop)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
@@ -99,11 +94,19 @@ class HomeLayout(QHBoxLayout, Component):
         contain_view.setMinimumWidth(self.width * 5 / 6)
         contain_view.setMaximumWidth(self.width * 12 / 5)
 
-        line = QVSeperationLine()
-        line.setStyleSheet(Style.replace_variables('background-color:@LightColor; border: ' + str(Style.unit / 200) + 'px;'))
+        lineH = QVSeperationLine()
+        lineH.setStyleSheet(Style.replace_variables('background-color: @HighlightColor; border: ' + str(Style.unit / 200) + 'px;'))
+        lineH.setFixedHeight(self.height / 10 * 0.6)
+
+        line_container = QVBoxLayout()
+        line_container.setAlignment(Qt.AlignTop)
+        line_container.addStretch(1)
+        line_container.addWidget(lineH)
+        line_container.addStretch(10)
+        line_container.addStretch(35)
 
         self.addWidget(contain_panel, 1)
-        self.addWidget(line)
+        self.addLayout(line_container)
         self.addWidget(contain_view, 5)
 
     def add_camera(self, camera):

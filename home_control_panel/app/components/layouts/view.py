@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (
 from ..style import Style
 from ..component import Component
 from ..widgets.spacers import QHSeperationLine
-from ..popups import LoginContainer
+# from ..popups import LoginContainer
 from ..widgets.buttons import CenterToggle
 from ..widgets.containers import (
     StreamGrid,
@@ -57,9 +57,9 @@ class View(QVBoxLayout, Component):
         line_h = QHSeperationLine()
         line_h.setStyleSheet(Style.replace_variables('background-color:@LightColor; border: ' + str(Style.unit / 150) + 'px;'))
 
-        self.addWidget(contain_header, 4)
+        self.addWidget(contain_header, 1)
         self.addWidget(line_h)
-        self.addWidget(contain_grid, 22)
+        self.addWidget(contain_grid, 9)
 # VIEW HEADER CONTAINER
 #   - Watchdog Logo [WIDGET]
 #   - Watchdog Text [WIDGET]
@@ -67,7 +67,7 @@ class View(QVBoxLayout, Component):
 class HeaderLayout(QHBoxLayout, Component):
     def __init__(self, ascendent):
         super(HeaderLayout, self).__init__(ascendent=ascendent)
-        self.set_dimensions(self.width, (self.height / 28) * 4)
+        self.set_dimensions(self.width, (self.height * 0.1))
         self.setContentsMargins(0, 0, 0, 0)
 
         self.icon_logo = QLabel()
@@ -88,31 +88,24 @@ class HeaderLayout(QHBoxLayout, Component):
         map_user = QPixmap('assets/icons/user.png')
         self.btn_user.setIcon(QIcon(map_user))
         self.btn_user.setIconSize(QSize(Style.sizes.icon_large, Style.sizes.icon_large))
+        self.btn_user.hide()
 
-        self.icon_logo.setContentsMargins(int(Style.unit / 24), 0, int(Style.unit / 24), 0)
-
-        self.login_shown = False
-        self.login = LoginContainer(self)
+        self.icon_logo.setContentsMargins(int(Style.unit / 8), 0, int(Style.unit / 16), 0)
 
         self.addWidget(self.icon_logo)
         self.addWidget(self.lbl_header, Qt.AlignLeft)
         self.addStretch(15)
-        # self.addWidget(self.btn_user, Qt.AlignRight)
-        # self.addWidget(self.login, Qt.AlignRight)
+        self.addWidget(self.btn_user, Qt.AlignRight)
 
     def toggle_login(self):
-        if self.login_shown:
-            self.login_shown = False
-            self.login.submit()
-        else:
-            self.login_shown = True
-            self.login.show()
+        Component.root.login_screen.show()
 
 # VIEW GRID CONTAINER
 #   - Stream Views [WIDGET]
 class GridLayout(QVBoxLayout, Component):
     def __init__(self, ascendent):
         super(GridLayout, self).__init__(ascendent=ascendent)
+        self.set_dimensions(self.width, (self.height * 0.9))
         self.setContentsMargins(0, 0, 0, 5)
         self.setSpacing(0)
         self.setAlignment(Qt.AlignTop)
@@ -120,6 +113,7 @@ class GridLayout(QVBoxLayout, Component):
         self.view_toggle = CenterToggle(self, 'Live', 'Clips')
         layout_above = QVBoxLayout()
         layout_above.setAlignment(Qt.AlignCenter)
+        layout_above.setContentsMargins(0, Style.unit / 5, 0, Style.unit / 5)
 
         layout_above.addStretch()
         layout_above.addWidget(self.view_toggle)
@@ -127,7 +121,7 @@ class GridLayout(QVBoxLayout, Component):
 
         widget_above = QWidget()
         widget_above.setLayout(layout_above)
-        widget_above.setFixedHeight(Style.unit / 3)
+        widget_above.setMaximumHeight(Style.unit / 2)
 
         # Live Viewer
         self.viewer = StreamGrid(self)
@@ -174,14 +168,21 @@ class GridLayout(QVBoxLayout, Component):
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.contain_viewer)
         self.scroll.setMinimumWidth(self.width)
-        self.scroll.setStyleSheet(Style.replace_variables('margin: ' + str(Style.unit / 8) + 'px; \
+
+        main_container = QVBoxLayout()
+        main_container.setAlignment(Qt.AlignCenter)
+        main_container.addWidget(widget_above)
+        main_container.addWidget(self.scroll)
+
+        main_widget = QWidget()
+        main_widget.setLayout(main_container)
+        main_widget.setStyleSheet(Style.replace_variables('margin: ' + str(Style.unit / 8) + 'px; \
                                                             padding: ' + str(Style.unit / 8) + 'px; \
                                                             border: none; \
                                                             border-radius: @LargeRadius; \
                                                             background-color: @DarkColor;'))
-        self.scroll.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=14, xOffset=2, yOffset=5))
-        self.addWidget(widget_above)
-        self.addWidget(self.scroll)
+        main_widget.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=14, xOffset=2, yOffset=5))
+        self.addWidget(main_widget)
         self.show()
 
     def show(self):
