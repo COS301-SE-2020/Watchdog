@@ -1,5 +1,4 @@
 import os
-import sys
 from PyQt5.QtWidgets import QApplication
 from .settings import Settings
 from .components.component import Component
@@ -7,6 +6,8 @@ from .components.layouts.window import Window
 from .controller.controller import CameraController
 from ..service import services
 from ..service.user import User
+from .components.popups import LoginPopup
+
 
 if not os.path.exists('data'):
     os.mkdir('data')
@@ -17,6 +18,7 @@ if not os.path.exists('data/temp/video'):
 if not os.path.exists('data/temp/image'):
     os.mkdir('data/temp/image')
 
+
 class ControlPanel(QApplication, Component):
     def __init__(self):
         super(ControlPanel, self).__init__([])
@@ -24,8 +26,10 @@ class ControlPanel(QApplication, Component):
         self.settings = Settings()
         self.controller = CameraController(self)
         self.window = Window(self)
+        self.login_screen = LoginPopup(self.window)
         self.window.home.view.grid.hide()
         self.window.home.sidepanel.list.hide()
+        self.login_screen.show()
         self.setApplicationName("Watchdog Control Panel")
 
     def user_login(self, username, password):
@@ -38,8 +42,10 @@ class ControlPanel(QApplication, Component):
             if self.controller.setup_environment():
                 if not self.controller.live:
                     self.controller.start()
+            return True
         else:
             print('Incorrect Login Details')
+        return False
 
     def change_location(self, location):
         self.current_location = location
@@ -74,6 +80,7 @@ class ControlPanel(QApplication, Component):
 
     def toggle_grid(self):
         if User.get_instance() is not None:
+            self.load_clips()
             self.window.home.view.grid.toggle()
 
     def load_alerts(self):
@@ -95,4 +102,5 @@ class ControlPanel(QApplication, Component):
 
     def end(self):
         self.controller.stop()
-        sys.exit()
+        self.controller.join()
+        os._exit(1)

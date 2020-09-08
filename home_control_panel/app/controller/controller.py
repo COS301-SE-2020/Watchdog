@@ -136,6 +136,7 @@ class CameraController(threading.Thread):
         self.live = False
         for address, client in self.cameras.items():
             client.stop()
+            client.join()
 
     def start_streams(self, camera_list):
         if self.client is not None:

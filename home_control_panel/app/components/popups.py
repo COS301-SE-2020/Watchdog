@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import (
     QRadioButton
 )
 from PyQt5.QtGui import (
-    QIcon,
     QPixmap
 )
 from .component import Component
@@ -42,12 +41,6 @@ class Popup(QWidget, Component):
 class SettingsPopup(Popup):
     def __init__(self, ascendent):
         super(SettingsPopup, self).__init__(ascendent=ascendent)
-
-        hbox = QHBoxLayout()
-        hbox.addWidget(QRadioButton('Broadcast'))
-        hbox.addWidget(QRadioButton('Off'))
-        hbox.addStretch()
-
         self.btn_submit = QPushButton('Save')
         self.btn_cancel = QPushButton('Cancel')
 
@@ -66,11 +59,6 @@ class SettingsPopup(Popup):
         self.lbl_streaming = QLabel('Streaming')
         self.lbl_empty = QLabel()
 
-        self.lbl_location.setStyleSheet(Style.replace_variables('border: @None;'))
-        self.lbl_address.setStyleSheet(Style.replace_variables('border: @None;'))
-        self.lbl_streaming.setStyleSheet(Style.replace_variables('border: @None;'))
-        self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
-
         self.input_location = QLineEdit(Component.root.settings.settings['site'])
         self.input_address = QLineEdit(Component.root.settings.settings['address'])
 
@@ -80,38 +68,42 @@ class SettingsPopup(Popup):
         self.layout.addRow(self.lbl_address, self.input_address)
         self.layout.addRow(self.lbl_empty, hbox_click)
 
-        self.icon_home = QLabel()
         map_home = QPixmap('assets/icons/home.png')
+        self.icon_home = QLabel()
         self.icon_home.setPixmap(map_home.scaled(Style.sizes.icon_medium, Style.sizes.icon_medium, Qt.KeepAspectRatio, Qt.FastTransformation))
+
+        logo_layout = QHBoxLayout()
+        logo_layout.setAlignment(Qt.AlignCenter)
+        logo_layout.addWidget(self.icon_home)
 
         layout_center = QVBoxLayout()
         layout_center.setAlignment(Qt.AlignCenter)
+        layout_center.addLayout(logo_layout)
         layout_center.addLayout(self.layout)
 
         contain_form = QWidget()
         contain_form.setLayout(layout_center)
         contain_form.setStyleSheet(Style.replace_variables('margin: @MediumMargin; \
                                                             padding: @LargePadding; \
-                                                            border: @BorderThick solid @LightTextColor; \
+                                                            border: @BorderThin solid @LightTextColor; \
                                                             border-radius: @SmallRadius; \
                                                             background-color: @LightColor; \
                                                             color: @LightTextColor; \
                                                             font: @ButtonTextSize @TextFont; \
                                                             font-weight: 30;'))
+
+        self.lbl_location.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_address.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_streaming.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.icon_home.setStyleSheet(Style.replace_variables('border: @None;'))
+
         layout_form = QHBoxLayout()
         layout_form.addStretch()
         layout_form.addWidget(contain_form)
         layout_form.addStretch()
 
-        layout_settings = QVBoxLayout()
-        layout_settings.setAlignment(Qt.AlignCenter)
-        
-        layout_settings.addStretch()
-        layout_settings.addWidget(self.icon_home)
-        layout_settings.addStretch()
-        layout_settings.addLayout(layout_form)
-
-        self.setLayout(layout_settings)
+        self.setLayout(layout_form)
 
     def submit(self):
         self.complete()
@@ -310,44 +302,66 @@ class LoginPopup(Popup):
     def __init__(self, ascendent):
         super(LoginPopup, self).__init__(ascendent=ascendent)
 
-        popup_width = Style.width / 5
-        popup_height = Style.height / 5
-        self.setGeometry(Style.h_margin + (Style.width - popup_width), Style.v_margin + popup_height, popup_width, popup_height)
+        popup_width = Style.width
+        popup_height = Style.height / 2
+        self.setGeometry((Style.screen_width / 2) - (popup_width / 2), (Style.screen_height / 2) - (popup_height / 2), popup_width, popup_height)
 
         self.btn_submit = QPushButton('Login')
-        self.btn_cancel = QPushButton('Cancel')
 
         self.btn_submit.setFixedWidth(int(Style.unit / 3))
-        self.btn_cancel.setFixedWidth(int(Style.unit / 3))
-        self.btn_cancel.setFixedHeight(int(Style.unit / 4))
         self.btn_submit.clicked.connect(self.submit)
-        self.btn_cancel.clicked.connect(self.cancel)
 
         hbox_click = QHBoxLayout()
         hbox_click.addWidget(self.btn_submit)
-        hbox_click.addWidget(self.btn_cancel)
 
         self.lbl_user = QLabel('Username')
         self.lbl_pass = QLabel('Password')
         self.lbl_empty = QLabel()
 
-        self.lbl_user.setStyleSheet(Style.replace_variables('border: @None;'))
-        self.lbl_pass.setStyleSheet(Style.replace_variables('border: @None;'))
-        self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
-
         self.input_username = QLineEdit('')
         self.input_password = QLineEdit('')
         self.input_password.setEchoMode(QLineEdit.Password)
 
+        self.input_username.setFixedWidth(self.width * 0.15)
+        self.input_password.setFixedWidth(self.width * 0.15)
+
+        self.input_username.returnPressed.connect(self.submit)
+        self.input_password.returnPressed.connect(self.submit)
+        
         self.layout = QFormLayout()
-        self.layout.setAlignment(Qt.AlignRight)
+        self.layout.setAlignment(Qt.AlignCenter)
         self.layout.addRow(self.lbl_user, self.input_username)
         self.layout.addRow(self.lbl_pass, self.input_password)
-        self.layout.addRow(self.lbl_empty, hbox_click)
+
+        map_logo = QPixmap('assets/icons/watchdog.png')
+        self.icon_logo = QLabel()
+        self.icon_logo.setPixmap(map_logo.scaled(Style.sizes.icon_logo, Style.sizes.icon_logo, Qt.KeepAspectRatio, Qt.FastTransformation))
+        self.lbl_message = QLabel('Please log in to your Watchdog Account.')
+
+        logo_layout = QHBoxLayout()
+        logo_layout.setAlignment(Qt.AlignCenter)
+        logo_layout.addWidget(self.icon_logo)
+
+        message_layout = QHBoxLayout()
+        message_layout.setAlignment(Qt.AlignCenter)
+        message_layout.addWidget(self.lbl_message)
+
+        form_layout = QHBoxLayout()
+        form_layout.setAlignment(Qt.AlignCenter)
+        form_layout.addStretch()
+        form_layout.addLayout(self.layout)
+        form_layout.addStretch()
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setAlignment(Qt.AlignCenter)
+        btn_layout.addWidget(self.btn_submit)
 
         layout_center = QVBoxLayout()
-        layout_center.setAlignment(Qt.AlignTop)
-        layout_center.addLayout(self.layout)
+        layout_center.setAlignment(Qt.AlignCenter)
+        layout_center.addLayout(logo_layout)
+        layout_center.addLayout(message_layout)
+        layout_center.addLayout(form_layout)
+        layout_center.addLayout(btn_layout)
 
         contain_form = QWidget()
         contain_form.setLayout(layout_center)
@@ -359,6 +373,12 @@ class LoginPopup(Popup):
                                                             color: @LightTextColor; \
                                                             font: @ButtonTextSize @TextFont; \
                                                             font-weight: 30;'))
+        self.lbl_user.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_pass.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.icon_logo.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_message.setStyleSheet(Style.replace_variables('border: @None; font: @SmallTextSize @TextFont;'))
+
         layout_form = QHBoxLayout()
         layout_form.addStretch()
         layout_form.addWidget(contain_form)
@@ -370,14 +390,13 @@ class LoginPopup(Popup):
         self.complete()
         self.hide()
 
-    def cancel(self):
-        self.hide()
-
     def complete(self):
-        Component.root.user_login(
+        res = Component.root.user_login(
             self.input_username.text(),
-            self.input_password.text(),
+            self.input_password.text()
         )
+        if not res:
+            self.show()
 
 
 class LoginContainer(QWidget, Component):

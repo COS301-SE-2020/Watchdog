@@ -271,3 +271,39 @@ class PlayButton(QWidget):
 
         self.setLayout(layout)
         self.setMaximumHeight(Style.unit / 8)
+
+
+class PlayToggleButton(QWidget):
+    def __init__(self, view, parent=None):
+        super(PlayToggleButton, self).__init__(parent)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self.view = view
+
+        self.button = QPushButton()
+        self.button.clicked.connect(self.toggle)
+
+        map_play = QPixmap('assets/icons/play.png')
+        self.play_icon = QIcon(map_play)
+
+        map_pause = QPixmap('assets/icons/pause.png')
+        self.pause_icon = QIcon(map_pause)
+
+        self.button.setIconSize(QSize(Style.unit / 8, Style.unit / 8))
+        self.button.setIcon(self.pause_icon)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addStretch()
+        layout.addWidget(self.button)
+        layout.addStretch()
+
+        self.setLayout(layout)
+        self.setMaximumHeight(Style.unit / 8)
+
+    def toggle(self):
+        self.view.playing = not self.view.playing
+        if self.view.playing:
+            self.button.setIcon(self.pause_icon)
+        else:
+            self.button.setIcon(self.play_icon)

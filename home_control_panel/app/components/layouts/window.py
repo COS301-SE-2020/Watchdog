@@ -1,3 +1,4 @@
+import os
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QWidget,
@@ -56,8 +57,7 @@ class Window(QMainWindow, Component):
         self.setCentralWidget(contain_layout)
 
     def closeEvent(self, event):
-        Component.root.end()
-        event.accept()  # let the window close
+        os._exit(1)
 
     def set_locations(self, labels):
         self.home.sidepanel.list.clear()

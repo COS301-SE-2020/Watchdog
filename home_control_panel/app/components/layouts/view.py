@@ -97,8 +97,8 @@ class HeaderLayout(QHBoxLayout, Component):
         self.addWidget(self.icon_logo)
         self.addWidget(self.lbl_header, Qt.AlignLeft)
         self.addStretch(15)
-        self.addWidget(self.btn_user, Qt.AlignRight)
-        self.addWidget(self.login, Qt.AlignRight)
+        # self.addWidget(self.btn_user, Qt.AlignRight)
+        # self.addWidget(self.login, Qt.AlignRight)
 
     def toggle_login(self):
         if self.login_shown:

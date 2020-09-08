@@ -101,10 +101,6 @@ class Stream:
 
         self.current_frame = resize(frame, (self.width, self.height))
 
-        # Detect Movement in Current Frame
-        if self.detect_movement():
-            self.triggers.is_movement = True
-            self.triggers.movement_timer = now + 1500
         # Check if there was any Recent Movement
         if now <= self.triggers.movement_timer:
             # Detect Face in Current Frame
@@ -118,6 +114,10 @@ class Stream:
             # await self.feedback_movement()
         else:
             self.frame_collector.collect(frame, Tag.PERIODIC)
+            # Detect Movement in Current Frame
+            if self.detect_movement():
+                self.triggers.is_movement = True
+                self.triggers.movement_timer = now + 1500
 
         # Within Clip Record Timeframe
         if self.config.start_time < now:

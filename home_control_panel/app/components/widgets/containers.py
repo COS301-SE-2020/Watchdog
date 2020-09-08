@@ -1,4 +1,5 @@
 import cv2
+import time
 import threading
 from cv2 import resize
 from PyQt5.QtCore import (
@@ -16,7 +17,6 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
-    QAction,
     QGraphicsDropShadowEffect
 )
 from .spacers import QHSeperationLine
@@ -25,7 +25,8 @@ from ..style import Style
 from .buttons import (
     ListButton,
     PlusButton,
-    PlayButton
+    PlayButton,
+    PlayToggleButton
 )
 from ..popups import (
     LocationPopup,
@@ -173,6 +174,7 @@ class ButtonList(QVBoxLayout, Component):
 class StreamView(QWidget):
     def __init__(self, camera, parent=None):
         super(StreamView, self).__init__(parent)
+        self.playing = True
         self.qp = QPainter()
         self.image = QImage()
         self.camera = camera
@@ -183,10 +185,10 @@ class StreamView(QWidget):
         self.setMinimumWidth(Style.unit)
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
 
-        self.setContextMenuPolicy(Qt.ActionsContextMenu)
-        quitAction = QAction("Remove", self)
+        # self.setContextMenuPolicy(Qt.ActionsContextMenu)
+        # quitAction = QAction("Remove", self)
         # quitAction.triggered.connect(qApp.quit)
-        self.addAction(quitAction)
+        # self.addAction(quitAction)
 
     def set_frame(self):
         if self.camera.stream.current_frame is not None:
@@ -219,7 +221,8 @@ class StreamGrid(QGridLayout, Component):
 
     def refresh(self):
         for index in range(len(self.streams)):
-            self.streams[index].set_frame()
+            if self.streams[index].playing:
+                self.streams[index].set_frame()
 
     def append_plus(self):
         if self.col >= 3:
@@ -363,12 +366,17 @@ class StreamGrid(QGridLayout, Component):
         info_layout.addLayout(layout_address)
         info_layout.addLayout(layout_location)
 
+        control_layout = QHBoxLayout()
+        control_layout.addLayout(info_layout)
+        control_layout.addWidget(PlayToggleButton(view))
+
         info_widget = QWidget()
-        info_widget.setLayout(info_layout)
+        info_widget.setLayout(control_layout)
         info_widget.setContentsMargins(int(Style.unit / 8), Style.sizes.margin_small, 0, 0)
 
         inner_layout.addWidget(view)
         inner_layout.addWidget(info_widget)
+
         outer_layout.addStretch()
         outer_layout.addLayout(inner_layout)
         outer_layout.addStretch()
@@ -432,19 +440,21 @@ class Player(threading.Thread):
     def run(self):
         self.started = True
         self.connection = cv2.VideoCapture(self.filepath)
-        self.connection.set(cv2.CAP_PROP_FPS, 1)
         self.playing = True
         while self.connection.isOpened():
             (grabbed, frame) = self.connection.read()
             if grabbed:
                 self.current_frame = frame
                 self.view.set_frame(self.current_frame)
+                time.sleep(1/60)
             else:
                 break
         self.playing = False
         self.connection.release()
-        # self.connection = None
 
+    def stop(self):
+        self.connection.release()
+        self.playing = False
 
 class VideoView(QWidget):
     def __init__(self, filepath, parent=None):
@@ -459,14 +469,18 @@ class VideoView(QWidget):
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
 
     def play(self):
-        if self.player is not None:
-            if not self.player.started:
-                self.player.start()
-            elif not self.player.playing:
-                self.player = None
-        else:
+        if self.player is None:
             self.player = Player(self.filepath, self)
-            self.play()
+
+        if self.player.started:
+            if not self.player.playing:
+                self.player.join()
+                self.player = None
+                self.play()
+            else:
+                self.player.stop()
+        else:
+            self.player.start()
 
     def set_frame(self, current_frame):
         if current_frame is not None:
@@ -496,8 +510,12 @@ class VideoGrid(QGridLayout, Component):
         (self.row, self.col) = (0, 0)
         self.views = []
         self.streams = []
+        self.paths = []
 
     def add_view(self, path):
+        if path in self.paths:
+            return
+
         if self.col >= 3:
             self.row += 1
             self.col = 0
@@ -507,6 +525,7 @@ class VideoGrid(QGridLayout, Component):
 
         view = VideoView(path)
         self.streams.append(view)
+        self.paths.append(path)
 
         outer_layout = QHBoxLayout()
         outer_layout.setAlignment(Qt.AlignCenter)

@@ -31,15 +31,15 @@ class Style:
     # Highlight Text Colour
     colors.highlight_text = '#98C8DE'
     # Header Text
-    text.head = '1px'
+    text.head = '0px'
     # Sub Header Text
-    text.subhead = '1px'
+    text.subhead = '0px'
     # Button text
-    text.button = '1px'
+    text.button = '0px'
     # Label text
-    text.label = '1px'
+    text.label = '0px'
     # Small text
-    text.small = '1px'
+    text.small = '0px'
     # Font
     text.font = 'Corbel, sans-serif'
     # Border
@@ -91,15 +91,15 @@ class Style:
         Style.text.label = str(int(Style.unit / 21.33)) + 'px'  # 18px
         Style.text.small = str(int(Style.unit / 24.0)) + 'px'  # 18px
 
-        Style.sizes.radius_large = int(Style.unit / 12.8)  # 30px
-        Style.sizes.radius_medium = int(Style.unit / 19.2)  # 20px
-        Style.sizes.radius_small = int(Style.unit / 25.6)  # 15px
+        Style.sizes.radius_large = int(Style.unit / 30)  # 30px
+        Style.sizes.radius_medium = int(Style.unit / 40)  # 20px
+        Style.sizes.radius_small = int(Style.unit / 50)  # 15px
         Style.sizes.icon_logo = int(Style.unit * 0.6)
         Style.sizes.icon_large = int(Style.unit / 4)
         Style.sizes.icon_medium = int(Style.unit / 8)
         Style.sizes.icon_small = int(Style.unit / 15)
 
-        Style.sizes.border_thick = int(Style.unit / 380)  # 2
+        Style.sizes.border_thick = max(int(Style.unit / 380), 1)  # 2
         Style.sizes.border_thin = 1  # 1
 
         Style.sizes.margin_large = int(Style.unit / 10.97)  # 35
