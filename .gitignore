@@ -24,4 +24,6 @@ home_control_panel/app/__pycache__
 data/temp/image/*
 data/temp/video/*
 # Other
-poetry.lock
+dist
+build
+*.bat

@@ -291,7 +291,7 @@ class StreamGrid(QGridLayout, Component):
                                                                 margin: @None; \
                                                                 padding: @None;'))
         self.addWidget(layout_container, self.row, self.col)
-        self.setRowMinimumHeight(self.row, (Style.unit * 0.6) + int(Style.unit / 8))
+        # self.setRowMinimumHeight(self.row, (Style.unit * 0.6) + int(Style.unit / 8))
 
         self.views.append(layout_container)
         self.col += 1
@@ -377,9 +377,9 @@ class StreamGrid(QGridLayout, Component):
         inner_layout.addWidget(view)
         inner_layout.addWidget(info_widget)
 
-        outer_layout.addStretch()
+        outer_layout.addStretch(1)
         outer_layout.addLayout(inner_layout)
-        outer_layout.addStretch()
+        outer_layout.addStretch(1)
 
         layout_container = QWidget()
         layout_container.setMaximumWidth(Style.unit + int(Style.unit / 4))
@@ -437,6 +437,14 @@ class Player(threading.Thread):
         self.started = False
         self.playing = False
 
+    def load(self):
+        self.connection = cv2.VideoCapture(self.filepath)
+        (grabbed, frame) = self.connection.read()
+        if grabbed:
+            self.current_frame = frame
+            self.view.set_frame(self.current_frame)
+        self.connection.release()
+
     def run(self):
         self.started = True
         self.connection = cv2.VideoCapture(self.filepath)
@@ -459,6 +467,7 @@ class Player(threading.Thread):
 class VideoView(QWidget):
     def __init__(self, filepath, parent=None):
         super(VideoView, self).__init__(parent)
+        self.playing = False
         self.dimensions = (int(Style.unit), int(Style.unit * 0.6))
         self.player = None
         self.filepath = filepath
@@ -467,6 +476,10 @@ class VideoView(QWidget):
         self.setContentsMargins(0, 0, 0, 0)
         self.setMinimumWidth(Style.unit)
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
+
+        self.player = Player(self.filepath, self)
+        self.player.load()
+        self.player = None
 
     def play(self):
         if self.player is None:
@@ -479,8 +492,11 @@ class VideoView(QWidget):
                 self.play()
             else:
                 self.player.stop()
+                self.player = None
+            self.playing = False
         else:
             self.player.start()
+            self.playing = True
 
     def set_frame(self, current_frame):
         if current_frame is not None:
@@ -536,9 +552,9 @@ class VideoGrid(QGridLayout, Component):
         inner_layout.addWidget(view)
         inner_layout.addWidget(PlayButton(view))
 
-        outer_layout.addStretch()
+        outer_layout.addStretch(1)
         outer_layout.addLayout(inner_layout)
-        outer_layout.addStretch()
+        outer_layout.addStretch(1)
 
         layout_container = QWidget()
         layout_container.setMaximumWidth(Style.unit + int(Style.unit / 4))
@@ -547,8 +563,6 @@ class VideoGrid(QGridLayout, Component):
         self.setRowMinimumHeight(self.row, (Style.unit * 0.6) + int(Style.unit / 8))
 
         self.col += 1
-
-        view.play()
 
         self.update()
 

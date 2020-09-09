@@ -101,6 +101,7 @@ class CameraController(threading.Thread):
 
                 self.cameras[address] = client
                 self.locations[location].add_camera(self.cameras[address])
+                self.client.add_camera(self.cameras[address].id)
                 self.cameras[address].start()
 
                 self.update_widgets()
@@ -124,7 +125,6 @@ class CameraController(threading.Thread):
         if self.app is not None:
             user_id = services.User.get_instance().user_id
             producer_id = services.User.get_instance().hcp_id
-            print('sending... ', camera_ids)
             self.client = connection.Producer(user_id, producer_id, camera_ids, self)
             while(True):
                 self.app.window.home.view.grid.viewer.refresh()

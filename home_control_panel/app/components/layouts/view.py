@@ -106,63 +106,70 @@ class GridLayout(QVBoxLayout, Component):
     def __init__(self, ascendent):
         super(GridLayout, self).__init__(ascendent=ascendent)
         self.set_dimensions(self.width, (self.height * 0.9))
-        self.setContentsMargins(0, 0, 0, 5)
+        self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
         self.setAlignment(Qt.AlignTop)
 
         self.view_toggle = CenterToggle(self, 'Live', 'Clips')
-        layout_above = QVBoxLayout()
-        layout_above.setAlignment(Qt.AlignCenter)
-        layout_above.setContentsMargins(0, Style.unit / 5, 0, Style.unit / 5)
 
-        layout_above.addStretch()
+        layout_above = QVBoxLayout()
+        layout_above.setAlignment(Qt.AlignBottom)
+        layout_above.setContentsMargins(0, 0, 0, 0)
+
+        layout_above.addStretch(2)
         layout_above.addWidget(self.view_toggle)
-        layout_above.addStretch()
 
         widget_above = QWidget()
         widget_above.setLayout(layout_above)
-        widget_above.setMaximumHeight(Style.unit / 2)
+        widget_above.setFixedHeight(Style.unit * 0.45)
 
-        # Live Viewer
         self.viewer = StreamGrid(self)
-        # Historical Viewer
         self.retriever = VideoGrid(self)
 
         contain_live = QVBoxLayout()
-        contain_live.setAlignment(Qt.AlignLeft)
+        contain_live.setContentsMargins(0, 0, 0, 0)
+        contain_live.setAlignment(Qt.AlignCenter)
         contain_live.addLayout(self.viewer)
         contain_live.addStretch()
 
         contain_historical = QVBoxLayout()
-        contain_historical.setAlignment(Qt.AlignLeft)
+        contain_historical.setContentsMargins(0, 0, 0, 0)
+        contain_historical.setAlignment(Qt.AlignCenter)
         contain_historical.addLayout(self.retriever)
         contain_historical.addStretch()
 
         self.live_viewer = QWidget()
         self.live_viewer.setLayout(contain_live)
+        self.live_viewer.setFixedWidth(self.width * 0.85)
 
         self.historical_viewer = QWidget()
         self.historical_viewer.setLayout(contain_historical)
+        self.historical_viewer.setFixedWidth(self.width * 0.85)
 
-        self.info_label = QWidget()
         info_box = QHBoxLayout()
         info_box.setAlignment(Qt.AlignCenter)
         info_box.addWidget(QLabel('Login to view your content...'))
+
+        self.info_label = QWidget()
         self.info_label.setLayout(info_box)
 
-        contain_both = QVBoxLayout()
+        contain_both = QHBoxLayout()
         contain_both.addWidget(self.live_viewer)
         contain_both.addWidget(self.historical_viewer)
         contain_both.addWidget(self.info_label)
+
         self.live_view = False
+
         self.toggle()
 
         # Widget that contains the collection of Vertical Box
         self.contain_viewer = QWidget()
+        self.contain_viewer.setContentsMargins(0, 0, 0, 0)
         self.contain_viewer.setLayout(contain_both)
         self.contain_viewer.setStyleSheet(Style.replace_variables('border: @None; \
-                                                            background-color: @DarkColor;'))
+                                                                   background-color: @DarkColor;'))
         self.scroll = QScrollArea()
+        self.scroll.setContentsMargins(0, 0, 0, 0)
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
@@ -170,7 +177,7 @@ class GridLayout(QVBoxLayout, Component):
         self.scroll.setMinimumWidth(self.width)
 
         main_container = QVBoxLayout()
-        main_container.setAlignment(Qt.AlignCenter)
+        main_container.setAlignment(Qt.AlignTop)
         main_container.addWidget(widget_above)
         main_container.addWidget(self.scroll)
 
