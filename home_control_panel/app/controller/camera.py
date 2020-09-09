@@ -81,7 +81,7 @@ class Camera(threading.Thread):
             self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, RES_X)
             self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, RES_Y)
             if self.connection.isOpened():
-                print("Connected to IP Camera [" + self.get_url() + "]")
+                print("Connected to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = True
             else:
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
@@ -127,7 +127,7 @@ class Camera(threading.Thread):
         }
 
     def __str__(self):
-        camera = '[address:' + self.get_url() + ']'
+        camera = '[address:' + str(self.get_url()) + ']'
         if self.protocol != '':
             camera = '[protocol:' + self.protocol + ']' + camera
         if self.location != '':
