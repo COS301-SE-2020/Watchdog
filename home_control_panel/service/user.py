@@ -39,6 +39,8 @@ class User:
             'token': '',
             'expiration': ''
         }
+        print('User:' + str(self.user_id))
+        print('HCP:' + str(self.hcp_id))
         self.generate_token()
 
     def generate_token(self):

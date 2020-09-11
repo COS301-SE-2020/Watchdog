@@ -51,6 +51,7 @@ class Window(QMainWindow, Component):
         self.setCentralWidget(contain_layout)
 
     def closeEvent(self, event):
+        Component.root.controller.client.socket.disconnect()
         os._exit(1)
 
     def set_locations(self, labels):

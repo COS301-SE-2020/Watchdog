@@ -21,6 +21,7 @@ class Connection:
 
         try:
             self.socket.connect(SERVER_URL)
+            # self.socket.connect('http://127.0.0.1:8008')
             self.connect = True
         except socketio.exceptions.ConnectionError:
             print("Failed to connect to stream server")
@@ -59,22 +60,15 @@ class Producer(Connection):
         self.camera_list = camera_ids
         self.controller = controller
         self.producer_id = producer_id
-        self.activate()
+        self.authorize()
 
     def add_camera(self, camera):
         if camera not in self.camera_list:
             self.camera_list.append(camera)
-            self.activate()
+            self.authorize()
 
-    # Start HCP Client Producer
-    def activate(self, camera_list=None):
-        self.active = True
-        if camera_list is not None:
-            self.camera_list = camera_list
-
-        self.controller.start_streams(self.camera_list)
-
-        print('sending... ', self.camera_list)
+    def authorize(self):
+        print('Cameras:', self.camera_list)
         if self.connect:
             self.socket.emit('authorize', {
                 'user_id': self.user_id,
@@ -84,10 +78,14 @@ class Producer(Connection):
                 'client_key': CLIENT_KEY
             })
 
+    # Start HCP Client Producer
+    def activate(self, camera_list):
+        self.active = True
+        self.controller.start_streams(camera_list)
+
     # Stop HCP Client Producer
     def deactivate(self):
         self.active = False
-        self.camera_list = None
         self.controller.stop_streams()
 
     # Send frame through to Server

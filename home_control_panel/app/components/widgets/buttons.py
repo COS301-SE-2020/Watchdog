@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QPushButton,
+    QSpacerItem,
     QGraphicsDropShadowEffect
 )
 from ..component import Component
@@ -226,12 +227,15 @@ class PanelToggle(QWidget, Component):
         container_layout.addWidget(self.toggle)
         container_layout.addStretch()
 
+        space = QSpacerItem(self.width, Style.unit / 8)
+
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignCenter)
+        layout.addItem(space)
         layout.addLayout(container_layout)
 
         self.setLayout(layout)
-        self.setFixedHeight(Style.unit / 4.5)
+        self.setFixedHeight(Style.unit / 3)
 
     def toggle_handler(self):
         Component.root.toggle_list()

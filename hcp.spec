@@ -56,18 +56,29 @@ if sys.platform == 'darwin':
 
 # Package the executable file into .app if on OS X
 if sys.platform == 'darwin':
-   app = BUNDLE(exe,
-                name='HCP.app',
-                info_plist={
-                  'NSHighResolutionCapable': 'True'
-                },
-                icon='assets/icon.icns')
+  app = BUNDLE(exe,
+              name='HCP.app',
+              info_plist={
+                'NSHighResolutionCapable': 'True'
+              },
+              icon='assets/icon.icns')
+
+  coll = COLLECT(EXE,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              strip=False,
+              debug=True,
+              upx=True,
+              upx_exclude=[],
+              name='HCP',
+              icon='assets/icon.icns')
 
 # Generate an executable file
 # Notice that the icon is a .ico file, unlike macOS
 # Also note that console=False
 if sys.platform == 'win32' or sys.platform == 'win64' or sys.platform == 'linux':
-    exe = EXE(pyz,
+  exe = EXE(pyz,
             a.scripts,
             [],
             exclude_binaries=True,
@@ -78,7 +89,7 @@ if sys.platform == 'win32' or sys.platform == 'win64' or sys.platform == 'linux'
             upx=True,
             console=True )
 
-    coll = COLLECT(exe,
+  coll = COLLECT(exe,
                 a.binaries,
                 a.zipfiles,
                 a.datas,
