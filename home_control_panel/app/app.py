@@ -39,13 +39,16 @@ class ControlPanel(QApplication, Component):
             self.window.home.sidepanel.list.show()
             self.load_alerts()
             self.load_clips()
-            if self.controller.setup_environment():
-                if not self.controller.live:
-                    self.controller.start()
+            # self.setup()
             return True
         else:
             print('Incorrect Login Details')
         return False
+
+    def setup(self):
+        if self.controller.setup_environment():
+            if not self.controller.live:
+                self.controller.start()
 
     def change_location(self, location):
         self.current_location = location
@@ -53,8 +56,8 @@ class ControlPanel(QApplication, Component):
         self.window.set_cameras(self.controller.get_cameras(self.current_location))
 
     # UI Added New Camera
-    def add_camera(self, location, address, port='', path='', protocol=''):
-        return self.controller.add_camera(location, address, port, path, protocol)
+    def add_camera(self, location, name='', address='', port='', path='', protocol=''):
+        return self.controller.add_camera(location, name, address, port, path, protocol)
 
     # UI Added New Location
     def add_location(self, location):

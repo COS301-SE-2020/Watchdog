@@ -34,6 +34,7 @@ class CameraController(threading.Thread):
                         loaded_camera = self.load_camera(
                             location,
                             camera_id,
+                            camera['name'],
                             camera['address'],
                             camera['port'],
                             camera['path'],
@@ -41,7 +42,7 @@ class CameraController(threading.Thread):
                         )
                         if loaded_camera is None:
                             if self.app is not None:
-                                self.app.window.fix_camera('', camera['address'], camera['port'], camera['protocol'], camera['path'])
+                                self.app.window.fix_camera(camera['name'], camera['address'], camera['port'], camera['protocol'], camera['path'])
                             services.remove_camera(location, camera_id)
             self.update_widgets()
             return True
@@ -67,7 +68,8 @@ class CameraController(threading.Thread):
     def load_location(self, label):
         if label not in self.locations:
             self.locations[label] = Location(label, self)
-            self.app.change_location(label)
+            if self.app.current_location == '':
+                self.app.change_location(label)
 
     def add_location(self, label):
         if label not in self.locations:
@@ -76,9 +78,9 @@ class CameraController(threading.Thread):
                 self.app.change_location(label)
             self.update_widgets()
 
-    def load_camera(self, location, camera_id, address, port, path, protocol):
+    def load_camera(self, location, camera_id, name, address, port, path, protocol):
         if location in self.locations and address not in self.cameras:
-            client = Camera(camera_id, protocol, address, port, path, location)
+            client = Camera(camera_id, protocol, name, address, port, path, location)
             if client.is_connected:
                 print("Loading camera " + str(client))
                 self.cameras[address] = client
@@ -86,11 +88,11 @@ class CameraController(threading.Thread):
                 return client  # successfully added client
         return None
 
-    def add_camera(self, location, address, port, path, protocol):
+    def add_camera(self, location, name, address, port, path, protocol):
         camera_id = 'c' + str(sha256((str(random.getrandbits(128))).encode('ascii')).hexdigest())
 
         if location in self.locations and address not in self.cameras:
-            client = Camera(camera_id, protocol, address, port, path, location)
+            client = Camera(camera_id, protocol, name, address, port, path, location)
 
             if client.is_connected:
                 print("Adding camera " + str(client))

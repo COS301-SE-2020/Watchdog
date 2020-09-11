@@ -180,6 +180,7 @@ class StreamView(QWidget):
         self.camera = camera
         self.location = camera.location
         self.address = camera.address
+        self.name = camera.name
         self.dimensions = (int(Style.unit), int(Style.unit * 0.6))
         self.setContentsMargins(0, 0, 0, 0)
         self.setMinimumWidth(Style.unit)
@@ -312,6 +313,18 @@ class StreamGrid(QGridLayout, Component):
         view = StreamView(camera)
         self.streams.append(view)
 
+        lbl_name = QLabel()
+        lbl_name.setContentsMargins(0, 0, 0, 0)
+        lbl_name.setText(view.name)
+        lbl_name.setAlignment(Qt.AlignCenter)
+        lbl_name.setStyleSheet(Style.replace_variables('font: @SmallTextSize @TextFont; \
+                                                            font-weight: 10; \
+                                                            background: none; \
+                                                            color: @LightTextColor; \
+                                                            margin: @None; \
+                                                            padding: @None; \
+                                                            margin-top: @MarginSmall;'))
+
         lbl_address = QLabel()
         lbl_address.setContentsMargins(0, 0, 0, 0)
         lbl_address.setText(view.address)
@@ -339,30 +352,44 @@ class StreamGrid(QGridLayout, Component):
         inner_layout = QVBoxLayout()
         inner_layout.setAlignment(Qt.AlignCenter)
 
-        layout_address = QHBoxLayout()
-        layout_address.setAlignment(Qt.AlignLeft)
-        layout_location = QHBoxLayout()
-        layout_location.setAlignment(Qt.AlignLeft)
-
         icon = QLabel()
-        map_logo = QPixmap('assets/icons/signal_off.png')
+        map_logo = QPixmap('assets/icons/signal_on.png')
         icon.setPixmap(map_logo.scaled(10, 10, Qt.KeepAspectRatio, Qt.FastTransformation))
         icon.setStyleSheet(Style.replace_variables('margin: @None; \
                                                     padding: @None; \
                                                     background-color: transparent;'))
+                                                    
+        layout_name = QHBoxLayout()
+        layout_name.setAlignment(Qt.AlignLeft)
+        layout_name.addWidget(icon)
+        layout_name.addWidget(lbl_name)
+
+        icon = QLabel()
+        map_logo = QPixmap('assets/icons/signal_on.png')
+        icon.setPixmap(map_logo.scaled(10, 10, Qt.KeepAspectRatio, Qt.FastTransformation))
+        icon.setStyleSheet(Style.replace_variables('margin: @None; \
+                                                    padding: @None; \
+                                                    background-color: transparent;'))
+                                                    
+        layout_address = QHBoxLayout()
+        layout_address.setAlignment(Qt.AlignLeft)
         layout_address.addWidget(icon)
         layout_address.addWidget(lbl_address)
 
         icon = QLabel()
-        map_logo = QPixmap('assets/icons/signal_off.png')
+        map_logo = QPixmap('assets/icons/signal_on.png')
         icon.setPixmap(map_logo.scaled(10, 10, Qt.KeepAspectRatio, Qt.FastTransformation))
         icon.setStyleSheet(Style.replace_variables('margin: @None; \
                                                     padding: @None; \
                                                     background-color: transparent;'))
+
+        layout_location = QHBoxLayout()
+        layout_location.setAlignment(Qt.AlignLeft)
         layout_location.addWidget(icon)
         layout_location.addWidget(lbl_location)
-
+        
         info_layout = QVBoxLayout()
+        info_layout.addLayout(layout_name)
         info_layout.addLayout(layout_address)
         info_layout.addLayout(layout_location)
 

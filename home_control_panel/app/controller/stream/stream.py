@@ -179,15 +179,15 @@ class Stream:
             grey,
             scaleFactor=1.1,
             minNeighbors=4,
-            minSize=(int(self.width * 0.05), int(self.height * 0.05))  # square must be 10% of screens size
+            minSize=(int(self.width * 0.01), int(self.height * 0.01))  # square must be 10% of screens size
         )
 
         for (x, y, w, h) in self.feedback.faces:
             self.feedback.irides = self.indicators.iris_cascade.detectMultiScale(
                 grey[y:y+h, x:x+w],
                 scaleFactor=1.3,
-                minNeighbors=5,
-                minSize=(int(self.width * 0.01), int(self.height * 0.01))
+                minNeighbors=4,
+                minSize=(int(self.width * 0.002), int(self.height * 0.002))
             )
 
         if len(self.feedback.faces) < 1 or len(self.feedback.irides) < 2:

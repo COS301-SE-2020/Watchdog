@@ -13,11 +13,13 @@ FPS = conf['video']['frames_per_second']
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, id, protocol='', address='', port='', path='', location=''):
+    def __init__(self, id, protocol='', name='', address='', port='', path='', location=''):
         threading.Thread.__init__(self)
         self.id = id
         # Camera Physical Location
         self.location = location
+        # Camera Name
+        self.name = name
         # Camera IP Address
         self.address = address
         # Camera Address Port
@@ -119,6 +121,7 @@ class Camera(threading.Thread):
 
     def get_metadata(self):
         return {
+            "name": self.name,
             "address": self.address,
             "port": self.port,
             "path": self.path,

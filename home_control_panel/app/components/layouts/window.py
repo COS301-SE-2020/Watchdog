@@ -64,6 +64,7 @@ class Window(QMainWindow, Component):
 
     def fix_camera(self, label, address, port, protocol, path):
         self.popup = CameraPopup(ascendent=self, label=label, address=address, port=port, protocol=protocol, path=path)
+        self.popup.lbl_warning.show()
         self.popup.show()
 ###############################
 

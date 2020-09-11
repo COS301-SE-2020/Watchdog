@@ -63,31 +63,36 @@ class Popup(QWidget, Component):
 class SettingsPopup(Popup):
     def __init__(self, ascendent):
         super(SettingsPopup, self).__init__(ascendent=ascendent)
+        popup_width = Style.width
+        popup_height = Style.height / 3
+        self.setGeometry((Style.screen_width / 2) - (popup_width / 2), (Style.screen_height / 2) - (popup_height / 2), popup_width, popup_height)
+
         self.btn_submit = QPushButton('Save')
-        self.btn_cancel = QPushButton('Cancel')
 
         self.btn_submit.setFixedWidth(int(Style.unit / 3))
-        self.btn_cancel.setFixedWidth(int(Style.unit / 3))
         self.btn_submit.clicked.connect(self.submit)
-        self.btn_cancel.clicked.connect(self.cancel)
-
-        hbox_click = QHBoxLayout()
-        hbox_click.addWidget(self.btn_submit)
-        hbox_click.addWidget(self.btn_cancel)
-        hbox_click.addStretch()
 
         self.lbl_location = QLabel('Location')
         self.lbl_address = QLabel('Address')
-        self.lbl_streaming = QLabel('Streaming')
-        self.lbl_empty = QLabel()
+        self.lbl_clips = QLabel('Clip Length (s)')
+        self.lbl_clips_extra = QLabel('1min Max')
+
+        container_clips = QHBoxLayout()
+        container_clips.addWidget(self.lbl_clips)
+        container_clips.addWidget(self.lbl_clips_extra)
+
+        widget_clips = QWidget()
+        widget_clips.setLayout(container_clips)
 
         self.input_location = QLineEdit(Component.root.settings.settings['site'])
         self.input_address = QLineEdit(Component.root.settings.settings['address'])
+        self.input_clips = QLineEdit(str(float(Component.root.settings.settings['recording_ratio']) * 60))
 
         self.layout = QFormLayout()
         self.layout.setAlignment(Qt.AlignRight)
         self.layout.addRow(self.lbl_location, self.input_location)
         self.layout.addRow(self.lbl_address, self.input_address)
+        self.layout.addRow(widget_clips, self.input_clips)
 
         map_home = QPixmap('assets/icons/home.png')
         self.icon_home = QLabel()
@@ -122,9 +127,10 @@ class SettingsPopup(Popup):
 
         self.lbl_location.setStyleSheet(Style.replace_variables('border: @None;'))
         self.lbl_address.setStyleSheet(Style.replace_variables('border: @None;'))
-        self.lbl_streaming.setStyleSheet(Style.replace_variables('border: @None;'))
-        self.lbl_empty.setStyleSheet(Style.replace_variables('border: @None;'))
         self.icon_home.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_clips.setStyleSheet(Style.replace_variables('border: @None;'))
+        widget_clips.setStyleSheet(Style.replace_variables('border: @None;'))
+        self.lbl_clips_extra.setStyleSheet(Style.replace_variables('border: @BorderThin solid @AltLightColor;'))
 
         layout_form = QHBoxLayout()
         layout_form.addStretch()
@@ -145,12 +151,20 @@ class SettingsPopup(Popup):
         print("Settings updated")
         Component.root.settings.change_setting('site', value=self.input_location.text())
         Component.root.settings.change_setting('address', value=self.input_address.text())
+        try:
+            length = min(60, float(self.input_clips.text()))
+            Component.root.settings.change_setting('recording_ratio', value=str(length/60))
+        except Exception:
+            pass
         Component.root.window.home.sidepanel.header.lbl_location.setText(Component.root.settings.settings['site'])
 
 
 class LocationPopup(Popup):
     def __init__(self, ascendent):
         super(LocationPopup, self).__init__(ascendent=ascendent)
+        popup_width = Style.width
+        popup_height = Style.height / 4
+        self.setGeometry((Style.screen_width / 2) - (popup_width / 2), (Style.screen_height / 2) - (popup_height / 2), popup_width, popup_height)
 
         self.btn_submit = QPushButton('Save')
         self.btn_cancel = QPushButton('Cancel')
@@ -238,16 +252,17 @@ class LocationPopup(Popup):
 class CameraPopup(Popup):
     def __init__(self, ascendent, label='', address='', port='', protocol='', path=''):
         super(CameraPopup, self).__init__(ascendent=ascendent)
+        popup_width = Style.width
+        popup_height = Style.height / 1.2
+        self.setGeometry((Style.screen_width / 2) - (popup_width / 2), (Style.screen_height / 2) - (popup_height / 2), popup_width, popup_height)
 
-        vbox = QVBoxLayout()
-        vbox.addWidget(QLineEdit())
-        vbox.addWidget(QLineEdit())
-
-        hbox = QHBoxLayout()
-        hbox.addWidget(QRadioButton('Intuder Alarm'))
-        hbox.addWidget(QRadioButton('Home Surveillance'))
-        hbox.addWidget(QRadioButton('Offline'))
-        hbox.addStretch()
+        self.lbl_warning = QLabel('Could not connect to IP Camera!')
+        self.lbl_warning.hide()
+        warning_layout = QHBoxLayout()
+        warning_layout.setContentsMargins(0, 0, 0, 0)
+        warning_layout.setAlignment(Qt.AlignCenter)
+        warning_layout.addWidget(self.lbl_warning)
+        self.lbl_warning.setStyleSheet(Style.replace_variables('border: @None; font: @SmallTextSize @TextFont; color: red;'))
 
         self.btn_submit = QPushButton('Submit')
         self.btn_cancel = QPushButton('Cancel')
@@ -294,6 +309,16 @@ class CameraPopup(Popup):
         self.layout.addRow(self.lbl_protocol, self.input_protocol)
         self.layout.addRow(self.lbl_path, self.input_path)
 
+        self.btn_webcam = QPushButton()
+        self.btn_webcam.clicked.connect(self.complete_webcam)
+        map_cam = QPixmap('assets/icons/webcam.png')
+        self.btn_webcam.setIcon(QIcon(map_cam))
+        self.btn_webcam.setIconSize(QSize(Style.sizes.icon_small, Style.sizes.icon_small))
+
+        webcam_layout = QHBoxLayout()
+        webcam_layout.setAlignment(Qt.AlignCenter)
+        webcam_layout.addWidget(self.btn_webcam)
+
         btn_layout = QHBoxLayout()
         btn_layout.setAlignment(Qt.AlignCenter)
         btn_layout.addWidget(self.btn_submit)
@@ -302,6 +327,8 @@ class CameraPopup(Popup):
         layout_center = QVBoxLayout()
         layout_center.setAlignment(Qt.AlignCenter)
         layout_center.addLayout(self.quit_button_container)
+        layout_center.addLayout(webcam_layout)
+        layout_center.addLayout(warning_layout)
         layout_center.addLayout(self.layout)
         layout_center.addLayout(btn_layout)
 
@@ -326,19 +353,34 @@ class CameraPopup(Popup):
 
     def submit(self):
         self.complete()
+        self.lbl_warning.hide()
         self.hide()
 
     def cancel(self):
+        self.lbl_warning.hide()
         self.hide()
 
     def complete(self):
         Component.root.add_camera(
             self.lbl_current_location.text(),
+            self.input_location.text(),
             self.input_address.text(),
             self.input_port.text(),
             self.input_path.text(),
             self.input_protocol.text()
         )
+
+    def complete_webcam(self):
+        Component.root.add_camera(
+            self.lbl_current_location.text(),
+            'Webcam',
+            0,
+            '',
+            '',
+            ''
+        )
+        self.lbl_warning.hide()
+        self.hide()
 
 
 class LoginPopup(Popup):
@@ -449,11 +491,12 @@ class LoginPopup(Popup):
             self.input_username.text(),
             self.input_password.text()
         )
+
         if res:
             self.lbl_warning.hide()
             self.quit_button.show()
             self.hide()
             Component.root.window.home.view.header.btn_user.show()
+            Component.root.setup()
         else:
             self.lbl_warning.show()
-            Component.root.window.home.view.header.btn_user.show()
