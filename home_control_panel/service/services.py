@@ -65,6 +65,7 @@ def upload_camera(camera_id, metadata):
             "location": metadata['location']
         },
         json={
+            "name": metadata['name'],
             "address": metadata['address'],
             "port": metadata['port'],
             "protocol": metadata['protocol'],
@@ -90,10 +91,10 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
 
     if tag == 'detected':
         with open("data/.logs", "a") as log_file:
-            log_file.write(str(datetime.datetime.now()) + ': Person Detected [camera:' + camera_id + ']\n')
+            log_file.write(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ': Person Detected\n')
     elif tag == 'intruder':
         with open("data/.logs", "a") as log_file:
-            log_file.write(str(datetime.datetime.now()) + ': Intruder Detected [camera:' + camera_id + ']\n')
+            log_file.write(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ': Intruder Detected\n')
 
     if os.path.exists(path):
         if tag in possible_tags:

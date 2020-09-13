@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QPushButton,
+    QSpacerItem,
     QGraphicsDropShadowEffect
 )
 from ..component import Component
@@ -41,27 +42,52 @@ class PlusButton(PopupButton):
         self.setStyleSheet('border: @None; margin: @None; padding: @None;')
 
 
-class ButtonSwitch(QVBoxLayout, Component):
+class ButtonSwitch(QWidget, Component):
     def __init__(self, ascendent, label):
         super(ButtonSwitch, self).__init__(ascendent=ascendent)
         self.active = False
+
         self.marker = QHSeperationLine()
-        self.button = QPushButton()
-        self.button.setText(label)
-        self.button.setMinimumHeight(int(Style.unit / 12.8))
         self.marker.setContentsMargins(0, 0, 0, 0)
+        self.button = QPushButton()
+        self.button.setContentsMargins(0, 0, 0, 0)
 
-        self.button.setMinimumWidth(int(Style.unit / 4))
+        self.button.setText(label)
 
-        self.addWidget(self.button)
-        self.addWidget(self.marker)
+        horizontal_box = QHBoxLayout()
+        horizontal_box.setSpacing(0)
+        horizontal_box.setContentsMargins(0, 0, 0, 0)
+        horizontal_box.setAlignment(Qt.AlignCenter)
+        horizontal_box.addStretch()
+        horizontal_box.addWidget(self.button)
+        horizontal_box.addStretch()
+
+        horizontal_widget = QWidget()
+        horizontal_widget.setContentsMargins(0, 0, 0, 0)
+        horizontal_widget.setLayout(horizontal_box)
+
+        vertical_box = QVBoxLayout()
+        vertical_box.setSpacing(0)
+        vertical_box.setContentsMargins(0, 0, 0, 0)
+        vertical_box.setAlignment(Qt.AlignCenter)
+        vertical_box.addStretch()
+        vertical_box.addWidget(horizontal_widget)
+        vertical_box.addStretch()
+        vertical_box.addWidget(self.marker)
+
+        self.setLayout(vertical_box)
+        self.setMaximumHeight(int(Style.unit / 10))
+        self.setMaximumWidth(int(Style.unit * 0.3))
+        self.setContentsMargins(0, 0, 0, 0)
 
         self.off()
 
     def draw(self):
         if self.active:
             self.button.setStyleSheet(Style.replace_variables('margin: @None; \
+                                        text-align: center; \
                                         padding: @None; \
+                                        border-radius: @MediumRadius; \
                                         margin-top: @PaddingSmall; \
                                         color: @HighlightTextColor;'))
             self.marker.setStyleSheet(Style.replace_variables('background-color: @HighlightColor; \
@@ -69,7 +95,9 @@ class ButtonSwitch(QVBoxLayout, Component):
                                         padding: @None;'))
         else:
             self.button.setStyleSheet(Style.replace_variables(('margin: @None; \
+                                        text-align: center; \
                                         padding: @None; \
+                                        border-radius: @MediumRadius; \
                                         margin-top: @PaddingSmall; \
                                         color: @LightTextColor;')))
             self.marker.setStyleSheet(Style.replace_variables(('background-color: @ColorDark; \
@@ -94,16 +122,15 @@ class ButtonSwitch(QVBoxLayout, Component):
         self.draw()
 
 
-class ButtonToggle(QVBoxLayout, Component):
+class ButtonToggle(QWidget, Component):
     def __init__(self, ascendent, left_label, right_label):
         super(ButtonToggle, self).__init__(ascendent=ascendent)
+        self.setStyleSheet(Style.replace_variables('margin: @None; padding @SmallPadding;'))
         self.setContentsMargins(0, 0, 0, 0)
-        self.setSpacing(0)
 
         self.toggle_layout = QHBoxLayout()
-        self.toggle_layout.setContentsMargins(0, 0, 0, 0)
-        self.toggle_layout.setSpacing(0)
         self.toggle_layout.setAlignment(Qt.AlignCenter)
+        self.toggle_layout.setContentsMargins(0, 0, 0, 0)
 
         self.left_button = ButtonSwitch(self, left_label)
         self.left_button.on()
@@ -111,30 +138,28 @@ class ButtonToggle(QVBoxLayout, Component):
         self.right_button = ButtonSwitch(self, right_label)
         self.right_button.off()
 
-        self.left_button.button.setStyleSheet(Style.replace_variables('border-radius: @PaddingSmall'))
-        self.right_button.button.setStyleSheet(Style.replace_variables('border-radius: @PaddingSmall'))
-
-        self.left_container = QWidget()
-        self.left_container.setLayout(self.left_button)
-
-        self.right_container = QWidget()
-        self.right_container.setLayout(self.right_button)
-
         self.spacer = QVSeperationLine()
+        self.spacer.setContentsMargins(0, 0, 0, 0)
+        self.spacer.setStyleSheet(Style.replace_variables('background-color: @LightColor;'))
 
-        self.toggle_layout.addWidget(self.left_container)
+        self.toggle_layout.addWidget(self.left_button)
         self.toggle_layout.addWidget(self.spacer)
-        self.toggle_layout.addWidget(self.right_container)
+        self.toggle_layout.addWidget(self.right_button)
 
         self.contain_toggle = QWidget()
         self.contain_toggle.setLayout(self.toggle_layout)
         self.contain_toggle.setMinimumHeight(Style.unit / 8)
+        self.contain_toggle.setContentsMargins(0, 0, 0, 0)
+        self.contain_toggle.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor; \
+                                                                    border-radius: @MediumRadius; \
+                                                                    padding: @None;'))
 
-        self.left_button.setContentsMargins(0, 0, 0, 0)
-        self.right_button.setContentsMargins(0, 0, 0, 0)
+        vertical_box = QVBoxLayout()
+        vertical_box.setAlignment(Qt.AlignCenter)
+        vertical_box.addWidget(self.contain_toggle)
 
-        self.setAlignment(Qt.AlignCenter)
-        self.addWidget(self.contain_toggle)
+        self.setLayout(vertical_box)
+        self.setMaximumHeight(int(Style.unit / 6))
 
     def toggle_handler(self):
         self.left_button.toggle()
@@ -145,50 +170,29 @@ class CenterToggle(QWidget, Component):
     def __init__(self, ascendent, left_label, right_label):
         super(CenterToggle, self).__init__(ascendent=ascendent)
         self.setContentsMargins(0, 0, 0, 0)
-<<<<<<< Updated upstream
-        self.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor; \
-=======
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=8, xOffset=3, yOffset=3))
         self.setStyleSheet(Style.replace_variables('background-color: transparent; \
->>>>>>> Stashed changes
                                                     border-radius: @MediumRadius; \
                                                     margin: @None; \
                                                     padding: @None;'))
+
         self.toggle = ButtonToggle(ascendent, left_label, right_label)
         self.toggle.left_button.button.clicked.connect(self.toggle_handler)
         self.toggle.right_button.button.clicked.connect(self.toggle_handler)
-<<<<<<< Updated upstream
-        self.toggle.contain_toggle.setMinimumWidth(Style.unit * 0.6)
-        self.toggle.contain_toggle.setMaximumWidth(Style.unit)
-        self.toggle.left_container.setStyleSheet(Style.replace_variables('text-align: center; \
-                                                    border-radius: @MediumRadius;'))
-        self.toggle.right_container.setStyleSheet(Style.replace_variables('text-align: center; \
-                                                    border-radius: @MediumRadius;'))
-        self.toggle.contain_toggle.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle.spacer.setStyleSheet(Style.replace_variables('background-color: @LightTextColor; \
-                                                    margin: @None;'))
-=======
 
         self.toggle.contain_toggle.setFixedWidth(Style.unit * 0.7)
         self.toggle.contain_toggle.setStyleSheet(Style.replace_variables('background-color: @AltLightColor; \
                                                                         margin: @None; \
                                                                         padding: @None; \
                                                                         border-radius: @MediumRadius;'))
->>>>>>> Stashed changes
         container_layout = QHBoxLayout()
+        container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setAlignment(Qt.AlignCenter)
         container_layout.addStretch()
-        container_layout.addLayout(self.toggle)
+        container_layout.addWidget(self.toggle)
         container_layout.addStretch()
 
         self.setLayout(container_layout)
-<<<<<<< Updated upstream
-
-        self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=10, xOffset=3, yOffset=3))
-=======
->>>>>>> Stashed changes
 
     def toggle_handler(self):
         Component.root.toggle_grid()
@@ -200,49 +204,37 @@ class PanelToggle(QWidget, Component):
     def __init__(self, ascendent, left_label, right_label):
         super(PanelToggle, self).__init__(ascendent=ascendent)
         self.setContentsMargins(0, 0, 0, 0)
-        self.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor; \
+        self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=10, xOffset=3, yOffset=3))
+        self.setStyleSheet(Style.replace_variables('background-color: transparent; \
+                                                    border-radius: @SmallRadius; \
                                                     margin: @None; \
                                                     padding: @None;'))
+
         self.toggle = ButtonToggle(ascendent, left_label, right_label)
         self.toggle.left_button.button.clicked.connect(self.toggle_handler)
         self.toggle.right_button.button.clicked.connect(self.toggle_handler)
-        self.toggle.contain_toggle.setMinimumWidth(self.width)
-        self.toggle.left_container.setMinimumWidth(self.width / 2)
-        self.toggle.right_container.setMinimumWidth(self.width / 2)
-        self.toggle.left_container.setStyleSheet(Style.replace_variables('text-align: center; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle.right_container.setStyleSheet(Style.replace_variables('text-align: center; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle.contain_toggle.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
-        self.toggle.spacer.setStyleSheet(Style.replace_variables('background-color: black; \
-                                                    margin: @None; \
-                                                    padding: @None;'))
 
-        contain_toggle = QHBoxLayout()
-        contain_toggle.addStretch(1)
-        contain_toggle.addLayout(self.toggle)
-        contain_toggle.addStretch(1)
-        contain_toggle.setContentsMargins(0, 0, 0, 0)
-        contain_toggle.setSpacing(0)
+        width = Style.unit * 0.75
+        self.toggle.contain_toggle.setMinimumWidth(width)
+        self.toggle.left_button.setFixedWidth(width * 0.4)
+        self.toggle.right_button.setFixedWidth(width * 0.4)
 
-        widget_contain = QWidget()
-        widget_contain.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor; \
-                                                        margin: @None; \
-                                                        padding: @None;'))
-        widget_contain.setLayout(contain_toggle)
+        container_layout = QHBoxLayout()
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setAlignment(Qt.AlignCenter)
+        container_layout.addStretch()
+        container_layout.addWidget(self.toggle)
+        container_layout.addStretch()
 
-        contain_layout = QHBoxLayout()
-        contain_layout.addWidget(widget_contain)
-        contain_layout.setSpacing(0)
-        contain_layout.setContentsMargins(0, 0, 0, 0)
+        space = QSpacerItem(self.width, Style.unit / 8)
 
-        self.setLayout(contain_layout)
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignCenter)
+        layout.addItem(space)
+        layout.addLayout(container_layout)
 
-        self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=10, xOffset=5, yOffset=5))
+        self.setLayout(layout)
+        self.setFixedHeight(Style.unit / 3)
 
     def toggle_handler(self):
         Component.root.toggle_list()
@@ -259,3 +251,74 @@ class ListButton(QPushButton, Component):
 
     def toggle_handler(self):
         Component.root.change_location(self.label)
+
+
+class PlayButton(QWidget):
+    def __init__(self, view, parent=None):
+        super(PlayButton, self).__init__(parent)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self.view = view
+
+        self.button = QPushButton()
+        self.button.clicked.connect(self.toggle)
+
+        map_play = QPixmap('assets/icons/play.png')
+        self.play_icon = QIcon(map_play)
+
+        map_pause = QPixmap('assets/icons/pause.png')
+        self.pause_icon = QIcon(map_pause)
+
+        self.button.setIconSize(QSize(Style.unit / 14, Style.unit / 14))
+        self.button.setIcon(self.play_icon)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addStretch()
+        layout.addWidget(self.button)
+        layout.addStretch()
+
+        self.setLayout(layout)
+        self.setMaximumHeight(Style.unit / 14)
+
+    def toggle(self):
+        if not self.view.playing:
+            self.button.setIcon(self.pause_icon)
+        else:
+            self.button.setIcon(self.play_icon)
+        self.view.play()
+
+class PlayToggleButton(QWidget):
+    def __init__(self, view, parent=None):
+        super(PlayToggleButton, self).__init__(parent)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self.view = view
+
+        self.button = QPushButton()
+        self.button.clicked.connect(self.toggle)
+
+        map_play = QPixmap('assets/icons/play.png')
+        self.play_icon = QIcon(map_play)
+
+        map_pause = QPixmap('assets/icons/pause.png')
+        self.pause_icon = QIcon(map_pause)
+
+        self.button.setIconSize(QSize(Style.unit / 14, Style.unit / 14))
+        self.button.setIcon(self.pause_icon)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addStretch()
+        layout.addWidget(self.button)
+        layout.addStretch()
+
+        self.setLayout(layout)
+        self.setMaximumHeight(Style.unit / 14)
+
+    def toggle(self):
+        self.view.playing = not self.view.playing
+        if self.view.playing:
+            self.button.setIcon(self.pause_icon)
+        else:
+            self.button.setIcon(self.play_icon)

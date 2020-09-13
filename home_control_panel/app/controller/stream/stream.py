@@ -94,17 +94,13 @@ class Stream:
     #   ii : Retrieve Images
     #   iii : Upload images to S3 bucket
     #   iv : Make call to API Gateway to trigger DetectIntruder lambda function on given images
-    async def put(self, frame):
+    def put(self, frame):
         now = time_now()
         self.triggers.is_movement = False
         self.triggers.is_person = False
 
         self.current_frame = resize(frame, (self.width, self.height))
 
-        # Detect Movement in Current Frame
-        if self.detect_movement():
-            self.triggers.is_movement = True
-            self.triggers.movement_timer = now + 1500
         # Check if there was any Recent Movement
         if now <= self.triggers.movement_timer:
             # Detect Face in Current Frame
@@ -118,6 +114,10 @@ class Stream:
             # await self.feedback_movement()
         else:
             self.frame_collector.collect(frame, Tag.PERIODIC)
+            # Detect Movement in Current Frame
+            if self.detect_movement():
+                self.triggers.is_movement = True
+                self.triggers.movement_timer = now + 1500
 
         # Within Clip Record Timeframe
         if self.config.start_time < now:
@@ -179,15 +179,15 @@ class Stream:
             grey,
             scaleFactor=1.1,
             minNeighbors=4,
-            minSize=(int(self.width * 0.05), int(self.height * 0.05))  # square must be 10% of screens size
+            minSize=(int(self.width * 0.01), int(self.height * 0.01))  # square must be 10% of screens size
         )
 
         for (x, y, w, h) in self.feedback.faces:
             self.feedback.irides = self.indicators.iris_cascade.detectMultiScale(
                 grey[y:y+h, x:x+w],
                 scaleFactor=1.3,
-                minNeighbors=5,
-                minSize=(int(self.width * 0.01), int(self.height * 0.01))
+                minNeighbors=4,
+                minSize=(int(self.width * 0.002), int(self.height * 0.002))
             )
 
         if len(self.feedback.faces) < 1 or len(self.feedback.irides) < 2:

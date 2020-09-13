@@ -6,6 +6,8 @@ from .components.layouts.window import Window
 from .controller.controller import CameraController
 from ..service import services
 from ..service.user import User
+from .components.popups import LoginPopup
+
 
 if not os.path.exists('data'):
     os.mkdir('data')
@@ -16,6 +18,7 @@ if not os.path.exists('data/temp/video'):
 if not os.path.exists('data/temp/image'):
     os.mkdir('data/temp/image')
 
+
 class ControlPanel(QApplication, Component):
     def __init__(self):
         super(ControlPanel, self).__init__([])
@@ -23,8 +26,10 @@ class ControlPanel(QApplication, Component):
         self.settings = Settings()
         self.controller = CameraController(self)
         self.window = Window(self)
+        self.login_screen = LoginPopup(self.window)
         self.window.home.view.grid.hide()
         self.window.home.sidepanel.list.hide()
+        self.login_screen.show()
         self.setApplicationName("Watchdog Control Panel")
 
     def user_login(self, username, password):
@@ -32,20 +37,18 @@ class ControlPanel(QApplication, Component):
         if services.login(username, password):
             self.window.home.view.grid.show()
             self.window.home.sidepanel.list.show()
-<<<<<<< Updated upstream
-            self.load_alerts()
-            # self.load_clips()
-            if self.controller.setup_environment():
-                if not self.controller.live:
-                    self.controller.start()
-=======
             # self.load_alerts()
             self.load_clips()
             # self.setup()
             return True
->>>>>>> Stashed changes
         else:
             print('Incorrect Login Details')
+        return False
+
+    def setup(self):
+        if self.controller.setup_environment():
+            if not self.controller.live:
+                self.controller.start()
 
     def change_location(self, location):
         self.current_location = location
@@ -53,8 +56,8 @@ class ControlPanel(QApplication, Component):
         self.window.set_cameras(self.controller.get_cameras(self.current_location))
 
     # UI Added New Camera
-    def add_camera(self, location, address, port='', path='', protocol=''):
-        return self.controller.add_camera(location, address, port, path, protocol)
+    def add_camera(self, location, name='', address='', port='', path='', protocol=''):
+        return self.controller.add_camera(location, name, address, port, path, protocol)
 
     # UI Added New Location
     def add_location(self, location):
@@ -80,6 +83,7 @@ class ControlPanel(QApplication, Component):
 
     def toggle_grid(self):
         if User.get_instance() is not None:
+            self.load_clips()
             self.window.home.view.grid.toggle()
 
     # def load_alerts(self):
@@ -92,9 +96,14 @@ class ControlPanel(QApplication, Component):
     def load_clips(self):
         for file in os.listdir("data/temp/video"):
             if file.endswith(".mp4"):
-                self.window.home.view.grid.retriever.add_view(file)
+                self.window.home.view.grid.retriever.add_view('data/temp/video/' + file)
 
     def start(self):
         print(self.controller)
         self.window.show()
         self.exec_()
+
+    def end(self):
+        self.controller.stop()
+        self.controller.join()
+        os._exit(1)

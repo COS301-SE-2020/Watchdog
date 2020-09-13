@@ -3,11 +3,13 @@ import base64
 import random
 import socketio
 from . import config
+import urllib3
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 conf = config.configure()
 CLIENT_KEY = conf['services']['client']['key']
-SERVER_URL = conf['services']['stream_url']  # https://ec2-13-245-14-169.af-south-1.compute.amazonaws.com:8080
+SERVER_URL = conf['services']['stream_url']
 
 
 # Front-End Client Asbtract Class
@@ -15,7 +17,7 @@ class Connection:
     def __init__(self, user_id):
         self.id = self.generate_id(self)
         self.user_id = user_id
-        self.socket = socketio.Client()
+        self.socket = socketio.Client(ssl_verify=False)
 
         try:
             self.socket.connect(SERVER_URL)
@@ -54,30 +56,35 @@ class Producer(Connection):
     def __init__(self, user_id, producer_id, camera_ids, controller):
         super(Producer, self).__init__(user_id)
         self.active = False
-        self.camera_list = []
+        self.camera_list = camera_ids
         self.controller = controller
         self.producer_id = producer_id
-        self.available_camera_ids = camera_ids
+        self.authorize()
 
+    def add_camera(self, camera):
+        if camera not in self.camera_list:
+            self.camera_list.append(camera)
+            self.authorize()
+
+    def authorize(self):
+        print('Cameras:', self.camera_list)
         if self.connect:
             self.socket.emit('authorize', {
                 'user_id': self.user_id,
                 'client_type': 'producer',
                 'producer_id': self.producer_id,
-                'available_cameras': self.available_camera_ids,
+                'available_cameras': self.camera_list,
                 'client_key': CLIENT_KEY
             })
 
     # Start HCP Client Producer
     def activate(self, camera_list):
         self.active = True
-        self.camera_list = camera_list
-        self.controller.start_streams(self.camera_list)
+        self.controller.start_streams(camera_list)
 
     # Stop HCP Client Producer
     def deactivate(self):
         self.active = False
-        self.camera_list = None
         self.controller.stop_streams()
 
     # Send frame through to Server

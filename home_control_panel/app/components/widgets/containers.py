@@ -1,4 +1,6 @@
-import os
+import cv2
+import time
+import threading
 from cv2 import resize
 from PyQt5.QtCore import (
     Qt,
@@ -15,27 +17,21 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
-<<<<<<< Updated upstream
-    QGraphicsDropShadowEffect,
-    QAction
-=======
     QAction,
     QGraphicsDropShadowEffect
->>>>>>> Stashed changes
 )
-from PyQt5.QtCore import QUrl
-from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
-from PyQt5.QtMultimediaWidgets import QVideoWidget
+from .spacers import QHSeperationLine
 from ..component import Component
 from ..style import Style
+from .buttons import (
+    ListButton,
+    PlusButton,
+    PlayButton,
+    PlayToggleButton
+)
 from ..popups import (
     LocationPopup,
     CameraPopup
-)
-from .spacers import QHSeperationLine
-from .buttons import (
-    ListButton,
-    PlusButton
 )
 
 
@@ -228,24 +224,18 @@ class ButtonList(QVBoxLayout, Component):
 class StreamView(QWidget):
     def __init__(self, camera, parent=None):
         super(StreamView, self).__init__(parent)
+        self.playing = True
         self.qp = QPainter()
         self.image = QImage()
         self.camera = camera
         self.location = camera.location
         self.address = camera.address
+        self.name = camera.name
         self.dimensions = (int(Style.unit), int(Style.unit * 0.6))
         self.setContentsMargins(0, 0, 0, 0)
         self.setMinimumWidth(Style.unit)
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
 
-<<<<<<< Updated upstream
-        self.setContextMenuPolicy(Qt.ActionsContextMenu)
-        quitAction = QAction("Remove", self)
-        # quitAction.triggered.connect(qApp.quit)
-        self.addAction(quitAction)
-
-=======
->>>>>>> Stashed changes
     def set_frame(self):
         if self.camera.stream.current_frame is not None:
             frame = resize(self.camera.stream.current_frame, self.dimensions)
@@ -278,7 +268,8 @@ class StreamGrid(QGridLayout, Component):
 
     def refresh(self):
         for index in range(len(self.streams)):
-            self.streams[index].set_frame()
+            if self.streams[index].playing:
+                self.streams[index].set_frame()
 
     def append_plus(self):
         if self.col >= self.count_per_row:
@@ -368,6 +359,18 @@ class StreamGrid(QGridLayout, Component):
         view = StreamView(camera)
         self.streams.append(view)
 
+        lbl_name = QLabel()
+        lbl_name.setContentsMargins(0, 0, 0, 0)
+        lbl_name.setText(view.name)
+        lbl_name.setAlignment(Qt.AlignCenter)
+        lbl_name.setStyleSheet(Style.replace_variables('font: @SmallTextSize @TextFont; \
+                                                            font-weight: 10; \
+                                                            background: none; \
+                                                            color: @LightTextColor; \
+                                                            margin: @None; \
+                                                            padding: @None; \
+                                                            margin-top: @MarginSmall;'))
+
         lbl_address = QLabel()
         lbl_address.setContentsMargins(0, 0, 0, 0)
         lbl_address.setText(view.address)
@@ -395,45 +398,61 @@ class StreamGrid(QGridLayout, Component):
         inner_layout = QVBoxLayout()
         inner_layout.setAlignment(Qt.AlignCenter)
 
-        layout_address = QHBoxLayout()
-        layout_address.setAlignment(Qt.AlignLeft)
-        layout_location = QHBoxLayout()
-        layout_location.setAlignment(Qt.AlignLeft)
-
         icon = QLabel()
-        map_logo = QPixmap('assets/icons/signal_off.png')
+        map_logo = QPixmap('assets/icons/signal_on.png')
         icon.setPixmap(map_logo.scaled(10, 10, Qt.KeepAspectRatio, Qt.FastTransformation))
         icon.setStyleSheet(Style.replace_variables('margin: @None; \
                                                     padding: @None; \
                                                     background-color: transparent;'))
+                                                    
+        layout_name = QHBoxLayout()
+        layout_name.setAlignment(Qt.AlignLeft)
+        layout_name.addWidget(icon)
+        layout_name.addWidget(lbl_name)
+
+        icon = QLabel()
+        map_logo = QPixmap('assets/icons/signal_on.png')
+        icon.setPixmap(map_logo.scaled(10, 10, Qt.KeepAspectRatio, Qt.FastTransformation))
+        icon.setStyleSheet(Style.replace_variables('margin: @None; \
+                                                    padding: @None; \
+                                                    background-color: transparent;'))
+                                                    
+        layout_address = QHBoxLayout()
+        layout_address.setAlignment(Qt.AlignLeft)
         layout_address.addWidget(icon)
         layout_address.addWidget(lbl_address)
 
         icon = QLabel()
-        map_logo = QPixmap('assets/icons/signal_off.png')
+        map_logo = QPixmap('assets/icons/signal_on.png')
         icon.setPixmap(map_logo.scaled(10, 10, Qt.KeepAspectRatio, Qt.FastTransformation))
         icon.setStyleSheet(Style.replace_variables('margin: @None; \
                                                     padding: @None; \
                                                     background-color: transparent;'))
+
+        layout_location = QHBoxLayout()
+        layout_location.setAlignment(Qt.AlignLeft)
         layout_location.addWidget(icon)
         layout_location.addWidget(lbl_location)
-
+        
         info_layout = QVBoxLayout()
+        info_layout.addLayout(layout_name)
         info_layout.addLayout(layout_address)
         info_layout.addLayout(layout_location)
 
+        control_layout = QHBoxLayout()
+        control_layout.addLayout(info_layout)
+        control_layout.addWidget(PlayToggleButton(view))
+
         info_widget = QWidget()
-<<<<<<< Updated upstream
-        info_widget.setLayout(info_layout)
-        info_widget.setContentsMargins(int(Style.unit / 8), Style.sizes.margin_small, 0, 0)
-=======
         info_widget.setLayout(control_layout)
         info_widget.setContentsMargins(0, 0, 0, 0)
->>>>>>> Stashed changes
 
         inner_layout.addWidget(view)
         inner_layout.addWidget(info_widget)
+
+        outer_layout.addStretch(1)
         outer_layout.addLayout(inner_layout)
+        outer_layout.addStretch(1)
 
         layout_container = QWidget()
         layout_container.setMaximumWidth(Style.unit + int(Style.unit / 4))
@@ -481,30 +500,94 @@ class StreamGrid(QGridLayout, Component):
         self.update()
 
 
+class Player(threading.Thread):
+    def __init__(self, filepath, view):
+        threading.Thread.__init__(self)
+        self.connection = None
+        self.current_frame = None
+        self.filepath = filepath
+        self.view = view
+        self.started = False
+        self.playing = False
+
+    def load(self):
+        self.connection = cv2.VideoCapture(self.filepath)
+        (grabbed, frame) = self.connection.read()
+        if grabbed:
+            self.current_frame = frame
+            self.view.set_frame(self.current_frame)
+        self.connection.release()
+
+    def run(self):
+        self.started = True
+        self.connection = cv2.VideoCapture(self.filepath)
+        self.playing = True
+        while self.connection.isOpened():
+            (grabbed, frame) = self.connection.read()
+            if grabbed:
+                self.current_frame = frame
+                self.view.set_frame(self.current_frame)
+                time.sleep(1/60)
+            else:
+                break
+        self.playing = False
+        self.connection.release()
+
+    def stop(self):
+        self.connection.release()
+        self.playing = False
+
 class VideoView(QWidget):
-    def __init__(self, file, parent=None):
+    def __init__(self, filepath, parent=None):
         super(VideoView, self).__init__(parent)
-        self.filepath = os.path.join(os.getcwd(), file)
-        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-
-        videoWidget = QVideoWidget()        
-        layout = QVBoxLayout()
-        layout.addWidget(videoWidget)
-        self.setLayout(layout)
-
-        self.mediaPlayer.setVideoOutput(videoWidget)
-        self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(self.filepath)))
-
+        self.playing = False
         self.dimensions = (int(Style.unit), int(Style.unit * 0.6))
+        self.player = None
+        self.filepath = filepath
+        self.qp = QPainter()
+        self.image = QImage()
         self.setContentsMargins(0, 0, 0, 0)
         self.setMinimumWidth(Style.unit)
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=5, xOffset=3, yOffset=3))
 
+        self.player = Player(self.filepath, self)
+        self.player.load()
+        self.player = None
+
     def play(self):
-        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
-            self.mediaPlayer.pause()
+        if self.player is None:
+            self.player = Player(self.filepath, self)
+
+        if self.player.started:
+            if not self.player.playing:
+                self.player.join()
+                self.player = None
+                self.play()
+            else:
+                self.player.stop()
+                self.player = None
+            self.playing = False
         else:
-            self.mediaPlayer.play()
+            self.player.start()
+            self.playing = True
+
+    def set_frame(self, current_frame):
+        if current_frame is not None:
+            frame = resize(current_frame, self.dimensions)
+            height, width, bpc = frame.shape
+            bpl = bpc * width
+            self.image = QImage(frame.data, width, height, bpl, QImage.Format_RGB888)
+            self.setFixedSize(self.image.size())
+            self.update()
+
+    def paintEvent(self, event):
+        try:
+            self.qp.begin(self)
+            if self.image:
+                self.qp.drawImage(QPoint(0, 0), self.image)
+            self.qp.end()
+        except Exception:
+            return
 
 
 class VideoGrid(QGridLayout, Component):
@@ -516,22 +599,14 @@ class VideoGrid(QGridLayout, Component):
         (self.row, self.col) = (0, 0)
         self.views = []
         self.streams = []
-<<<<<<< Updated upstream
-=======
         self.paths = []
         self.count_per_row = 2
->>>>>>> Stashed changes
 
-    def refresh(self):
-        for index in range(len(self.streams)):
-            self.streams[index].set_frame()
-
-<<<<<<< Updated upstream
     def add_view(self, path):
-        if self.col >= 3:
-=======
+        if path in self.paths:
+            return
+
         if self.col >= self.count_per_row:
->>>>>>> Stashed changes
             self.row += 1
             self.col = 0
         elif self.col < 0:
@@ -540,29 +615,36 @@ class VideoGrid(QGridLayout, Component):
 
         view = VideoView(path)
         self.streams.append(view)
+        self.paths.append(path)
 
         outer_layout = QHBoxLayout()
         outer_layout.setAlignment(Qt.AlignCenter)
+
         inner_layout = QVBoxLayout()
         inner_layout.setAlignment(Qt.AlignCenter)
 
         inner_layout.addWidget(view)
+        inner_layout.addWidget(PlayButton(view))
+
+        outer_layout.addStretch(1)
         outer_layout.addLayout(inner_layout)
+        outer_layout.addStretch(1)
 
         layout_container = QWidget()
         layout_container.setMaximumWidth(Style.unit + int(Style.unit / 4))
         layout_container.setLayout(outer_layout)
         self.addWidget(layout_container, self.row, self.col)
         self.setRowMinimumHeight(self.row, (Style.unit * 0.6) + int(Style.unit / 8))
-        self.views.append(layout_container)
+
         self.col += 1
+
         self.update()
 
     def clear_views(self):
         for i in reversed(range(self.count())): 
             self.itemAt(i).widget().deleteLater()
         (self.row, self.col) = (0, 0)
-        self.views = []
+        self.streams = []
 
     def add_views(self, cameras):
         for index in range(len(cameras)):
@@ -573,4 +655,3 @@ class VideoGrid(QGridLayout, Component):
         self.clear_views()
         self.add_views(cameras)
         self.update()
-

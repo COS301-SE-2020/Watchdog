@@ -22,7 +22,7 @@ from cv2 import (
 conf = json.loads(os.environ['config'])
 fps = conf['video']['frames_per_second']
 clip_length = conf['video']['clip_length']
-recording_ratio = conf['video']['recording_ratio']
+recording_ratio = float(conf['settings']['recording_ratio'])
 capture_limit = conf['image']['capture_limit']
 image_threshold = conf['image']['image_threshold']
 

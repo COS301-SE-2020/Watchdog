@@ -2,9 +2,7 @@ import os
 import json
 import cv2
 import threading
-import asyncio
 from .stream.stream import Stream
-# from .stream.collectors.collector import time_now
 
 
 conf = json.loads(os.environ['config'])
@@ -15,11 +13,13 @@ FPS = conf['video']['frames_per_second']
 
 # Camera connector
 class Camera(threading.Thread):
-    def __init__(self, id, protocol='', address='', port='', path='', location=''):
+    def __init__(self, id, protocol='', name='', address='', port='', path='', location=''):
         threading.Thread.__init__(self)
         self.id = id
         # Camera Physical Location
         self.location = location
+        # Camera Name
+        self.name = name
         # Camera IP Address
         self.address = address
         # Camera Address Port
@@ -58,7 +58,7 @@ class Camera(threading.Thread):
             self.connect()
         (grabbed, frame) = self.connection.read()
         if grabbed:
-            asyncio.run(self.stream.put(frame))
+            self.stream.put(frame)
         else:
             self.check_connection()
 
@@ -83,7 +83,7 @@ class Camera(threading.Thread):
             self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, RES_X)
             self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, RES_Y)
             if self.connection.isOpened():
-                print("Connected to IP Camera [" + self.get_url() + "]")
+                print("Connected to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = True
             else:
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
@@ -121,6 +121,7 @@ class Camera(threading.Thread):
 
     def get_metadata(self):
         return {
+            "name": self.name,
             "address": self.address,
             "port": self.port,
             "path": self.path,
@@ -129,7 +130,7 @@ class Camera(threading.Thread):
         }
 
     def __str__(self):
-        camera = '[address:' + self.get_url() + ']'
+        camera = '[address:' + str(self.get_url()) + ']'
         if self.protocol != '':
             camera = '[protocol:' + self.protocol + ']' + camera
         if self.location != '':
