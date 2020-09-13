@@ -151,6 +151,7 @@ class ButtonList(QVBoxLayout, Component):
         del self.buttons[self.active_index]
         del self.highlights[self.active_index]
         self.active_index = ''
+        # TODO: services.remove_location(self.active_index)
 
     def append_plus(self):
         btn = PlusButton(self, LocationPopup)
