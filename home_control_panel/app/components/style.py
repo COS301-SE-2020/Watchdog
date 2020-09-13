@@ -80,7 +80,7 @@ class Style:
     @staticmethod
     def set_unit(dimensions):
         (Style.screen_width, Style.screen_height) = dimensions
-        Style.unit = max(min(Style.screen_width / 3.8 / 3.5, 480), 80)  # 480px
+        Style.unit = max(min(Style.screen_width / 3.8 / 3.5, 480), 140)  # 480px
         Style.width = 3.5 * Style.unit
         Style.height = 2 * Style.unit
         Style.h_margin = int((Style.screen_width - Style.width) / 2)

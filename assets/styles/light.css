@@ -1,6 +1,7 @@
 QMainWindow 
 {
     color: @DarkTextColor;
+    background-color: transparent;
 }
 
 QWidget
@@ -44,6 +45,7 @@ QLabel
     font-weight: 10;
     color: @LightTextColor;
     font: @LabelTextSize Corbel, sans-serif;
+    text-align: center;
 }
 
 /* SCROLL Area */

@@ -148,18 +148,21 @@ class ButtonToggle(QWidget, Component):
 
         self.contain_toggle = QWidget()
         self.contain_toggle.setLayout(self.toggle_layout)
-        self.contain_toggle.setMinimumHeight(Style.unit / 8)
+        self.contain_toggle.setFixedHeight(Style.unit / 8)
         self.contain_toggle.setContentsMargins(0, 0, 0, 0)
         self.contain_toggle.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor; \
                                                                     border-radius: @MediumRadius; \
                                                                     padding: @None;'))
 
         vertical_box = QVBoxLayout()
+        vertical_box.setContentsMargins(0, 0, 0, 0)
         vertical_box.setAlignment(Qt.AlignCenter)
+
+        vertical_box.addStretch()
         vertical_box.addWidget(self.contain_toggle)
+        vertical_box.addStretch()
 
         self.setLayout(vertical_box)
-        self.setMaximumHeight(int(Style.unit / 6))
 
     def toggle_handler(self):
         self.left_button.toggle()

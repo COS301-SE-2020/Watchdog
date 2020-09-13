@@ -4,14 +4,11 @@
 # IDEs
 .vs
 .vscode
-# Python-Module
-home_control_panel.egg-info
 # Python-Cache
 .pytest_cache
 __pycache__
-home_control_panel/.pytest_cache
-home_control_panel/tests/__pycache__
 home_control_panel/__pycache__
+home_control_panel/app/__pycache__
 home_control_panel/app/components/__pycache__
 home_control_panel/app/components/layouts/__pycache__
 home_control_panel/app/components/widgets/__pycache__
@@ -19,7 +16,7 @@ home_control_panel/app/controller/__pycache__
 home_control_panel/app/controller/stream/__pycache__
 home_control_panel/app/controller/stream/collectors/__pycache__
 home_control_panel/service/__pycache__
-home_control_panel/app/__pycache__
+home_control_panel/tests/__pycache__
 # Generated Content
 data/temp/image/*
 data/temp/video/*

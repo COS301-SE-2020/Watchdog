@@ -11,14 +11,18 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel
 )
-from .view import View
-from .sidebar import SideBar
 from ..component import Component
 from ..popups import CameraPopup
 from ..style import Style
+from ..widgets.spacers import (
+    QVSeperationLine
+)
+from .sidebar import SideBar
+from .view import View
 from ..popups import SettingsPopup
-from ..widgets.buttons import PopupButton
-from ..widgets.spacers import QVSeperationLine
+from ..widgets.buttons import (
+    PopupButton
+)
 
 ###############################
 # MAIN WINDOW

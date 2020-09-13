@@ -47,18 +47,7 @@ class GridLayout(QVBoxLayout, Component):
         self.setAlignment(Qt.AlignCenter)
 
         self.view_toggle = CenterToggle(self, 'Live', 'Clips')
-
-        layout_above = QVBoxLayout()
-        layout_above.setAlignment(Qt.AlignCenter)
-        layout_above.setContentsMargins(0, 0, 0, 0)
-        layout_above.setSpacing(0)
-        layout_above.addStretch(12)
-        layout_above.addWidget(self.view_toggle)
-
-        widget_above = QWidget()
-        widget_above.setLayout(layout_above)
-        widget_above.setContentsMargins(0, 0, 0, 0)
-        widget_above.setFixedHeight(Style.unit * 0.32)
+        self.view_toggle.setFixedWidth(self.width)
 
         self.viewer = StreamGrid(self)
         self.retriever = VideoGrid(self)
@@ -86,13 +75,11 @@ class GridLayout(QVBoxLayout, Component):
         info_box = QHBoxLayout()
         info_box.setAlignment(Qt.AlignCenter)
         info_box.addWidget(QLabel('Login to view your content...'))
-
         self.info_label = QWidget()
         self.info_label.setLayout(info_box)
 
         contain_both = QHBoxLayout()
         contain_both.setContentsMargins(0, 0, 0, 0)
-
         contain_both.addWidget(self.live_viewer)
         contain_both.addWidget(self.historical_viewer)
         contain_both.addWidget(self.info_label)
@@ -108,25 +95,27 @@ class GridLayout(QVBoxLayout, Component):
                                                                 margin @None; \
                                                                 padding @None; \
                                                                 background-color: @DarkColor;'))
+
         self.scroll = QScrollArea()
         self.scroll.setContentsMargins(0, 0, 0, 0)
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.contain_viewer)
-        self.scroll.setMinimumWidth(self.width)
+        self.scroll.setMinimumWidth(self.width * 0.94)
 
         main_container = QVBoxLayout()
-        main_container.setContentsMargins(0, 0, 0, 0)
-        main_container.setAlignment(Qt.AlignCenter)
-        main_container.addWidget(widget_above)
-        main_container.addWidget(self.scroll)
+        main_container.setContentsMargins(0, Style.unit / 4, 0, 0)
+        main_container.setAlignment(Qt.AlignTop)
+        main_container.addWidget(self.view_toggle, 1)
+        main_container.addWidget(self.scroll, 10)
 
         main_widget = QWidget()
+        main_widget.setFixedWidth(self.width * 0.96)
         main_widget.setLayout(main_container)
         main_widget.setStyleSheet(Style.replace_variables('margin: ' + str(Style.sizes.margin_large * 1.4) + 'px; \
                                                             padding: @None; \
-                                                            border: none; \
+                                                            border: @None; \
                                                             border-radius: @LargeRadius; \
                                                             background-color: @DarkColor;'))
         main_widget.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=10, xOffset=3, yOffset=3))

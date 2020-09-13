@@ -56,24 +56,27 @@ class SettingLayout(QWidget, Component):
         self.lbl_location.setStyleSheet(Style.replace_variables('font: @SubTextSize @TextFont; \
                                                                 color: @HighlightColor; \
                                                                 font-weight: 30;'))
-        map_settings = QPixmap('assets/icons/settings.png')
-        self.btn_settings = PopupButton(self, SettingsPopup)
-        self.btn_settings.setIcon(QIcon(map_settings))
-        self.btn_settings.setIconSize(QSize(Style.sizes.icon_medium, Style.sizes.icon_medium))
-
         layout = QHBoxLayout()
-        layout.addStretch()
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addStretch(1)
         layout.addWidget(self.lbl_location)
-        layout.addStretch()
+        layout.addStretch(1)
 
         style_widget = QWidget()
+        style_widget.setFixedWidth(self.width)
         style_widget.setLayout(layout)
-        style_widget.setStyleSheet(Style.replace_variables('border-radius: @LargeRadius; \
-                                                            margin: @MediumMargin; \
-                                                            padding: @SmallPadding;'))
-        head = QHBoxLayout()
+        # style_widget.setStyleSheet(Style.replace_variables('border-radius: @LargeRadius; \
+        #                                                     margin: @MediumMargin; \
+        #                                                     padding: @SmallPadding;'))
+        head = QVBoxLayout()
+        head.setAlignment(Qt.AlignCenter)
+        head.setContentsMargins(0, 0, 0, 0)
+        head.addStretch(2)
         head.addWidget(style_widget)
-        self.setLayout(layout)
+        head.addStretch(1)
+
+        self.setLayout(head)
 # SIDE LIST TOGGLE CONTAINER
 #   - Button Toggle [WIDGET]
 #   - Button List [WIDGET]
@@ -109,7 +112,7 @@ class ToggleLayout(QVBoxLayout, Component):
 
         self.addStretch()
         self.addWidget(self.scroll)
-        self.addStretch(2)
+        self.addStretch(1)
 
     def show(self):
         self.location_list.show()
