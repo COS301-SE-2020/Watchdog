@@ -37,10 +37,12 @@ QGridLayout
 
 QPushButton
 {
+    padding: 0px;
+    margin: 0px;
     background-color: transparent;
     border: 0px;
     border-radius: 0px;
-    text-align: left;
+    text-align: center;
     font: @ButtonTextSize Corbel, sans-serif;
     font-weight: 30;
     color: @DarkTextColor;

@@ -32,11 +32,18 @@ class ControlPanel(QApplication, Component):
         if services.login(username, password):
             self.window.home.view.grid.show()
             self.window.home.sidepanel.list.show()
+<<<<<<< Updated upstream
             self.load_alerts()
             # self.load_clips()
             if self.controller.setup_environment():
                 if not self.controller.live:
                     self.controller.start()
+=======
+            # self.load_alerts()
+            self.load_clips()
+            # self.setup()
+            return True
+>>>>>>> Stashed changes
         else:
             print('Incorrect Login Details')
 
@@ -66,21 +73,21 @@ class ControlPanel(QApplication, Component):
         screen_resolution = self.desktop().screenGeometry()
         return (screen_resolution.width(), screen_resolution.height())
 
-    def toggle_list(self):
-        if User.get_instance() is not None:
-            self.load_alerts()
-            self.window.home.sidepanel.list.toggle()
+    # def toggle_list(self):
+    #     if User.get_instance() is not None:
+    #         # self.load_alerts()
+    #         self.window.home.sidepanel.list.toggle()
 
     def toggle_grid(self):
         if User.get_instance() is not None:
             self.window.home.view.grid.toggle()
 
-    def load_alerts(self):
-        log_file = open("data/.logs", "r")
-        self.window.home.sidepanel.list.log_list.clear_labels()
-        for line in log_file:
-            self.window.home.sidepanel.list.log_list.add_label(line)
-        log_file.close()
+    # def load_alerts(self):
+    #     log_file = open("data/.logs", "r")
+    #     self.window.home.sidepanel.list.log_list.clear_labels()
+    #     for line in log_file:
+    #         self.window.home.sidepanel.list.log_list.add_label(line)
+    #     log_file.close()
 
     def load_clips(self):
         for file in os.listdir("data/temp/video"):

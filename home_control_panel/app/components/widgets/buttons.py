@@ -145,13 +145,19 @@ class CenterToggle(QWidget, Component):
     def __init__(self, ascendent, left_label, right_label):
         super(CenterToggle, self).__init__(ascendent=ascendent)
         self.setContentsMargins(0, 0, 0, 0)
+<<<<<<< Updated upstream
         self.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor; \
+=======
+        self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=8, xOffset=3, yOffset=3))
+        self.setStyleSheet(Style.replace_variables('background-color: transparent; \
+>>>>>>> Stashed changes
                                                     border-radius: @MediumRadius; \
                                                     margin: @None; \
                                                     padding: @None;'))
         self.toggle = ButtonToggle(ascendent, left_label, right_label)
         self.toggle.left_button.button.clicked.connect(self.toggle_handler)
         self.toggle.right_button.button.clicked.connect(self.toggle_handler)
+<<<<<<< Updated upstream
         self.toggle.contain_toggle.setMinimumWidth(Style.unit * 0.6)
         self.toggle.contain_toggle.setMaximumWidth(Style.unit)
         self.toggle.left_container.setStyleSheet(Style.replace_variables('text-align: center; \
@@ -163,6 +169,14 @@ class CenterToggle(QWidget, Component):
                                                     padding: @None;'))
         self.toggle.spacer.setStyleSheet(Style.replace_variables('background-color: @LightTextColor; \
                                                     margin: @None;'))
+=======
+
+        self.toggle.contain_toggle.setFixedWidth(Style.unit * 0.7)
+        self.toggle.contain_toggle.setStyleSheet(Style.replace_variables('background-color: @AltLightColor; \
+                                                                        margin: @None; \
+                                                                        padding: @None; \
+                                                                        border-radius: @MediumRadius;'))
+>>>>>>> Stashed changes
         container_layout = QHBoxLayout()
         container_layout.setAlignment(Qt.AlignCenter)
         container_layout.addStretch()
@@ -170,8 +184,11 @@ class CenterToggle(QWidget, Component):
         container_layout.addStretch()
 
         self.setLayout(container_layout)
+<<<<<<< Updated upstream
 
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=10, xOffset=3, yOffset=3))
+=======
+>>>>>>> Stashed changes
 
     def toggle_handler(self):
         Component.root.toggle_grid()
@@ -237,6 +254,7 @@ class ListButton(QPushButton, Component):
     def __init__(self, label, ascendent=None):
         super(ListButton, self).__init__(ascendent=ascendent)
         self.label = label
+        self.setContentsMargins(0, 0, 0, 0)
         self.clicked.connect(self.toggle_handler)
 
     def toggle_handler(self):

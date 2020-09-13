@@ -1,11 +1,4 @@
-from PyQt5.QtCore import (
-    Qt,
-    QSize
-)
-from PyQt5.QtGui import (
-    QIcon,
-    QPixmap
-)
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QLabel,
     QWidget,
@@ -14,17 +7,20 @@ from PyQt5.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
     QScrollArea,
-    QPushButton,
     QGraphicsDropShadowEffect
 )
 from ..style import Style
 from ..component import Component
+<<<<<<< Updated upstream
 from ..widgets.spacers import QHSeperationLine
 from ..popups import LoginPopup, LoginContainer
 from ..widgets.buttons import (
     PopupButton,
     CenterToggle
 )
+=======
+from ..widgets.buttons import CenterToggle
+>>>>>>> Stashed changes
 from ..widgets.containers import (
     StreamGrid,
     VideoGrid
@@ -37,26 +33,19 @@ from ..widgets.containers import (
 class View(QVBoxLayout, Component):
     def __init__(self, ascendent):
         super(View, self).__init__(ascendent=ascendent)
-        self.set_dimensions((self.width / 5) * 4, self.height)
+        self.set_dimensions(self.width * 4/5, self.height * 1/8)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
-        self.header = HeaderLayout(self)
         self.grid = GridLayout(self)
 
-        # Dark Header
-        contain_header = QWidget()
-        contain_header.setLayout(self.header)
-        contain_header.setStyleSheet(Style.dark)
-        contain_header.setStyleSheet(Style.replace_variables('background-color: @AltDarkColor;'))
-        contain_header.setMinimumWidth(self.width)
-        contain_header.setMinimumHeight(int(self.header.height))
-
-        # Light View
+        # # Light View
         contain_grid = QWidget()
+        contain_grid.setContentsMargins(0, 0, 0, 0)
         contain_grid.setLayout(self.grid)
         contain_grid.setStyleSheet(Style.light)
         contain_grid.setMinimumWidth(self.width)
+<<<<<<< Updated upstream
         contain_grid.setMinimumHeight(int(self.header.height))
 
         line = QHSeperationLine()
@@ -111,24 +100,45 @@ class HeaderLayout(QHBoxLayout, Component):
         else:
             self.login_shown = True
             self.login.show()
+=======
+>>>>>>> Stashed changes
 
+        self.addWidget(contain_grid)
 # VIEW GRID CONTAINER
 #   - Stream Views [WIDGET]
 class GridLayout(QVBoxLayout, Component):
     def __init__(self, ascendent):
         super(GridLayout, self).__init__(ascendent=ascendent)
+<<<<<<< Updated upstream
         self.setContentsMargins(0, 0, 0, 5)
+=======
+        self.set_dimensions(self.width, self.height * 7/8)
+        self.setContentsMargins(0, 0, 0, 0)
+>>>>>>> Stashed changes
         self.setSpacing(0)
-        self.setAlignment(Qt.AlignTop)
+        self.setAlignment(Qt.AlignCenter)
 
         spacer = QSpacerItem(self.width, int(Style.unit / 8), QSizePolicy.Fixed)
         self.view_toggle = CenterToggle(self, 'Live', 'Clips')
         layout_above = QVBoxLayout()
         layout_above.setAlignment(Qt.AlignCenter)
+<<<<<<< Updated upstream
         layout_above.addSpacerItem(spacer)
         layout_above.addWidget(self.view_toggle)
 
         # Live Viewer
+=======
+        layout_above.setContentsMargins(0, 0, 0, 0)
+        layout_above.setSpacing(0)
+        layout_above.addStretch(12)
+        layout_above.addWidget(self.view_toggle)
+
+        widget_above = QWidget()
+        widget_above.setLayout(layout_above)
+        widget_above.setContentsMargins(0, 0, 0, 0)
+        widget_above.setFixedHeight(Style.unit * 0.32)
+
+>>>>>>> Stashed changes
         self.viewer = StreamGrid(self)
         # Historical Viewer
         self.retriever = VideoGrid(self)
@@ -155,7 +165,13 @@ class GridLayout(QVBoxLayout, Component):
         info_box.addWidget(QLabel('Login to view your content...'))
         self.info_label.setLayout(info_box)
 
+<<<<<<< Updated upstream
         contain_both = QVBoxLayout()
+=======
+        contain_both = QHBoxLayout()
+        contain_both.setContentsMargins(0, 0, 0, 0)
+
+>>>>>>> Stashed changes
         contain_both.addWidget(self.live_viewer)
         contain_both.addWidget(self.historical_viewer)
         contain_both.addWidget(self.info_label)
@@ -166,13 +182,20 @@ class GridLayout(QVBoxLayout, Component):
         self.contain_viewer = QWidget()
         self.contain_viewer.setLayout(contain_both)
         self.contain_viewer.setStyleSheet(Style.replace_variables('border: @None; \
+<<<<<<< Updated upstream
                                                             background-color: @DarkColor;'))
+=======
+                                                                margin @None; \
+                                                                padding @None; \
+                                                                background-color: @DarkColor;'))
+>>>>>>> Stashed changes
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.contain_viewer)
         self.scroll.setMinimumWidth(self.width)
+<<<<<<< Updated upstream
         self.scroll.setStyleSheet(Style.replace_variables('margin: ' + str(Style.unit / 8) + 'px; \
                                                             padding: ' + str(Style.unit / 8) + 'px; \
                                                             border: none; \
@@ -181,6 +204,25 @@ class GridLayout(QVBoxLayout, Component):
         self.scroll.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=14, xOffset=2, yOffset=5))
         self.addLayout(layout_above)
         self.addWidget(self.scroll)
+=======
+
+        main_container = QVBoxLayout()
+        main_container.setContentsMargins(0, 0, 0, 0)
+        main_container.setAlignment(Qt.AlignCenter)
+        main_container.addWidget(widget_above)
+        main_container.addWidget(self.scroll)
+
+        main_widget = QWidget()
+        main_widget.setLayout(main_container)
+        main_widget.setStyleSheet(Style.replace_variables('margin: ' + str(Style.sizes.margin_large * 1.4) + 'px; \
+                                                            padding: @None; \
+                                                            border: none; \
+                                                            border-radius: @LargeRadius; \
+                                                            background-color: @DarkColor;'))
+        main_widget.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=10, xOffset=3, yOffset=3))
+
+        self.addWidget(main_widget)
+>>>>>>> Stashed changes
         self.show()
 
     def show(self):
