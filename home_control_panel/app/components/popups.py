@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import (
 )
 from .component import Component
 from .style import Style
+from ...cli import debug
 
 
 class Popup(QWidget, Component):
@@ -404,6 +405,7 @@ class CameraPopup(Popup):
 class LoginPopup(Popup):
     def __init__(self, ascendent):
         super(LoginPopup, self).__init__(ascendent=ascendent)
+        debug('Init Login...')
         self.logged_in = False
 
         popup_width = Style.width * 1.5
@@ -500,6 +502,7 @@ class LoginPopup(Popup):
         layout_form.addStretch()
 
         self.setLayout(layout_form)
+        debug('Init Login Done.')
 
     def submit(self):
         self.complete()

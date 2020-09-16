@@ -4,6 +4,8 @@ import cv2
 import threading
 from .stream.stream import Stream
 
+from ...cli import debug
+
 
 conf = json.loads(os.environ['config'])
 PROTOCOLS = ['', 'rstp', 'http', 'https']
@@ -14,6 +16,7 @@ FPS = conf['video']['frames_per_second']
 # Camera connector
 class Camera(threading.Thread):
     def __init__(self, id, protocol='', name='', address='', port='', path='', location=''):
+        debug(f'Creating Camera: {name}...')
         threading.Thread.__init__(self)
         self.id = id
         # Camera Physical Location
@@ -34,9 +37,12 @@ class Camera(threading.Thread):
         self.is_connected = False
         # Stream View GUI Object
         self.stream_view = None
+        self.connection = None
         # Stream Management Object
+        debug(f'\tcreating StreamManagementObject for {name}')
         self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
         # Connect to Camera
+        debug(f'\tconnect to camera {name}')
         self.connect()
 
     # Start thread
@@ -47,7 +53,7 @@ class Camera(threading.Thread):
             self.live = False
         # Update stream while live
         self.live = True
-        while(self.live):
+        while self.live:
             self.update()
         # Disconnect after the stream has been stopped
         self.disconnect()
@@ -75,6 +81,7 @@ class Camera(threading.Thread):
 
     # Connect to IP Camera
     def connect(self):
+        debug(f'Connecting to camera: {self.name}')
         # check not already connected
         if not self.is_connected:
             # Camera Stream Connection

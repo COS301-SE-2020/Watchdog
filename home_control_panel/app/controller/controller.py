@@ -8,6 +8,7 @@ from ...service import services
 from ...service import connection
 from .camera import Camera
 from .location import Location
+from ...cli import debug
 
 conf = json.loads(os.environ['config'])
 site_label = conf['settings']['site']
@@ -15,18 +16,25 @@ site_label = conf['settings']['site']
 
 class CameraController(threading.Thread):
     def __init__(self, app=None):
+        debug('Init Camera Controller...')
         threading.Thread.__init__(self)
         self.client = None
         self.live = False
         self.locations = {}
         self.cameras = {}
         self.app = app
+        debug('DONE Init Camera Controller')
 
     # Called at Start, Pass in UI Window for UI Setup
     def setup_environment(self):
         print('Loading Environment...')
         locations = services.get_camera_setup()
+
+        debug('Locations Loaded')
+        debug(locations, header='Printing Locations', footer='Done Print Locations')
+
         if locations is not None:
+            debug('Locations not None...\n Loading cameras...')
             for location, cameras in locations.items():
                 self.load_location(location)
                 if cameras is not None:
@@ -45,40 +53,58 @@ class CameraController(threading.Thread):
                                 self.app.window.fix_camera(camera['name'], camera['address'], camera['port'], camera['protocol'], camera['path'])
                             services.remove_camera(location, camera_id)
             self.update_widgets()
+            debug('Done Loading Environment (Returning True)')
             return True
+        debug('Done Loading Environment (Returning False)')
         return False
 
     def update_widgets(self):
+        debug('Camera Controller: Updating Widgets...')
         if self.app is not None:
+            debug('Camera Controller: App is not None...')
             self.app.window.set_locations(self.get_locations())
             self.app.window.set_cameras(self.get_cameras(location=self.app.current_location))
+        debug('Camera Controller: App is None...')
 
     def get_cameras(self, location):
+        debug('CameraController: Getting Cameras...')
         cameras = []
         for address, camera in self.locations[location].cameras.items():
             cameras.append(camera)
+        debug('CameraController: DONE Getting Cameras')
         return cameras
 
     def get_locations(self):
+        debug('CameraController: Getting Locations...')
         locations = []
         for location, location_object in self.locations.items():
             locations.append(location)
+        debug('CameraController: DONE Getting Locations')
         return locations
 
     def load_location(self, label):
+        debug('CameraController: Loading Locations...')
         if label not in self.locations:
+            debug('CameraController: \tLocation not in locations. Creating New Location in App Location...')
             self.locations[label] = Location(label, self)
             if self.app.current_location == '':
+                debug('CameraController: \tCurrent App Location Blank. Changing Location...')
                 self.app.change_location(label)
+        debug('CameraController: DONE Loading Locations')
 
     def add_location(self, label):
+        debug(f'CameraController: adding location {label}...')
         if label not in self.locations:
+            debug('CameraController: putting in dict...')
             self.locations[label] = Location(label, self)
             if self.app is not None:
+                debug('CameraController: \tCurrent App Location Blank. Changing Location...')
                 self.app.change_location(label)
             self.update_widgets()
+        debug('CameraController: DONE Adding Location')
 
     def load_camera(self, location, camera_id, name, address, port, path, protocol):
+        debug(f'CameraController: Loading Camera {location} => {name} => {camera_id}')
         if location in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location)
             if client.is_connected:
@@ -112,6 +138,7 @@ class CameraController(threading.Thread):
 
     # starts the controller
     def run(self):
+        debug('Camera Controller: Running....')
         self.live = True
         if self.cameras.__len__() == 0:
             print("There are currently no ip cameras detected...")

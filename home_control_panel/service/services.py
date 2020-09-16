@@ -6,6 +6,7 @@ from hashlib import sha256
 from . import config
 from .user import User, authenticate_user
 
+from ..cli import debug
 
 conf = config.configure()
 CONNECT = conf['services']['connect']
@@ -49,6 +50,7 @@ def login(username, password):
 
 
 def upload_camera(camera_id, metadata):
+    debug(f'\t\tServices: Adding Camera {camera_id}...')
     if not CONNECT:
         return None
     api_endpoint = BASE_URL + "/cameras"
@@ -74,6 +76,7 @@ def upload_camera(camera_id, metadata):
         headers={'Authorization': token}
     )
     # print(str(response.text))
+    debug(f'\t\tServices: DONE Adding Camera {camera_id}')
     return response
 
 
@@ -131,6 +134,7 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
 
 
 def update_location(old_location, new_location):
+    debug(f'\t\tServices: Updating Location from {old_location} to {new_location} ...')
     if not CONNECT:
         return None
     api_endpoint = BASE_URL + "/cameras"
@@ -150,6 +154,7 @@ def update_location(old_location, new_location):
     )
     if response.status_code == 202:
         print("the current location already exists, please try and use a location that is not in the current Site")
+    debug('\t\tServices: DONE Updating Location')
     return response
 
 
