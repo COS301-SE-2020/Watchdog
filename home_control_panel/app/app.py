@@ -37,7 +37,11 @@ class ControlPanel(QApplication, Component):
         if services.login(username, password):
             self.window.home.view.grid.show()
             self.window.home.sidepanel.list.show()
+<<<<<<< HEAD
             self.load_alerts()
+=======
+            # self.load_alerts()
+>>>>>>> UI_Redesign
             self.load_clips()
             # self.setup()
             return True
@@ -76,22 +80,38 @@ class ControlPanel(QApplication, Component):
         screen_resolution = self.desktop().screenGeometry()
         return (screen_resolution.width(), screen_resolution.height())
 
+<<<<<<< HEAD
     def toggle_list(self):
         if User.get_instance() is not None:
             self.load_alerts()
             self.window.home.sidepanel.list.toggle()
+=======
+    # def toggle_list(self):
+    #     if User.get_instance() is not None:
+    #         # self.load_alerts()
+    #         self.window.home.sidepanel.list.toggle()
+>>>>>>> UI_Redesign
 
     def toggle_grid(self):
         if User.get_instance() is not None:
             self.load_clips()
             self.window.home.view.grid.toggle()
 
+<<<<<<< HEAD
     def load_alerts(self):
         log_file = open("data/.logs", "r")
         self.window.home.sidepanel.list.log_list.clear_labels()
         for line in log_file:
             self.window.home.sidepanel.list.log_list.add_label(line)
         log_file.close()
+=======
+    # def load_alerts(self):
+    #     log_file = open("data/.logs", "r")
+    #     self.window.home.sidepanel.list.log_list.clear_labels()
+    #     for line in log_file:
+    #         self.window.home.sidepanel.list.log_list.add_label(line)
+    #     log_file.close()
+>>>>>>> UI_Redesign
 
     def load_clips(self):
         for file in os.listdir("data/temp/video"):

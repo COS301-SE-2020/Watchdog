@@ -34,7 +34,7 @@ QPushButton
     margin: 0px;
     background-color: transparent;
     border: 0px;
-    text-align: left;
+    text-align: center;
     font: @ButtonTextSize Corbel, sans-serif;
     font-weight: 30;
     color: @LightTextColor;
@@ -45,6 +45,7 @@ QLabel
     font-weight: 10;
     color: @LightTextColor;
     font: @LabelTextSize Corbel, sans-serif;
+    text-align: center;
 }
 
 /* SCROLL Area */

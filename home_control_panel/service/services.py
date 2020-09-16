@@ -195,3 +195,22 @@ def get_camera_setup():
             except KeyError:
                 pass
             return response
+
+
+def remove_location(location):
+    api_endpoint = BASE_URL + '/sites'
+    user = User.get_instance()
+    if user is None:
+        print(
+            f"\033[31mCould not remove {location} because you have not authenticated a valid user!")
+        return 400
+    token = user.get_token()
+    response = requests.delete(
+        url=api_endpoint,
+        params={
+            "site_id": user.hcp_id,
+            "location": location
+        },
+        headers={'Authorization': token}
+    )
+    return response

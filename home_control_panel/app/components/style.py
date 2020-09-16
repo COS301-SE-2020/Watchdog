@@ -80,26 +80,26 @@ class Style:
     @staticmethod
     def set_unit(dimensions):
         (Style.screen_width, Style.screen_height) = dimensions
-        Style.unit = min((Style.screen_width / 2) / 3, 480)  # 480px
-        Style.width = 5.5 * Style.unit
-        Style.height = 3 * Style.unit
+        Style.unit = max(min(Style.screen_width / 3.8 / 3.5, 480), 140)  # 480px
+        Style.width = 3.5 * Style.unit
+        Style.height = 2 * Style.unit
         Style.h_margin = int((Style.screen_width - Style.width) / 2)
         Style.v_margin = int((Style.screen_height - Style.height) / 2)
-        Style.text.head = str(int(Style.unit / 8.4)) + 'px'  # 60px
-        Style.text.subhead = str(int(Style.unit / 12)) + 'px'  # 36px
-        Style.text.button = str(int(Style.unit / 21.33)) + 'px'  # 18px
-        Style.text.label = str(int(Style.unit / 21.33)) + 'px'  # 18px
-        Style.text.small = str(int(Style.unit / 24.0)) + 'px'  # 18px
+        Style.text.head = str(int(Style.unit / 7)) + 'px'  # 60px
+        Style.text.subhead = str(int(Style.unit / 14.5)) + 'px'  # 36px
+        Style.text.button = str(int(Style.unit / 15.5)) + 'px'  # 18px
+        Style.text.label = str(int(Style.unit / 15.5)) + 'px'  # 18px
+        Style.text.small = str(int(Style.unit / 16)) + 'px'  # 18px
 
-        Style.sizes.radius_large = int(Style.unit / 30)  # 30px
-        Style.sizes.radius_medium = int(Style.unit / 40)  # 20px
-        Style.sizes.radius_small = int(Style.unit / 50)  # 15px
+        Style.sizes.radius_large = int(Style.unit / 36)  # 30px
+        Style.sizes.radius_medium = int(Style.unit / 50)  # 20px
+        Style.sizes.radius_small = int(Style.unit / 60)  # 15px
         Style.sizes.icon_logo = int(Style.unit * 0.6)
-        Style.sizes.icon_large = int(Style.unit / 4)
-        Style.sizes.icon_medium = int(Style.unit / 8)
-        Style.sizes.icon_small = int(Style.unit / 15)
+        Style.sizes.icon_large = int(Style.unit / 6)
+        Style.sizes.icon_medium = int(Style.unit / 10)
+        Style.sizes.icon_small = int(Style.unit / 18)
 
-        Style.sizes.border_thick = max(int(Style.unit / 380), 1)  # 2
+        Style.sizes.border_thick = max(int(Style.unit / 420), 1)  # 2
         Style.sizes.border_thin = 1  # 1
 
         Style.sizes.margin_large = int(Style.unit / 10.97)  # 35
