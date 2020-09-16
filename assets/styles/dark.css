@@ -1,6 +1,7 @@
 QMainWindow 
 {
     color: @DarkTextColor;
+    background-color: transparent;
 }
 
 QWidget
@@ -37,10 +38,12 @@ QGridLayout
 
 QPushButton
 {
+    padding: 0px;
+    margin: 0px;
     background-color: transparent;
     border: 0px;
     border-radius: 0px;
-    text-align: left;
+    text-align: center;
     font: @ButtonTextSize Corbel, sans-serif;
     font-weight: 30;
     color: @DarkTextColor;
@@ -48,11 +51,12 @@ QPushButton
 
 QLabel
 {
-    font: @ButtonTextSize Corbel, sans-serif;
+    font: @LabelTextSize Corbel, sans-serif;
     font-weight: 10;
     border: 0px;
     border-radius: 0px;
     color: @DarkTextColor;
+    text-align: center;
 }
 
 /* SCROLL Area */

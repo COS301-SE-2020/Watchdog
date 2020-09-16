@@ -4,24 +4,23 @@
 # IDEs
 .vs
 .vscode
-# Python-Module
-home_controller_system.egg-info
 # Python-Cache
 .pytest_cache
-home_control_system/.pytest_cache
-home_control_system/tests/__pycache__
-home_control_system/__pycache__
-home_control_system/app/components/__pycache__
-home_control_system/app/components/layouts/__pycache__
-home_control_system/app/components/widgets/__pycache__
-home_control_system/app/controller/__pycache__
-home_control_system/app/controller/stream/__pycache__
-home_control_system/app/controller/stream/collectors/__pycache__
-home_control_system/service/__pycache__
-home_control_system/app/__pycache__
+__pycache__
+home_control_panel/__pycache__
+home_control_panel/app/__pycache__
+home_control_panel/app/components/__pycache__
+home_control_panel/app/components/layouts/__pycache__
+home_control_panel/app/components/widgets/__pycache__
+home_control_panel/app/controller/__pycache__
+home_control_panel/app/controller/stream/__pycache__
+home_control_panel/app/controller/stream/collectors/__pycache__
+home_control_panel/service/__pycache__
+home_control_panel/tests/__pycache__
 # Generated Content
 data/temp/image/*
 data/temp/video/*
 # Other
-poetry.lock
-*.cpython-37.pyc
+dist
+build
+*.bat
