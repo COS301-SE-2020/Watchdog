@@ -10,7 +10,6 @@ from .collector import (
     Tag,
     time_now,
     hash_id,
-    distinct_frames,
     capture_limit,
     image_threshold
 )
@@ -34,22 +33,13 @@ class ImageCollector(threading.Thread):
     def collect(self, frame):
         self.queue.append(frame)
 
-    def sort(self):
-        for index in range(len(self.queue)):
-            for step in range(len(self.queue)):
-                if index < len(self.queue) and step < len(self.queue) and not distinct_frames(self.queue[index], self.queue[step]):
-                    del self.queue[step]
-
     def flush(self):
-        # start = time_now()
-        self.sort()
         if len(self.queue) == 0:
             return None
-        images = []
         count = 0
+        images = []
+        start = time_now()
         for index in range(len(self.queue)):
-            if count > image_threshold:
-                break
             image = Image(
                 self.camera_id,
                 self.queue[index],
@@ -58,13 +48,15 @@ class ImageCollector(threading.Thread):
             )
             images.append(image)
             image.export()
-            # diff = time_now() - start
-            # wait = max(capture_limit - diff, 0.0)
-            wait = capture_limit
+            diff = time_now() - start
+            wait = max(capture_limit - diff, 0.0)
             if wait > 0.0:
                 count += 1
                 time.sleep(wait)
+            if count > image_threshold:
+                break
         self.queue.clear()
+        self.queue = []
         return images
 
     def retrieve_images(self, drop=False):

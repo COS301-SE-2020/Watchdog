@@ -15,6 +15,7 @@ FPS = conf['video']['frames_per_second']
 class Camera(threading.Thread):
     def __init__(self, id, protocol='', name='', address='', port='', path='', location=''):
         threading.Thread.__init__(self)
+        # Given camera id
         self.id = id
         # Camera Physical Location
         self.location = location
@@ -32,8 +33,6 @@ class Camera(threading.Thread):
         self.live = False
         # Is IP Camera Connected
         self.is_connected = False
-        # Stream View GUI Object
-        self.stream_view = None
         # Stream Management Object
         self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
         # Connect to Camera
@@ -52,7 +51,7 @@ class Camera(threading.Thread):
         # Disconnect after the stream has been stopped
         self.disconnect()
 
-    # Update Camera Connection
+    # Update Camera Connection with new Frame and put in the stream
     def update(self):
         if(not self.is_connected):
             self.connect()
