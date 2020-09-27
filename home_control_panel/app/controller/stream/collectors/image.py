@@ -49,10 +49,9 @@ class ImageCollector(threading.Thread):
             images.append(image)
             image.export()
             diff = time_now() - start
-            wait = max(capture_limit - diff, 0.0)
-            if wait > 0.0:
-                count += 1
-                time.sleep(wait)
+            time.sleep(max(capture_limit - diff, 0.0))
+
+            count += 1
             if count > image_threshold:
                 break
         self.queue.clear()
