@@ -17,12 +17,12 @@ from .....service import services
 
 
 class ImageCollector(threading.Thread):
-    def __init__(self, address):
+    def __init__(self, camera_id, address):
         threading.Thread.__init__(self)
-        self.camera_id = 0
+        self.camera_id = camera_id
+        self.address = address
         self.queue = []
         self.live = False
-        self.address = address
 
     def run(self):
         self.live = True

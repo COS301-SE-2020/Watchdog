@@ -1,4 +1,5 @@
 
+# Location Container Class
 class Location:
     def __init__(self, location, controller):
         self.label = location

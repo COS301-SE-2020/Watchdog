@@ -4,10 +4,10 @@ import json
 import random
 import threading
 from hashlib import sha256
-from ...service import services
-from ...service import connection
 from .camera import Camera
 from .location import Location
+from ...service import services
+from ...service import connection
 
 
 conf = json.loads(os.environ['config'])
@@ -17,20 +17,69 @@ site_label = conf['settings']['site']
 # Camera Controller Class
 #   Manages all camera and location objects
 #   Host stream server connection
-#   Update Video Stream UI Elements
+#   Manages Main Connection and Camera Connections
 class CameraController(threading.Thread):
     def __init__(self, app=None):
         threading.Thread.__init__(self)
-        # stream server client connection
-        self.client = None
-        # live indicator
-        self.live = False
-        # Mapping of location names to location objects
-        self.locations = {}
-        # Mapping of camera address to camera objects
-        self.cameras = {}
         # Reference to UI Application
         self.app = app
+        # live indicator
+        self.live = False
+        # Mapping of camera address to camera objects
+        self.cameras = {}
+        # Mapping of location names to location objects
+        self.locations = {}
+
+    # Starts the controller
+    def run(self):
+        if self.cameras.__len__() == 0:
+            print("There are currently no ip cameras detected...")
+        self.live = True
+        # Start Loaded Cameras
+        for address, client in self.cameras.items():
+            client.start()
+        # Start Client Controllers Stream Connection Management
+        while(self.live):
+            for address, client in self.cameras.items():
+                if not client.check_connection():
+                    pass  # TODO: Spawn Popup for Editing : app.repair_camera(location, name, address, port, path, protocol)
+            if self.connect():
+                time.sleep()
+
+    # Stops the controller
+    def stop(self):
+        self.live = False
+        for address, client in self.cameras.items():
+            client.stop()
+
+    def connect(self):
+        if self.client is None:
+            self.client = connection.Producer(services.User.get_instance().user_id, services.User.get_instance().hcp_id, self)
+        if not self.client.connected:
+            exp_wait = 1
+            while not self.client.connect():
+                time.sleep(exp_wait ^ exp_wait)
+                exp_wait += 1
+                if exp_wait > 6:
+                    return False
+        self.client.authorize()
+        return True
+
+    # Starts the given cameras livestreams, stops all the others
+    def start_streams(self, camera_list):
+        if self.connect():
+            for address, camera in self.cameras.items():
+                if camera.id in camera_list:
+                    camera.start_stream(self.client)
+                else:
+                    camera.stop_stream()
+        else:
+            self.stop_streams()
+
+    # Stops all camera streams
+    def stop_streams(self):
+        for address, camera in self.cameras.items():
+            camera.stop_stream()
 
     # Called at Start, Pass in UI Window for UI Setup
     def setup_environment(self):
@@ -52,17 +101,10 @@ class CameraController(threading.Thread):
                         )
                         if loaded_camera is None:
                             if self.app is not None:  # spawn popup for adding/editing an invalid camera from the server
-                                self.app.window.fix_camera(camera['name'], camera['address'], camera['port'], camera['protocol'], camera['path'])
+                                pass  # TODO: Spawn Popup for Editing : app.repair_camera(location, name, address, port, path, protocol)
                             services.remove_camera(location, camera_id)
-            self.update_widgets()
             return True
         return False
-
-    # Use UI Reference to update the UI Elements
-    def update_widgets(self):
-        if self.app is not None:
-            self.app.window.set_locations(self.get_locations())
-            self.app.window.set_cameras(self.get_cameras(location=self.app.current_location))
 
     # Returns the list of cameras for a given location
     def get_cameras(self, location):
@@ -78,20 +120,18 @@ class CameraController(threading.Thread):
             locations.append(location)
         return locations
 
+    def get_camera_ids(self):
+        # Build List of Camera ID's
+        camera_ids = []
+        for address, camera in self.cameras.items():
+            camera_ids.append(camera.id)
+        return camera_ids
+
     # Loads in an Existing location
     def load_location(self, label):
         if label not in self.locations:
             self.locations[label] = Location(label, self)
-            if self.app.current_location == '':
-                self.app.change_location(label)
-
-    # Adds a new Location
-    def add_location(self, label):
-        if label not in self.locations:
-            self.locations[label] = Location(label, self)
-            if self.app is not None:
-                self.app.change_location(label)
-            self.update_widgets()
+            pass  # TODO: Add Location to UI : app.add_location(location_label)
 
     # Loads in an Existing Camera
     def load_camera(self, location, camera_id, name, address, port, path, protocol):
@@ -101,8 +141,17 @@ class CameraController(threading.Thread):
                 print("Loading camera " + str(client))
                 self.cameras[address] = client
                 self.locations[location].add_camera(client)
+                pass  # TODO: Add Camera to UI : app.add_camera(location_label, name, address, port, path, protocol)
+                pass  # TODO: Attach Stream UI Component to Stream Object : app.attach_stream(camera_id, stream_object)
+                # stream = self.cameras[address].stream
                 return client  # successfully added client
         return None
+
+    # Adds a new Location
+    def add_location(self, label):
+        if label not in self.locations:
+            self.locations[label] = Location(label, self)
+            pass  # TODO: Add Location to UI : app.add_location(location_label)
 
     # Adds a new Camera and Inserts it into database
     def add_camera(self, location, name, address, port, path, protocol):
@@ -110,7 +159,6 @@ class CameraController(threading.Thread):
 
         if location in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location)
-            
             if client.is_connected:
                 print("Adding camera " + str(client))
 
@@ -119,68 +167,23 @@ class CameraController(threading.Thread):
                     print('Warning: Camera not uploaded!')
 
                 self.cameras[address] = client
-                self.locations[location].add_camera(self.cameras[address])
-                self.client.add_camera(self.cameras[address].id)
                 self.cameras[address].start()
 
-                self.update_widgets()
-                return client  # successfully added client
+                self.locations[location].add_camera(self.cameras[address])
+                self.client.authorize()
+                pass  # TODO: Add Camera to UI : app.add_camera(location_label, name, address, port, path, protocol)
+                return self.cameras[address]  # successfully added client
+            else:
+                print('Warning: Could not connect to camera', '[', camera_id, name, ']')
         return None
-
-    # Starts the controller
-    def run(self):
-        self.live = True
-        if self.cameras.__len__() == 0:
-            print("There are currently no ip cameras detected...")
-
-        for address, client in self.cameras.items():
-            client.start()
-
-        camera_ids = []
-
-        for address, camera in self.cameras.items():
-            camera_ids.append(camera.id)
-
-        # Start UI Updates
-        if self.app is not None:
-            user_id = services.User.get_instance().user_id
-            producer_id = services.User.get_instance().hcp_id
-            self.client = connection.Producer(user_id, producer_id, camera_ids, self)
-            while(self.live):
-                sec_start = time.time_ns() / (10 ** 9)
-                self.app.window.home.view.grid.viewer.refresh()
-                sec_diff = (time.time_ns() / (10 ** 9)) - sec_start
-                fps = 1 / 15
-                time.sleep(max(fps - sec_diff, 0))
-
-    # Stops the controller
-    def stop(self):
-        self.live = False
-        for address, client in self.cameras.items():
-            client.stop()
-            client.join()
-
-    # Starts the given cameras livestreams, stops all the others
-    def start_streams(self, camera_list):
-        if self.client is not None:
-            for address, camera in self.cameras.items():
-                if camera.id in camera_list:
-                    camera.start_stream(self.client)
-                else:
-                    camera.stop_stream()
-
-    # Stops all camera streams
-    def stop_streams(self):
-        for address, camera in self.cameras.items():
-            camera.stop_stream()
 
     # Returns stats for a given camera address
     def client_stats(self, address):
         stats = {}
-        stats['is_connected'] = self.cameras[address].is_connected
+        stats['is_frames'] = self.cameras[address].stream.current_frame is not None
         stats['is_movement'] = self.cameras[address].stream.triggers.is_movement
         stats['is_person'] = self.cameras[address].stream.triggers.is_person
-        stats['is_frames'] = self.cameras[address].stream.current_frame is not None
+        stats['is_connected'] = self.cameras[address].is_connected
         return stats
 
     def __str__(self):

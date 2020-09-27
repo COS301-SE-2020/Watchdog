@@ -1,8 +1,8 @@
-from home_control_panel.app import home
+from home_control_panel.app import app
 
 
 def main():
-    home.start()
+    app.start()
 
 
 if __name__ == "__main__":

@@ -1,95 +1,43 @@
 import os
 from PyQt5.QtWidgets import QApplication
-from .settings import Settings
-from .components.component import Component
-from .components.layouts.window import Window
+from ..service.settings import Settings
 from .controller.controller import CameraController
-from ..service import services
-from ..service.user import User
-from .components.popups import LoginPopup
 
 
-if not os.path.exists('data'):
-    os.mkdir('data')
-if not os.path.exists('data/temp'):
-    os.mkdir('data/temp')
-if not os.path.exists('data/temp/video'):
-    os.mkdir('data/temp/video')
-if not os.path.exists('data/temp/image'):
-    os.mkdir('data/temp/image')
-
-
-class ControlPanel(QApplication, Component):
+class ControlPanel(QApplication):
     def __init__(self):
         super(ControlPanel, self).__init__([])
-        self.current_location = ''
+        self.setup()
+        self.setApplicationName("Watchdog Control Panel")
         self.settings = Settings()
         self.controller = CameraController(self)
-        self.window = Window(self)
-        self.login_screen = LoginPopup(self.window)
-        self.window.home.view.grid.hide()
-        self.window.home.sidepanel.list.hide()
-        self.login_screen.show()
-        self.setApplicationName("Watchdog Control Panel")
-
-    def user_login(self, username, password):
-        print('Logging in...')
-        if services.login(username, password):
-            self.window.home.view.grid.show()
-            self.window.home.sidepanel.list.show()
-            self.load_clips()
-            return True
-        else:
-            print('Incorrect Login Details')
-        return False
-
-    def setup(self):
-        if self.controller.setup_environment():
-            if not self.controller.live:
-                self.controller.start()
-
-    def change_location(self, location):
-        self.current_location = location
-        self.window.home.sidepanel.list.button_list.toggle_handler(self.current_location)
-        self.window.set_cameras(self.controller.get_cameras(self.current_location))
-
-    # UI Added New Camera
-    def add_camera(self, location, name='', address='', port='', path='', protocol=''):
-        return self.controller.add_camera(location, name, address, port, path, protocol)
-
-    # UI Added New Location
-    def add_location(self, location):
-        return self.controller.add_location(location)
-
-    # Return Camera Info for UI
-    def get_cameras(self, location):
-        return self.controller.get_cameras(location)
-
-    # Return Location Info for UI
-    def get_locations(self):
-        return self.controller.get_locations()
-
-    # Return Resolution Info for UI
-    def get_resolution(self):
-        screen_resolution = self.desktop().screenGeometry()
-        return (screen_resolution.width(), screen_resolution.height())
-
-    def toggle_grid(self):
-        if User.get_instance() is not None:
-            self.load_clips()
-            self.window.home.view.grid.toggle()
-
-    def load_clips(self):
-        for file in os.listdir("data/temp/video"):
-            if file.endswith(".mp4"):
-                self.window.home.view.grid.retriever.add_view('data/temp/video/' + file)
 
     def start(self):
-        print(self.controller)
-        self.window.show()
         self.exec_()
 
     def end(self):
         self.controller.stop()
         self.controller.join()
         os._exit(1)
+
+    @staticmethod
+    def setup():
+        # Directory Structure
+        if not os.path.exists('data'):
+            os.mkdir('data')
+        if not os.path.exists('data/temp'):
+            os.mkdir('data/temp')
+        if not os.path.exists('data/temp/video'):
+            os.mkdir('data/temp/video')
+        if not os.path.exists('data/temp/image'):
+            os.mkdir('data/temp/image')
+        # Utility Files
+        if not os.path.exists('data/.conf'):
+            with open('data/.conf', 'w'):
+                pass
+        if not os.path.exists('data/.hash'):
+            with open('data/.hash', 'w'):
+                pass
+        if not os.path.exists('data/.logs'):
+            with open('data/.logs', 'w'):
+                pass

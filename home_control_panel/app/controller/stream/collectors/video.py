@@ -54,14 +54,14 @@ from .....service import services
 #       Using the queues (of equal length, sometimes containing empty frames) build a clip of %minute length
 #################################################
 class FrameCollector(threading.Thread):
-    def __init__(self, address):
+    def __init__(self, camera_id, address):
         threading.Thread.__init__(self)
         self.dimensions = (480, 360)
-        self.camera_id = 0
+        self.camera_id = camera_id
+        self.address = address
         self.alert_queue = []
         self.move_queue = []
         self.period_queue = []
-        self.address = address
         self.live = False
 
     def run(self):
@@ -197,7 +197,7 @@ class Video:
                 file = VideoWriter(name, -1, fps, (w, h), True)
             elif sys.platform == 'darwin' or sys.platform == 'linux':
                 file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
-            
+
             print("Exporting Video [" + name + "]")
             for index in range(len(self.frames)):
                 if self.frames[index] is not None:
