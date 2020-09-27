@@ -4,6 +4,7 @@
 # IDEs
 .vs
 .vscode
+venv
 # Python-Cache
 .pytest_cache
 __pycache__
