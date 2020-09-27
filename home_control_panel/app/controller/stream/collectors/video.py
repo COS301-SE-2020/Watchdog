@@ -54,13 +54,14 @@ from .....service import services
 #       Using the queues (of equal length, sometimes containing empty frames) build a clip of %minute length
 #################################################
 class FrameCollector(threading.Thread):
-    def __init__(self, address):
+    def __init__(self, camera_id, address):
         threading.Thread.__init__(self)
-        self.camera_id = 0
+        self.dimensions = (480, 360)
+        self.camera_id = camera_id
+        self.address = address
         self.alert_queue = []
         self.move_queue = []
         self.period_queue = []
-        self.address = address
         self.live = False
 
     def run(self):
@@ -73,6 +74,8 @@ class FrameCollector(threading.Thread):
                 time.sleep(clip_length * (1.0 - progress))
 
     def collect(self, frame, tag=Tag.DEFAULT):
+        (width, height) = self.dimensions
+        frame = resize(frame, (width, height))
         if tag == Tag.INTRUDER:
             self.alert_queue.append(frame)
         else:
@@ -149,7 +152,9 @@ class FrameCollector(threading.Thread):
         self.alert_queue.clear()
         self.move_queue.clear()
         self.period_queue.clear()
-
+        self.alert_queue = []
+        self.move_queue = []
+        self.period_queue = []
         return video
 
 
@@ -161,10 +166,11 @@ class Video:
         self.time_start = time_now()
         self.time_end = time_now()
         self.address = address
+        self.dimensions = (480, 360)
         self.id = hash_id(self.time_start, self.address)
 
     def resize(self, dimensions):
-        (width, height) = dimensions
+        self.dimensions = (width, height) = dimensions
         for index in range(len(self.frames)):
             self.frames[index] = resize(self.frames[index], (width, height))
 
@@ -186,10 +192,12 @@ class Video:
             name = 'data/temp/video/' + str(self.id) + ext
             (w, h) = (480, 360)
             self.resize((w, h))
+
             if sys.platform == 'win32':
                 file = VideoWriter(name, -1, fps, (w, h), True)
             elif sys.platform == 'darwin' or sys.platform == 'linux':
                 file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
+
             print("Exporting Video [" + name + "]")
             for index in range(len(self.frames)):
                 if self.frames[index] is not None:
@@ -208,6 +216,7 @@ class Video:
             services.upload_to_s3('data/temp/video', str(self.id) + ext, tag_label, self.camera_id)
 
             return True
+
         return False
 
     def get_metadata(self):

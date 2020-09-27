@@ -17,14 +17,9 @@ class Connection:
     def __init__(self, user_id):
         self.id = self.generate_id(self)
         self.user_id = user_id
+        self.connected = False
         self.socket = socketio.Client(ssl_verify=False)
-
-        try:
-            self.socket.connect(SERVER_URL)
-            self.connect = True
-        except socketio.exceptions.ConnectionError:
-            print("Failed to connect to stream server")
-            self.connect = False
+        self.connect()
 
         # Data : { user_id : string, camera_list : string }
         @self.socket.on('activate-broadcast')
@@ -45,6 +40,15 @@ class Connection:
             image = data['frame']
             self.consume(image)
 
+    def connect(self):
+        try:
+            self.socket.connect(SERVER_URL)
+            self.connected = True
+        except socketio.exceptions.ConnectionError:
+            print("Failed to connect to stream server")
+            self.connected = False
+        return self.connected
+
     @staticmethod
     def generate_id(user):
         id = 'u' + str(random.getrandbits(128))
@@ -56,24 +60,24 @@ class Producer(Connection):
     def __init__(self, user_id, producer_id, camera_ids, controller):
         super(Producer, self).__init__(user_id)
         self.active = False
-        self.camera_list = camera_ids
         self.controller = controller
         self.producer_id = producer_id
-        self.authorize()
+        # self.camera_list = self.controller.get_camera_ids()
+        # self.authorize()
 
-    def add_camera(self, camera):
-        if camera not in self.camera_list:
-            self.camera_list.append(camera)
-            self.authorize()
+    # def add_camera(self, camera):
+    #     if camera not in self.camera_list:
+    #         self.camera_list.append(camera)
+    #         self.authorize()
 
     def authorize(self):
-        print('Cameras:', self.camera_list)
+        print('Cameras:', self.controller.get_camera_ids())
         if self.connect:
             self.socket.emit('authorize', {
                 'user_id': self.user_id,
                 'client_type': 'producer',
                 'producer_id': self.producer_id,
-                'available_cameras': self.camera_list,
+                'available_cameras': self.controller.get_camera_ids(),
                 'client_key': CLIENT_KEY
             })
 
@@ -90,7 +94,7 @@ class Producer(Connection):
     # Send frame through to Server
     def produce(self, camera_id, frame_px):
         if self.connect:
-            if self.active and camera_id in self.camera_list:
+            if self.active and camera_id in self.controller.get_camera_ids():
                 retval, buffer = cv2.imencode('.jpg', frame_px)
                 frame = str(base64.b64encode(buffer))
                 self.socket.emit('produce-frame', {'camera_id': camera_id, 'frame': frame})
