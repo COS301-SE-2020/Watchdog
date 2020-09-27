@@ -121,11 +121,11 @@ class Camera(threading.Thread):
 
     def get_metadata(self):
         return {
+            "location": self.location,
             "name": self.name,
             "address": self.address,
             "port": self.port,
             "path": self.path,
-            "location": self.location,
             "protocol": self.protocol
         }
 

@@ -9,7 +9,6 @@ from .location import Location
 from ...service import services
 from ...service import connection
 
-
 conf = json.loads(os.environ['config'])
 site_label = conf['settings']['site']
 
@@ -42,7 +41,8 @@ class CameraController(threading.Thread):
         while(self.live):
             for address, client in self.cameras.items():
                 if not client.check_connection():
-                    pass  # TODO: Spawn Popup for Editing : app.repair_camera(location, name, address, port, path, protocol)
+                    self.app.repair_camera(client.location, client.id, client.name, client.address, client.port, client.path, client.protocol)
+                    # TODO: Check if Repaired in real time and update DB
             if self.connect():
                 time.sleep()
 
@@ -52,6 +52,7 @@ class CameraController(threading.Thread):
         for address, client in self.cameras.items():
             client.stop()
 
+    # Connect to Livestream Server
     def connect(self):
         if self.client is None:
             self.client = connection.Producer(services.User.get_instance().user_id, services.User.get_instance().hcp_id, self)
@@ -100,9 +101,17 @@ class CameraController(threading.Thread):
                             camera['protocol']
                         )
                         if loaded_camera is None:
-                            if self.app is not None:  # spawn popup for adding/editing an invalid camera from the server
-                                pass  # TODO: Spawn Popup for Editing : app.repair_camera(location, name, address, port, path, protocol)
+                            # Camera Failed to Connect, Delete from DB and Ask User to Fix Details
                             services.remove_camera(location, camera_id)
+                            self.app.repair_camera(location, camera_id, camera['name'], camera['address'], camera['port'], camera['path'], camera['protocol'])
+                            services.upload_camera(camera_id, {
+                                "location": location,
+                                "name": camera['name'],
+                                "address": camera['address'],
+                                "port": camera['port'],
+                                "path": camera['path'],
+                                "protocol": camera['protocol']
+                            })
             return True
         return False
 
@@ -131,7 +140,7 @@ class CameraController(threading.Thread):
     def load_location(self, label):
         if label not in self.locations:
             self.locations[label] = Location(label, self)
-            pass  # TODO: Add Location to UI : app.add_location(location_label)
+            self.app.add_location(label)
 
     # Loads in an Existing Camera
     def load_camera(self, location, camera_id, name, address, port, path, protocol):
@@ -141,9 +150,8 @@ class CameraController(threading.Thread):
                 print("Loading camera " + str(client))
                 self.cameras[address] = client
                 self.locations[location].add_camera(client)
-                pass  # TODO: Add Camera to UI : app.add_camera(location_label, name, address, port, path, protocol)
-                pass  # TODO: Attach Stream UI Component to Stream Object : app.attach_stream(camera_id, stream_object)
-                # stream = self.cameras[address].stream
+                self.app.add_camera(location, camera_id, name, address, port, path, protocol)
+                self.app.attach_stream(camera_id, self.cameras[address].stream)
                 return client  # successfully added client
         return None
 
@@ -151,12 +159,12 @@ class CameraController(threading.Thread):
     def add_location(self, label):
         if label not in self.locations:
             self.locations[label] = Location(label, self)
-            pass  # TODO: Add Location to UI : app.add_location(location_label)
+            self.app.add_location(label)
+            # TODO: Added a service function for adding a location without cameras
 
     # Adds a new Camera and Inserts it into database
     def add_camera(self, location, name, address, port, path, protocol):
         camera_id = 'c' + str(sha256((str(random.getrandbits(128))).encode('ascii')).hexdigest())
-
         if location in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location)
             if client.is_connected:
@@ -171,7 +179,7 @@ class CameraController(threading.Thread):
 
                 self.locations[location].add_camera(self.cameras[address])
                 self.client.authorize()
-                pass  # TODO: Add Camera to UI : app.add_camera(location_label, name, address, port, path, protocol)
+                self.app.add_camera(location, camera_id, name, address, port, path, protocol)
                 return self.cameras[address]  # successfully added client
             else:
                 print('Warning: Could not connect to camera', '[', camera_id, name, ']')
