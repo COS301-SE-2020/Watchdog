@@ -1,11 +1,12 @@
 """
 Interface Class:
+- Abstract class that generalizes to Actual UI
 """
 import os
 from abc import ABC
 
 
-class Interface(ABC):
+class Interface:
     def __init__(self, controller_events: dict = None):
         """
         Interface Constructor
@@ -14,13 +15,15 @@ class Interface(ABC):
         :param controller_events: (dict) Does all the backend logic for each event - {
             "start": func() - start controller,
             "end": func() - end controller,
-            "login": func(username, password) - does the login,
+            "login": func(username, password) - does the login and returns True or False,
             "logout": func() - shuts down all background processes,
             "add_camera": func(protocol, ip, path, name, location) - adds a camera object,
+            "remove_camera": func(id) - removes camera with camerae.id = id,
             "add_location": func(name) - adds a new location,
-            "remove_location": func(name, id) - removes a location
+            "remove_location": func(id) - removes a location
         }
         """
+        print("Interface Constructor")
         if not os.path.exists('data'):
             os.mkdir('data')
         if not os.path.exists('data/temp'):
@@ -111,7 +114,7 @@ class Interface(ABC):
         """
         pass
 
-    def update_stream(self, camera_id, frame):
+    def ui_update_stream(self, camera_id, frame):
         """
         Updates UI camera stream
         :param camera_id
