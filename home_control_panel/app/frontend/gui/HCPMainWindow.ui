@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>662</width>
-    <height>537</height>
+    <width>945</width>
+    <height>757</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>662</width>
-    <height>524</height>
+    <width>945</width>
+    <height>757</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -26,69 +26,34 @@
    <property name="styleSheet">
     <string notr="true"/>
    </property>
-   <layout class="QGridLayout" name="gridLayout_2">
-    <item row="2" column="0">
-     <widget class="QSplitter" name="splitter">
-      <property name="minimumSize">
-       <size>
-        <width>576</width>
-        <height>310</height>
-       </size>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="2">
+     <widget class="QScrollArea" name="scrollArea">
+      <property name="widgetResizable">
+       <bool>true</bool>
       </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <widget class="QTreeView" name="rooms">
-       <property name="minimumSize">
-        <size>
-         <width>200</width>
-         <height>0</height>
-        </size>
+      <widget class="QWidget" name="scrollAreaContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>649</width>
+         <height>494</height>
+        </rect>
        </property>
-       <property name="maximumSize">
-        <size>
-         <width>266</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="styleSheet">
-        <string notr="true"/>
-       </property>
-      </widget>
-      <widget class="QWidget" name="gridLayoutWidget">
-       <property name="minimumSize">
-        <size>
-         <width>360</width>
-         <height>310</height>
-        </size>
-       </property>
-       <layout class="QGridLayout" name="cameras"/>
+       <layout class="QGridLayout" name="cameras">
+        <item row="0" column="0">
+         <widget class="QLabel" name="promptLabel">
+          <property name="text">
+           <string>To add a camera go to Cameras &gt; Add New in the Menu above</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="WatchdogLogo">
-      <property name="minimumSize">
-       <size>
-        <width>638</width>
-        <height>62</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>62</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Watchdog Home Control Panel</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0">
+    <item row="2" column="2">
      <widget class="QProgressBar" name="progressBar">
       <property name="maximum">
        <number>0</number>
@@ -101,6 +66,38 @@
       </property>
      </widget>
     </item>
+    <item row="0" column="0" colspan="3">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap resource="resources.qrc">:/images/assets/smallLogo.png</pixmap>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="1">
+     <widget class="QTreeWidget" name="locations">
+      <property name="maximumSize">
+       <size>
+        <width>250</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <column>
+       <property name="text">
+        <string>Locations</string>
+       </property>
+      </column>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -108,7 +105,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>662</width>
+     <width>945</width>
      <height>22</height>
     </rect>
    </property>
@@ -131,9 +128,16 @@
     </property>
     <addaction name="actionView_Recordings"/>
    </widget>
+   <widget class="QMenu" name="menuLocations">
+    <property name="title">
+     <string>Locations</string>
+    </property>
+    <addaction name="actionAdd_New_Location"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCameras"/>
    <addaction name="menuRecordings"/>
+   <addaction name="menuLocations"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionAdd_New_Camera">
@@ -161,7 +165,14 @@
     <string>View Recordings</string>
    </property>
   </action>
+  <action name="actionAdd_New_Location">
+   <property name="text">
+    <string>Add New Location</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>AddCamera</class>
- <widget class="QDialog" name="AddCamera">
+ <class>RepairCamera</class>
+ <widget class="QDialog" name="RepairCamera">
   <property name="windowModality">
    <enum>Qt::ApplicationModal</enum>
   </property>
@@ -9,24 +9,24 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>332</width>
-    <height>536</height>
+    <width>374</width>
+    <height>574</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>332</width>
-    <height>536</height>
+    <width>374</width>
+    <height>391</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>431</width>
-    <height>598</height>
+    <width>374</width>
+    <height>577</height>
    </size>
   </property>
   <property name="windowTitle">
-   <string>Add New Camera</string>
+   <string>Repair Camera</string>
   </property>
   <property name="modal">
    <bool>true</bool>
@@ -45,7 +45,7 @@
         <string notr="true"/>
        </property>
        <property name="text">
-        <string>Add New Camera</string>
+        <string>Repair Broken Camera</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -54,7 +54,82 @@
      </item>
     </layout>
    </item>
-   <item row="1" column="0">
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Camera Name</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLineEdit" name="nameInput"/>
+   </item>
+   <item row="8" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Protocol</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLineEdit" name="protocolInput">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>IP Address</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0">
+    <widget class="QLineEdit" name="ipAddressInput"/>
+   </item>
+   <item row="14" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Path</string>
+     </property>
+    </widget>
+   </item>
+   <item row="15" column="0">
+    <widget class="QLineEdit" name="pathInput"/>
+   </item>
+   <item row="16" column="0">
+    <widget class="QProgressBar" name="progressBar">
+     <property name="maximum">
+      <number>0</number>
+     </property>
+     <property name="value">
+      <number>-1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="17" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="cancel">
+       <property name="text">
+        <string>Delete</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="fixCamera">
+       <property name="text">
+        <string>Fix</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -67,107 +142,45 @@
      </property>
     </spacer>
    </item>
-   <item row="2" column="0">
+   <item row="13" column="0">
+    <widget class="QLineEdit" name="portInput"/>
+   </item>
+   <item row="12" column="0">
     <widget class="QLabel" name="label_6">
-     <property name="text">
-      <string>Location</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLineEdit" name="locationInput"/>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Camera Name</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QLineEdit" name="nameInput"/>
-   </item>
-   <item row="6" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Protocol</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0">
-    <widget class="QLineEdit" name="protocolInput">
-     <property name="text">
-      <string>rtsp</string>
-     </property>
-     <property name="placeholderText">
-      <string/>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>IP Address</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0">
-    <widget class="QLineEdit" name="ipAddressInput"/>
-   </item>
-   <item row="10" column="0">
-    <widget class="QLabel" name="label_7">
      <property name="text">
       <string>Port</string>
      </property>
     </widget>
    </item>
-   <item row="11" column="0">
-    <widget class="QLineEdit" name="portInput"/>
-   </item>
-   <item row="12" column="0">
-    <widget class="QLabel" name="label_3">
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_7">
+     <property name="styleSheet">
+      <string notr="true">color: grey;</string>
+     </property>
      <property name="text">
-      <string>Path</string>
+      <string>You're seeing this because I've failed to connect to this camera</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="13" column="0">
-    <widget class="QLineEdit" name="pathInput"/>
-   </item>
-   <item row="14" column="0">
-    <widget class="QProgressBar" name="progressBar">
-     <property name="maximum">
-      <number>0</number>
-     </property>
-     <property name="value">
-      <number>-1</number>
-     </property>
-    </widget>
-   </item>
-   <item row="15" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QPushButton" name="cancel">
-       <property name="text">
-        <string>Cancel</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="addCamera">
-       <property name="text">
-        <string>Add</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="16" column="0">
+   <item row="18" column="0">
     <widget class="QLabel" name="statusBar">
      <property name="text">
       <string/>
      </property>
     </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_8">
+     <property name="text">
+      <string>Location</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLineEdit" name="locationInput"/>
    </item>
   </layout>
  </widget>

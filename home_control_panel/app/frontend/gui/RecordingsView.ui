@@ -26,7 +26,14 @@
    <bool>true</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" colspan="2">
+   <item row="2" column="0">
+    <widget class="QPushButton" name="refreshList">
+     <property name="text">
+      <string>Refresh List</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="3">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLabel" name="label">
@@ -46,7 +53,13 @@
     </layout>
    </item>
    <item row="1" column="1">
-    <widget class="QListWidget" name="recordingsList"/>
+    <widget class="QTreeWidget" name="treeWidget">
+     <column>
+      <property name="text">
+       <string>Videos</string>
+      </property>
+     </column>
+    </widget>
    </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBox">
@@ -107,13 +120,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item row="2" column="0">
-    <widget class="QPushButton" name="refreshList">
-     <property name="text">
-      <string>Refresh List</string>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

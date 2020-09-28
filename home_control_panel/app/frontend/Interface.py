@@ -19,11 +19,12 @@ class Interface:
             "logout": func() - shuts down all background processes,
             "add_camera": func(protocol, ip, path, name, location) - adds a camera object,
             "remove_camera": func(id) - removes camera with camerae.id = id,
+            "repair_camera": func(id) -
             "add_location": func(name) - adds a new location,
             "remove_location": func(id) - removes a location
         }
         """
-        print("Interface Constructor")
+        # Directory Structure
         if not os.path.exists('data'):
             os.mkdir('data')
         if not os.path.exists('data/temp'):
@@ -32,10 +33,29 @@ class Interface:
             os.mkdir('data/temp/video')
         if not os.path.exists('data/temp/image'):
             os.mkdir('data/temp/image')
+        # Utility Files
+        if not os.path.exists('data/.conf'):
+            with open('data/.conf', 'w'):
+                pass
+        if not os.path.exists('data/.hash'):
+            with open('data/.hash', 'w'):
+                pass
+        if not os.path.exists('data/.logs'):
+            with open('data/.logs', 'w'):
+                pass
 
         self.controller_events = controller_events
         self.camera_elements = {}
         self.loggedIn = False
+
+    # ---------------------------- Event Triggers ------------------------------- #
+    def get_stream_object(self, camera_id):
+        """
+        Gets the Stream Object
+        :param camera_id:
+        :return: StreamObject
+        """
+        pass
 
     # ---------------------------- Event Triggers ------------------------------- #
 
@@ -76,18 +96,32 @@ class Interface:
         """
         pass
 
-    # ---------------------------- UI Manipulators ------------------------------- #
-
-    def ui_add_camera(self, camera_object: dict, callback=None):
+    def trigger_view_recordings(self, callback=None):
         """
-        Add camera to UI
-        :param camera_object: object from controller
-        :param callback: (func)
-        :return: None
+        Fetched and displays all the Recordings
+        :param callback:
+        :return:
         """
         pass
 
-    def ui_remove_camera(self, camera_id, callback=None):
+    # ---------------------------- UI Manipulators ------------------------------- #
+
+    def add_camera(self, location_label, camera_id, name, address, port, path, protocol, callback=None):
+        """
+        Adds Camera to UI
+        :param location_label:
+        :param camera_id:
+        :param name:
+        :param address:
+        :param port:
+        :param path:
+        :param protocol:
+        :param callback:
+        :return:
+        """
+        pass
+
+    def remove_camera(self, camera_id, callback=None):
         """
         Remove camera from UI
         :param camera_id
@@ -96,16 +130,16 @@ class Interface:
         """
         pass
 
-    def ui_add_location(self, location_obj, callback=None):
+    def add_location(self, location_label, callback=None):
         """
         Adds location to UI
-        :param location_obj
+        :param location_label
         :param callback:
         :return:
         """
         pass
 
-    def ui_remove_location(self, location_id, callback=None):
+    def remove_location(self, location_id, callback=None):
         """
         Removes location from UI
         :param location_id
@@ -114,7 +148,7 @@ class Interface:
         """
         pass
 
-    def ui_update_stream(self, camera_id, frame):
+    def update_stream(self, camera_id, frame):
         """
         Updates UI camera stream
         :param camera_id
@@ -145,3 +179,6 @@ class Interface:
         :return:
         """
         self.loggedIn = False
+
+    def attach_stream(self, camera_id, stream_obj):
+        pass
