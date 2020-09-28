@@ -9,7 +9,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QWidget
 
 
@@ -53,5 +53,7 @@ class Ui_StreamView(QWidget):
         self.location.setText(_translate("StreamView", "Unknown Location"))
 
     def update_frame(self, frame):
-        pixmap = QPixmap.fromImage(frame)
-        self.stream_view.setPixmap(pixmap)
+        height, width, bpc = frame.shape
+        bpl = bpc * width
+        self.stream_view.setPixmap(QPixmap.fromImage(QImage(frame.data, width, height, bpl, QImage.Format_RGB888)))
+        self.update()

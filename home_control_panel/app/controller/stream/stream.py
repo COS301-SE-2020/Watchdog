@@ -13,10 +13,11 @@ from cv2 import (
     erode,
     absdiff,
     resize,
-    COLOR_BGR2GRAY,
     THRESH_BINARY,
     RETR_EXTERNAL,
-    CHAIN_APPROX_SIMPLE
+    CHAIN_APPROX_SIMPLE,
+    COLOR_BGR2GRAY,
+    COLOR_BGR2RGB
 )
 from .collectors.video import FrameCollector
 from .collectors.image import ImageCollector
@@ -90,7 +91,7 @@ class Stream:
                 self.triggers.movement_timer = now + self.triggers.movement_buffer
         # Update UI Component
         if self.stream_view is not None:
-            self.stream_view.update(self.current_frame)
+            self.stream_view.update_frame(cvtColor(self.current_frame, COLOR_BGR2RGB))
         # Update Online Livestream
         if self.stream_connection is not None:
             self.stream_connection.produce(self.camera_id, self.current_frame)

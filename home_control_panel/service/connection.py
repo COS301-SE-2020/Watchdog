@@ -57,7 +57,7 @@ class Connection:
 
 # Front-End Producer Client
 class Producer(Connection):
-    def __init__(self, user_id, producer_id, camera_ids, controller):
+    def __init__(self, user_id, producer_id, controller):
         super(Producer, self).__init__(user_id)
         self.active = False
         self.controller = controller

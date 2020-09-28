@@ -17,33 +17,31 @@ class Camera(threading.Thread):
         threading.Thread.__init__(self)
         # Given camera id
         self.id = id
-        # Camera IP Address
-        self.address = address
-        # Stream Management Object
-        self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
         # Camera Name
         self.name = name
         # Camera Address Port
         self.port = port
-        # Camera Address Path (if necessary)
+        # Camera Address Path
         self.path = path
+        # Camera IP Address
+        self.address = address
         # Camera Connection Protocol
         self.protocol = protocol
         # Camera Physical Location
         self.location = location
         # Live Boolean Spin Variable
         self.live = False
+        # Connection
+        self.connection = None
         # Is IP Camera Connected
         self.is_connected = False
+        # Stream Management Object
+        self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
         # Connect to Camera
         self.connect()
 
     # Start thread
     def run(self):
-        self.start()
-
-    # Start thread
-    def start(self):
         print("Starting Camera Client " + str(self))
         # Set to Live
         self.live = True
@@ -67,7 +65,7 @@ class Camera(threading.Thread):
     # Connect to IP Camera
     def connect(self):
         # check not already connected
-        if not self.connection.isOpened():
+        if self.connection is None or not self.connection.isOpened():
             # Camera Stream Connection
             self.connection = cv2.VideoCapture(self.get_url(True))
             self.connection.set(cv2.CAP_PROP_FPS, FPS)
@@ -98,7 +96,7 @@ class Camera(threading.Thread):
         if grabbed:
             self.stream.put(frame)
         else:
-            self.check_connection()
+            self.disconnect()
 
     def check_connection(self):
         if (not self.is_connected) | (not self.connection.isOpened()):
