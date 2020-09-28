@@ -208,6 +208,9 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
     def __exit_recordings_view(self):
         self.recordings_view.close()
 
+    def __exit_repair_camera_dialog(self):
+        self.repair_camera_dialog.close()
+
     def __repair_camera_event(self):
         self.repair_camera_dialog.ui.progressBar.show()
         location_label = self.repair_camera_dialog.ui.locationInput.text()
