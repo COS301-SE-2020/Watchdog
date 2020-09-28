@@ -6,7 +6,7 @@ pyinstaller==4.0
 python-socketio==4.6.0
 requests==2.24.0
 vidgear==0.1.8
-warrant==0.6.1
+pycognito==0.1.4
 urllib3==1.25.10
 
 # face detection libraries
