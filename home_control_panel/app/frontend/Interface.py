@@ -24,25 +24,6 @@ class Interface:
             "remove_location": func(id) - removes a location
         }
         """
-        # Directory Structure
-        if not os.path.exists('data'):
-            os.mkdir('data')
-        if not os.path.exists('data/temp'):
-            os.mkdir('data/temp')
-        if not os.path.exists('data/temp/video'):
-            os.mkdir('data/temp/video')
-        if not os.path.exists('data/temp/image'):
-            os.mkdir('data/temp/image')
-        # Utility Files
-        if not os.path.exists('data/.conf'):
-            with open('data/.conf', 'w'):
-                pass
-        if not os.path.exists('data/.hash'):
-            with open('data/.hash', 'w'):
-                pass
-        if not os.path.exists('data/.logs'):
-            with open('data/.logs', 'w'):
-                pass
 
         self.controller_events = controller_events
         self.camera_elements = {}
