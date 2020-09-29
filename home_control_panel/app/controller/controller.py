@@ -19,7 +19,7 @@ site_label = conf['settings']['site']
 #   Manages Main Connection and Camera Connections
 class CameraController(threading.Thread):
     def __init__(self):
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, daemon=True)
         # live indicator
         self.live = False
         # Mapping of camera address to camera objects
