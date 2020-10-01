@@ -1,4 +1,7 @@
+import os
 import sys
+from time import sleep
+
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QTreeWidgetItem
 from home_control_panel.app.frontend.Interface import Interface
@@ -20,6 +23,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.loggedIn = False
         self.camera_elements_row = 0
         self.camera_elements_column = 0
+        self.locations = []
 
         self.settings = Settings()
 
@@ -31,7 +35,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.login_dialog = QtWidgets.QDialog()
         self.login_dialog.ui = Ui_Login()
         self.login_dialog.ui.setupUi(self.login_dialog)
-        self.login_dialog.ui.progressBar.hide()
+        # self.login_dialog.ui.progressBar.hide()
         self.login_dialog.ui.login.clicked.connect(self.__login_event)
 
         # Repair Camera Dialog
@@ -80,6 +84,11 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
     def trigger_add_camera(self, callback=None):
         self.add_camera_dialog.ui.statusBar.setText("")
+        if len(self.locations) == 0:
+            self.trigger_add_location()
+
+        self.add_camera_dialog.ui.locationInput.clear()
+        self.add_camera_dialog.ui.locationInput.addItems(self.locations)
         self.add_camera_dialog.exec_()
         if callback:
             callback()
@@ -91,7 +100,9 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
     # Internal UI Events
     def __login_event(self):
+        self.login_dialog.ui.statusBar.setText("Logging in...")
         self.login_dialog.ui.progressBar.show()
+
         username = self.login_dialog.ui.usernameInput.text()
         password = self.login_dialog.ui.passwordInput.text()
 
@@ -113,6 +124,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
             # If logged in exit login dialog
             if self.loggedIn:
+                self.login_dialog.ui.statusBar.setText("Success!")
                 self.login_dialog.close()
             else:
                 self.login_dialog.ui.statusBar.setText('Login Failed. Please Check Credentials...')
@@ -122,8 +134,9 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.login_dialog.ui.progressBar.hide()
 
     def __add_camera_event(self):
+        self.add_camera_dialog.ui.statusBar.setText(f"Adding Camera {self.add_camera_dialog.ui.nameInput.text()}...")
         self.add_camera_dialog.ui.progressBar.show()
-        location_label = self.add_camera_dialog.ui.locationInput.text()
+        location_label = str(self.add_camera_dialog.ui.locationInput.currentText())
         name = self.add_camera_dialog.ui.nameInput.text()
         protocol = self.add_camera_dialog.ui.protocolInput.text()
         ip = self.add_camera_dialog.ui.ipAddressInput.text()
@@ -278,13 +291,22 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
         self.repair_camera_dialog.ui.progressBar.hide()
 
+    def __remove_camera(self, camera_id):
+        self.camera_elements[camera_id]['stream_view'].destroy()
+        self.camera_elements[camera_id]['stream_view'].deleteLater()
+        self.update()
+
     # UI Manipulation
     def login(self, callback=None):
         self.hide()
+        self.login_dialog.ui.progressBar.hide()
         self.login_dialog.exec_()
-
         if self.loggedIn:
             self.show()
+            self.ui.progressBar.show()
+            self.update()
+            self.update_status("Start Environment Loadup...", None)
+            # sleep(5)
             self.setup_environment()
         else:
             self.close()
@@ -321,8 +343,13 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         # Add StreamView Element
         stream = Ui_StreamView()
         stream.setupUi(stream)
+        stream.camera_id = camera_id
         stream.location.setText(location_label)
         stream.cameraName.setText(name)
+
+        # Connect dynamic events
+        stream.removeStream.clicked.connect(lambda: self.remove_camera(stream.camera_id))
+        stream.pauseStream.clicked.connect(lambda: self.pause_stream(stream.camera_id))
         self.camera_elements[camera_id]['stream_view'] = stream
         stream.setMinimumSize(150, 150)
         self.ui.cameras.addWidget(stream, self.camera_elements_row, self.camera_elements_column)
@@ -348,6 +375,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.repair_camera_dialog.exec_()
 
     def add_location(self, location_label, callback=None):
+        self.locations.append(location_label)
         rowcount = self.ui.locations.topLevelItemCount()
         self.ui.locations.addTopLevelItem(QTreeWidgetItem(rowcount))
         self.ui.locations.topLevelItem(rowcount).setText(0, location_label)
@@ -357,35 +385,74 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         stream_object.set_view(stream_view)  # this will now automatically call : stream_view.update(curr
 
     def update_status(self, message: str, display_for_milliseconds=5000):
-        self.ui.statusbar.showMessage(message, display_for_milliseconds)
+        if display_for_milliseconds is None:
+            self.ui.statusbar.showMessage(message)
+        else:
+            self.ui.statusbar.showMessage(message, display_for_milliseconds)
+        self.update()
+
+    def remove_camera(self, camera_id, callback=None):
+        # TODO: Call controller["remove_camera"] and also remove from locations list
+        self.__remove_camera(camera_id)
+
+    def pause_stream(self, camera_id):
+        # TODO Connect this to controller
+        pass
+
+    def detected_face_on(self, camera_id):
+        self.camera_elements[camera_id]['stream_view'].detectedLabel.setStyle('color: red;')
+
+    def detected_face_off(self, camera_id):
+        self.camera_elements[camera_id]['stream_view'].detectedLabel.setStyle('color: green;')
 
     # Called at Start, Pass in UI Window for UI Setup
     def setup_environment(self):
         print('Loading Environment...')
-        locations = services.get_camera_setup()
-        if locations is not None:
-            for location, cameras in locations.items():
-                controller.load_location(location)
-                self.add_location(location)
-                if cameras is not None:
-                    for camera_id, camera in cameras.items():
-                        loaded_camera = controller.load_camera(
-                            location,
-                            camera_id,
-                            camera['name'],
-                            camera['address'],
-                            camera['port'],
-                            camera['path'],
-                            camera['protocol']
-                        )
-                        # Camera Failed to Connect, Delete from DB and Ask User to Fix Details
-                        if loaded_camera is None:
-                            services.remove_camera(location, camera_id)
-                            self.repair_camera(location, camera_id, camera['name'], camera['address'], camera['port'], camera['path'], camera['protocol'])
-                        else:
-                            self.add_camera(location, camera_id, camera['name'], camera['address'], camera['port'], camera['path'], camera['protocol'])
-                            self.attach_stream(loaded_camera.id, loaded_camera.stream)
-            return True
+        self.update_status("Environment: Getting Camera Setup...")
+        try:
+            locations = services.get_camera_setup()
+            if locations is not None:
+                for location, cameras in locations.items():
+                    self.update_status("Environment: Loading Locations...")
+                    controller.load_location(location)
+                    self.add_location(location)
+                    if cameras is not None:
+                        for camera_id, camera in cameras.items():
+                            self.update_status(f"Environment: Loading Camera {camera['name']}...")
+                            loaded_camera = controller.load_camera(
+                                location,
+                                camera_id,
+                                camera['name'],
+                                camera['address'],
+                                camera['port'],
+                                camera['path'],
+                                camera['protocol']
+                            )
+                            # Camera Failed to Connect, Delete from DB and Ask User to Fix Details
+                            if loaded_camera is None:
+                                self.update_status(
+                                    f"Environment: Camera {camera['name']} broken. Attempting Repair...")
+                                services.remove_camera(location, camera_id)
+                                self.repair_camera(location, camera_id, camera['name'], camera['address'],
+                                                   camera['port'], camera['path'], camera['protocol'])
+                            else:
+                                self.update_status(f"Environment: Camera {camera['name']} loaded.")
+                                self.add_camera(location, camera_id, camera['name'], camera['address'], camera['port'],
+                                                camera['path'], camera['protocol'])
+                                self.update_status(
+                                    f"Environment: Attaching Stream from Camera {camera['name']}....")
+                                self.attach_stream(loaded_camera.id, loaded_camera.stream)
+                                self.update_status(
+                                    f"Environment: Done Attaching Stream from Camera {camera['name']}....")
+                self.ui.statusbar.showMessage("Ready")
+                self.ui.progressBar.hide()
+        except Exception as e:
+            print('error occured!!')
+            self.ui.statusbar.showMessage("Environment Failed to load!!")
+            print(e)
+
+        self.ui.statusbar.showMessage("Ready")
+        self.ui.progressBar.hide()
         return False
 
 
@@ -403,7 +470,9 @@ application = ControlPanel(
         "stop": lambda: controller.stop(),
         "login": lambda username, password: services.login(username, password),
         "logout": lambda x: print("Controller: Logging out..."),
-        "add_camera": lambda location, name, address, port, path, protocol: controller.add_camera(location, name, address, port, path, protocol),
+        "add_camera": lambda location, name, address, port, path, protocol: controller.add_camera(location, name,
+                                                                                                  address, port, path,
+                                                                                                  protocol),
         "remove_camera": lambda id: controller.remove_camera(id),
         "add_location": lambda name: controller.add_location(name),
         "remove_location": lambda id: controller.remove_location(id)
