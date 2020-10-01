@@ -3,7 +3,7 @@ import sys
 from time import sleep
 
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QTreeWidgetItem
+from PyQt5.QtWidgets import QTreeWidgetItem, QFileSystemModel
 from home_control_panel.app.frontend.Interface import Interface
 from home_control_panel.app.frontend.gui.add_camera_dialog import Ui_AddCamera
 from home_control_panel.app.frontend.gui.add_location_dialog import Ui_AddLocation
@@ -21,9 +21,12 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
     def __init__(self, controller_events: dict):
         super().__init__(controller_events=controller_events)
         self.loggedIn = False
+
         self.camera_elements_row = 0
         self.camera_elements_column = 0
         self.locations = []
+        self.camera_elements = {}
+        self.location_elements = {}
 
         self.settings = Settings()
 
@@ -63,6 +66,9 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.recordings_view = QtWidgets.QDialog()
         self.recordings_view.ui = Ui_RecordingsView()
         self.recordings_view.ui.setupUi(self.recordings_view)
+        model = QFileSystemModel()
+        model.setRootPath('~')  # TODO: Please set this to the directory path of the recordings @Jordan
+        self.recordings_view.ui.directory.setModel(model)
 
         # Connect UI events to controller_events
         self.ui.actionAdd_New.triggered.connect(self.trigger_add_camera)
@@ -281,6 +287,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
             else:
                 self.add_camera(location_label, camera.id, name, ip, port, path, protocol)
                 self.attach_stream(camera.id, camera.stream)
+                self.repair_camera_dialog.hide()
 
         self.repair_camera_dialog.ui.nameInput.setDisabled(False)
         self.repair_camera_dialog.ui.protocolInput.setDisabled(False)
@@ -294,6 +301,9 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
     def __remove_camera(self, camera_id):
         self.camera_elements[camera_id]['stream_view'].destroy()
         self.camera_elements[camera_id]['stream_view'].deleteLater()
+        camera_location = self.camera_elements[camera_id]['location_view']
+        location_label = self.camera_elements[camera_id]['location_label']
+        self.location_elements[location_label]['location_view'].removeChild(camera_location)
         self.update()
 
     # UI Manipulation
@@ -324,6 +334,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
         # Add to Location in Tree View:
         camera = QTreeWidgetItem([name])
+        self.camera_elements[camera_id]['location_view'] = camera
 
         location = None
         rowcount = self.ui.locations.topLevelItemCount()
@@ -377,7 +388,9 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
     def add_location(self, location_label, callback=None):
         self.locations.append(location_label)
         rowcount = self.ui.locations.topLevelItemCount()
-        self.ui.locations.addTopLevelItem(QTreeWidgetItem(rowcount))
+        self.location_elements[location_label] = {}
+        self.location_elements[location_label]['location_view'] = QTreeWidgetItem(rowcount)
+        self.ui.locations.addTopLevelItem(self.location_elements[location_label]['location_view'])
         self.ui.locations.topLevelItem(rowcount).setText(0, location_label)
 
     def attach_stream(self, camera_id, stream_object):
@@ -392,11 +405,11 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.update()
 
     def remove_camera(self, camera_id, callback=None):
-        # TODO: Call controller["remove_camera"] and also remove from locations list
+        # TODO: We need to basically call controller["remove_camera"] and then __remove_camera (like bellow) on success @Jordan
         self.__remove_camera(camera_id)
 
     def pause_stream(self, camera_id):
-        # TODO Connect this to controller
+        # TODO: Please connect this to controller @Jordan
         pass
 
     def detected_face_on(self, camera_id):
