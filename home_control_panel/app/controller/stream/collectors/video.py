@@ -1,4 +1,4 @@
-import sys
+import os
 import time
 import json
 import threading
@@ -16,6 +16,10 @@ from .collector import (
     recording_ratio
 )
 from .....service import services
+
+conf = json.loads(os.environ['config'])
+FPS = conf['video']['frames_per_second']
+(RES_X, RES_Y) = (conf['video']['resolution']['width'], conf['video']['resolution']['height'])
 
 #################################################
 # FrameCollector
@@ -56,7 +60,7 @@ from .....service import services
 class FrameCollector(threading.Thread):
     def __init__(self, camera_id, address):
         threading.Thread.__init__(self)
-        self.dimensions = (480, 360)
+        self.dimensions = (RES_X, RES_Y)
         self.camera_id = camera_id
         self.address = address
         self.alert_queue = []
@@ -166,7 +170,7 @@ class Video:
         self.time_start = time_now()
         self.time_end = time_now()
         self.address = address
-        self.dimensions = (480, 360)
+        self.dimensions = (RES_X, RES_Y)
         self.id = hash_id(self.time_start, self.address)
 
     def resize(self, dimensions):
@@ -190,13 +194,11 @@ class Video:
         if len(self.frames) > 0:
             ext = '.mp4'
             name = 'data/temp/video/' + str(self.id) + ext
-            (w, h) = (480, 360)
+            (width, height) = self.dimensions
+            (w, h) = (width, height)
             self.resize((w, h))
 
-            if sys.platform == 'win32':
-                file = VideoWriter(name, -1, fps, (w, h), True)
-            elif sys.platform == 'darwin' or sys.platform == 'linux':
-                file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
+            file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
 
             print("Exporting Video [" + name + "]")
             for index in range(len(self.frames)):
