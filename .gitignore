@@ -25,3 +25,4 @@ data/temp/video/*
 dist
 build
 *.bat
+data/.hash

@@ -43,13 +43,14 @@ class CameraController(threading.Thread):
             for address, client in self.cameras.items():
                 if not client.check_connection():
                     client.connect()
-            time.sleep(30)
+            time.sleep(15)
 
     # Stops the controller
     def stop(self):
         self.live = False
         for address, client in self.cameras.items():
             client.stop()
+        self.client.socket.disconnect()
 
     # Connect to Livestream Server
     def connect(self):
@@ -70,11 +71,15 @@ class CameraController(threading.Thread):
     def check_connection(self):
         if self.client is None or not self.client.connected:
             return self.connect()
+
+        if self.client is not None and self.client.connected:
+            self.client.pulse()
+
         return self.client.connected
 
     # Starts the given cameras livestreams, stops all the others
     def start_streams(self, camera_list):
-        if self.connect():
+        if self.check_connection():
             for address, camera in self.cameras.items():
                 if camera.id in camera_list:
                     camera.start_stream(self.client)
@@ -104,6 +109,7 @@ class CameraController(threading.Thread):
                 self.cameras[address] = client
                 self.locations[location_label].add_camera(client)
                 self.cameras[address].start()
+                self.connect()
                 return client
         return None
 
@@ -132,6 +138,7 @@ class CameraController(threading.Thread):
                     self.client.authorize()
 
                 self.cameras[address].start()
+                self.connect()
                 return self.cameras[address]  # successfully added client
             else:
                 print('Warning: Could not connect to camera', '[', camera_id, name, ']')

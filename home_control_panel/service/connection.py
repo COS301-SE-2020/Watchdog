@@ -62,17 +62,13 @@ class Producer(Connection):
         self.active = False
         self.controller = controller
         self.producer_id = producer_id
-        # self.camera_list = self.controller.get_camera_ids()
-        # self.authorize()
 
-    # def add_camera(self, camera):
-    #     if camera not in self.camera_list:
-    #         self.camera_list.append(camera)
-    #         self.authorize()
+    def pulse(self):
+        self.socket.emit('pulse', {})
 
     def authorize(self):
-        print('Cameras:', self.controller.get_camera_ids())
         if self.connect:
+            print('Cameras:', self.controller.get_camera_ids())
             self.socket.emit('authorize', {
                 'user_id': self.user_id,
                 'client_type': 'producer',
