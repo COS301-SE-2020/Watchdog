@@ -1,7 +1,4 @@
-import os
 import sys
-from time import sleep
-
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QTreeWidgetItem, QFileSystemModel
 from home_control_panel.app.frontend.Interface import Interface
