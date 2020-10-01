@@ -465,6 +465,8 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.ui.progressBar.hide()
         return False
 
+    def closeEvent(self, a0):
+        self.controller_events['stop']()
 
 def log(obj=None):
     print(obj)
