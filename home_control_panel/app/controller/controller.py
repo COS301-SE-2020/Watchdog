@@ -43,7 +43,7 @@ class CameraController(threading.Thread):
             for address, client in self.cameras.items():
                 if not client.check_connection():
                     client.connect()
-            time.sleep(15)
+            time.sleep(5)
 
     # Stops the controller
     def stop(self):
