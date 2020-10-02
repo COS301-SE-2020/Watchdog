@@ -163,21 +163,21 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
             fine = False
             self.add_camera_dialog.ui.nameInput.setStyleSheet('border: 1px solid red;')
 
-        if protocol == '':
-            fine = False
-            self.add_camera_dialog.ui.protocolInput.setStyleSheet('border: 1px solid red;')
+        # if protocol == '':
+        #     fine = False
+        #     self.add_camera_dialog.ui.protocolInput.setStyleSheet('border: 1px solid red;')
 
         if ip == '':
             fine = False
             self.add_camera_dialog.ui.ipAddressInput.setStyleSheet('border: 1px solid red;')
 
-        if path == '':
-            fine = False
-            self.add_camera_dialog.ui.pathInput.setStyleSheet('border: 1px solid red;')
-
-        if port == '':
-            fine = False
-            self.add_camera_dialog.ui.portInput.setStyleSheet('border: 1px solid red;')
+        # if path == '':
+        #     fine = False
+        #     self.add_camera_dialog.ui.pathInput.setStyleSheet('border: 1px solid red;')
+        #
+        # if port == '':
+        #     fine = False
+        #     self.add_camera_dialog.ui.portInput.setStyleSheet('border: 1px solid red;')
 
         if fine:
             camera = self.controller_events["add_camera"](location_label, name, ip, port, path, protocol)
@@ -259,21 +259,21 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
             fine = False
             self.repair_camera_dialog.ui.nameInput.setStyleSheet('border: 1px solid red;')
 
-        if protocol == '':
-            fine = False
-            self.repair_camera_dialog.ui.protocolInput.setStyleSheet('border: 1px solid red;')
+        # if protocol == '':
+        #     fine = False
+        #     self.repair_camera_dialog.ui.protocolInput.setStyleSheet('border: 1px solid red;')
 
         if ip == '':
             fine = False
             self.repair_camera_dialog.ui.ipAddressInput.setStyleSheet('border: 1px solid red;')
 
-        if path == '':
-            fine = False
-            self.repair_camera_dialog.ui.pathInput.setStyleSheet('border: 1px solid red;')
+        # if path == '':
+        #     fine = False
+        #     self.repair_camera_dialog.ui.pathInput.setStyleSheet('border: 1px solid red;')
 
-        if port == '':
-            fine = False
-            self.repair_camera_dialog.ui.portInput.setStyleSheet('border: 1px solid red;')
+        # if port == '':
+        #     fine = False
+        #     self.repair_camera_dialog.ui.portInput.setStyleSheet('border: 1px solid red;')
 
         if fine:
             camera = self.controller_events["add_camera"](location_label, name, ip, port, path, protocol)
@@ -467,6 +467,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
     def closeEvent(self, a0):
         self.controller_events['stop']()
+
 
 def log(obj=None):
     print(obj)
