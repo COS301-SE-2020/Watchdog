@@ -1,3 +1,4 @@
+import os
 import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QTreeWidgetItem, QFileSystemModel
@@ -9,6 +10,7 @@ from home_control_panel.app.frontend.gui.main_window import Ui_MainWindow
 from home_control_panel.app.frontend.gui.recordings_view import Ui_RecordingsView
 from home_control_panel.app.frontend.gui.repair_camera_dialog import Ui_RepairCamera
 from home_control_panel.app.frontend.gui.stream_view import Ui_StreamView
+from .frontend.gui.settings_dialog import Ui_Settings
 from ..service import services
 from ..service.settings import Settings
 from .controller.controller import CameraController
@@ -64,16 +66,26 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.recordings_view.ui = Ui_RecordingsView()
         self.recordings_view.ui.setupUi(self.recordings_view)
         model = QFileSystemModel()
-        model.setRootPath('~')  # TODO: Please set this to the directory path of the recordings @Jordan
+        model.setRootPath(os.path.abspath('data/temp/video/'))
         self.recordings_view.ui.directory.setModel(model)
+        self.recordings_view.ui.directory.setRootIndex(model.index(os.path.abspath('data/temp/video/')))
+
+        # Add Settings Dialog
+        self.settings_dialog = QtWidgets.QDialog()
+        self.settings_dialog.ui = Ui_Settings()
+        self.settings_dialog.ui.setupUi(self.settings_dialog)
 
         # Connect UI events to controller_events
         self.ui.actionAdd_New.triggered.connect(self.trigger_add_camera)
         self.ui.actionView_Recordings.triggered.connect(self.trigger_view_recordings)
         self.ui.actionAdd_New_Location.triggered.connect(self.trigger_add_location)
+        self.ui.actionPreferences.triggered.connect(self.trigger_show_settings)
+
         self.add_camera_dialog.ui.cancel.clicked.connect(self.__cancel_add_camera)
         self.add_location_dialog.ui.cancel.clicked.connect(self.__cancel_add_location)
+
         self.recordings_view.ui.exit.clicked.connect(self.__exit_recordings_view)
+
         self.repair_camera_dialog.ui.cancel.clicked.connect(self.__exit_repair_camera_dialog)
 
         # Start Controller
@@ -100,6 +112,9 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.add_location_dialog.exec_()
         if callback:
             callback()
+
+    def trigger_show_settings(self, callback=None):
+        self.settings_dialog.exec_()
 
     # Internal UI Events
     def __login_event(self):
@@ -466,7 +481,23 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         return False
 
     def closeEvent(self, a0):
-        self.controller_events['stop']()
+        flag = 5
+        while flag > 0:
+            try:
+                print('Trying to shutdown thread...')
+                self.controller_events['stop']()
+            except Exception as e:
+                print(f'FAILED: {e}')
+            flag -= 1
+
+        if flag <= 0:
+            print('FAILED to shutdown threads Gracefully...\nFORCING SHUTDOWN')
+            if os._exit:
+                os._exit(0)
+            else:
+                sys.exit(0)
+        else:
+            print('Shutting down gracefully.\nGOOD BYE')
 
 
 def log(obj=None):
