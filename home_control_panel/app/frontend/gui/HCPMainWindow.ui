@@ -38,7 +38,7 @@
          <x>0</x>
          <y>0</y>
          <width>649</width>
-         <height>494</height>
+         <height>634</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="cameras">
@@ -74,7 +74,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap resource="resources.qrc">:/images/assets/smallLogo.png</pixmap>
+         <pixmap>:/images/assets/smallLogo.png</pixmap>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -113,7 +113,8 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionExit"/>
+    <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuCameras">
     <property name="title">
@@ -136,8 +137,8 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCameras"/>
-   <addaction name="menuRecordings"/>
    <addaction name="menuLocations"/>
+   <addaction name="menuRecordings"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionAdd_New_Camera">
@@ -168,6 +169,11 @@
   <action name="actionAdd_New_Location">
    <property name="text">
     <string>Add New Location</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences</string>
    </property>
   </action>
  </widget>
