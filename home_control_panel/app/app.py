@@ -1,7 +1,9 @@
 import os
 import sys
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QTreeWidgetItem, QFileSystemModel
+from copy import deepcopy
+
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QTreeWidgetItem, QFileSystemModel, QApplication
 from home_control_panel.app.frontend.Interface import Interface
 from home_control_panel.app.frontend.gui.add_camera_dialog import Ui_AddCamera
 from home_control_panel.app.frontend.gui.add_location_dialog import Ui_AddLocation
@@ -28,40 +30,42 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.location_elements = {}
 
         self.settings = Settings()
+        self.settings_map = deepcopy(self.settings.settings)
+        self.video_settings_map = deepcopy(self.settings.video)
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.progressBar.hide()
 
-        # Login Dialog
+        # Login Dialog ========================================
         self.login_dialog = QtWidgets.QDialog()
         self.login_dialog.ui = Ui_Login()
         self.login_dialog.ui.setupUi(self.login_dialog)
         # self.login_dialog.ui.progressBar.hide()
         self.login_dialog.ui.login.clicked.connect(self.__login_event)
 
-        # Repair Camera Dialog
+        # Repair Camera Dialog ========================================
         self.repair_camera_dialog = QtWidgets.QDialog()
         self.repair_camera_dialog.ui = Ui_RepairCamera()
         self.repair_camera_dialog.ui.setupUi(self.repair_camera_dialog)
         self.repair_camera_dialog.ui.progressBar.hide()
         self.repair_camera_dialog.ui.fixCamera.clicked.connect(self.__repair_camera_event)
 
-        # Add Camera Dialog
+        # Add Camera Dialog ========================================
         self.add_camera_dialog = QtWidgets.QDialog()
         self.add_camera_dialog.ui = Ui_AddCamera()
         self.add_camera_dialog.ui.setupUi(self.add_camera_dialog)
         self.add_camera_dialog.ui.progressBar.hide()
         self.add_camera_dialog.ui.addCamera.clicked.connect(self.__add_camera_event)
 
-        # Add Locations Dialog
+        # Add Locations Dialog ========================================
         self.add_location_dialog = QtWidgets.QDialog()
         self.add_location_dialog.ui = Ui_AddLocation()
         self.add_location_dialog.ui.setupUi(self.add_location_dialog)
         self.add_location_dialog.ui.addLocation.clicked.connect(self.__add_location_event)
         self.add_location_dialog.ui.progressBar.hide()
 
-        # Add Recordings View
+        # Add Recordings View ========================================
         self.recordings_view = QtWidgets.QDialog()
         self.recordings_view.ui = Ui_RecordingsView()
         self.recordings_view.ui.setupUi(self.recordings_view)
@@ -70,12 +74,28 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.recordings_view.ui.directory.setModel(model)
         self.recordings_view.ui.directory.setRootIndex(model.index(os.path.abspath('data/temp/video/')))
 
-        # Add Settings Dialog
+        # Add Settings Dialog ========================================
         self.settings_dialog = QtWidgets.QDialog()
         self.settings_dialog.ui = Ui_Settings()
         self.settings_dialog.ui.setupUi(self.settings_dialog)
+        self.settings_dialog.ui.recordingRatio.setValue(int(float(self.settings.settings['recording_ratio'])*100))
+        self.settings_dialog.ui.recordingRatioValue.setText(str(int(float(self.settings.settings['recording_ratio'])*100)))
 
-        # Connect UI events to controller_events
+        self.settings_dialog.ui.recordingRatio.valueChanged.connect(lambda: self.__settings_value_updated('recordingRatio'))
+        self.settings_dialog.ui.height.valueChanged.connect(lambda: self.__settings_value_updated('height'))
+        self.settings_dialog.ui.width.valueChanged.connect(lambda: self.__settings_value_updated('width'))
+        self.settings_dialog.ui.clipLength.valueChanged.connect(lambda: self.__settings_value_updated('clipLength'))
+        self.settings_dialog.ui.framesPerSecond.valueChanged.connect(lambda: self.__settings_value_updated('framesPerSecond'))
+
+        self.settings_dialog.ui.site.textChanged.connect(lambda: self.__settings_value_updated('site'))
+        self.settings_dialog.ui.address.textChanged.connect(lambda: self.__settings_value_updated('site'))
+
+        self.settings_dialog.ui.live.currentIndexChanged.connect(lambda: self.__settings_value_updated('live'))
+
+        self.settings_dialog.ui.updateSettings.clicked.connect(self.update_settings)
+        self.settings_dialog.ui.progressBar.hide()
+
+        # Connect UI events to controller_events ========================================
         self.ui.actionAdd_New.triggered.connect(self.trigger_add_camera)
         self.ui.actionView_Recordings.triggered.connect(self.trigger_view_recordings)
         self.ui.actionAdd_New_Location.triggered.connect(self.trigger_add_location)
@@ -88,7 +108,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
         self.repair_camera_dialog.ui.cancel.clicked.connect(self.__exit_repair_camera_dialog)
 
-        # Start Controller
+        # Start Controller ==============================
         self.controller_events["start"]()
 
     # Dialog Triggers
@@ -105,16 +125,43 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.add_camera_dialog.ui.locationInput.clear()
         self.add_camera_dialog.ui.locationInput.addItems(self.locations)
         self.add_camera_dialog.exec_()
+        self.update_status('Added New Camera.')
         if callback:
             callback()
 
     def trigger_add_location(self, callback=None):
         self.add_location_dialog.exec_()
+        self.update_status('Added New Location.')
         if callback:
             callback()
 
     def trigger_show_settings(self, callback=None):
+        ui = self.settings_dialog.ui
+        ui.site.setText(self.settings.settings['site'])
+        ui.address.setText(self.settings.settings['address'])
+        ui.live.addItems(['True', 'False'])
+
+        index = ui.live.findText(str(self.settings.settings['live']), QtCore.Qt.MatchFixedString)
+        if index >= 0:
+            ui.live.setCurrentIndex(index)
+
+        ui.recordingRatio.setValue(int(float(self.settings.settings['recording_ratio'])*100))
+        ui.recordingRatioValue.setText(str(int(float(self.settings.settings['recording_ratio'])*100)))
+
+        ui.height.setValue(int(self.settings.video['resolution']['height']))
+        ui.heightValue.setText(str(int(self.settings.video['resolution']['height'])))
+
+        ui.width.setValue(int(self.settings.video['resolution']['width']))
+        ui.widthValue.setText(str(int(self.settings.video['resolution']['width'])))
+
+        ui.clipLength.setValue(int(self.settings.video['clip_length']))
+        ui.clipLengthValue.setText(str(int(self.settings.video['clip_length'])))
+
+        ui.framesPerSecond.setValue(int(self.settings.video['frames_per_second']))
+        ui.framesPerSecondValue.setText(str(int(self.settings.video['frames_per_second'])))
+
         self.settings_dialog.exec_()
+        self.update_status('Updated Settings.')
 
     # Internal UI Events
     def __login_event(self):
@@ -146,6 +193,8 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
                 self.login_dialog.close()
             else:
                 self.login_dialog.ui.statusBar.setText('Login Failed. Please Check Credentials...')
+        else:
+            self.login_dialog.ui.statusBar.setText('Please fill in all required fields.')
 
         self.login_dialog.ui.usernameInput.setDisabled(False)
         self.login_dialog.ui.passwordInput.setDisabled(False)
@@ -318,6 +367,40 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.location_elements[location_label]['location_view'].removeChild(camera_location)
         self.update()
 
+    def __settings_value_updated(self, element):
+        ui = self.settings_dialog.ui
+
+        if element == 'site':
+            value = ui.site.text()
+            # print(f'site changed: {value}')
+            self.settings_map['site'] = value
+        elif element == 'address':
+            value = ui.site.text()
+            self.settings_map['address'] = value
+        elif element == 'live':
+            value = str(self.settings_dialog.ui.live.currentText())
+            self.settings_map['live'] = value
+        elif element == 'recordingRatio':
+            value = ui.recordingRatio.value()
+            ui.recordingRatioValue.setText(str(value))
+            self.settings_map['recording_ratio'] = str(int(value)/100)
+        elif element == 'height':
+            value = ui.height.value()
+            ui.heightValue.setText(str(value))
+            self.video_settings_map['resolution']['height'] = int(value)
+        elif element == 'width':
+            value = ui.width.value()
+            ui.widthValue.setText(str(value))
+            self.video_settings_map['resolution']['width'] = int(value)
+        elif element == 'clipLength':
+            value = ui.clipLength.value()
+            ui.clipLengthValue.setText(str(value))
+            self.video_settings_map['clip_length'] = float(value)
+        elif element == 'framesPerSecond':
+            value = ui.framesPerSecond.value()
+            ui.framesPerSecondValue.setText(str(value))
+            self.video_settings_map['frames_per_second'] = float(value)
+
     # UI Manipulation
     def login(self, callback=None):
         self.hide()
@@ -429,6 +512,20 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
     def detected_face_off(self, camera_id):
         self.camera_elements[camera_id]['stream_view'].detectedLabel.setStyle('color: green;')
+
+    def update_settings(self):
+        self.settings_dialog.ui.progressBar.show()
+        self.settings_dialog.ui.statusBar.setText('Updating Settings...')
+        # app.processEvents()
+        self.settings_dialog.update()
+
+        self.settings.update_settings(self.settings_map)
+        self.settings.update_video_settings(self.video_settings_map)
+
+        self.settings_dialog.ui.progressBar.hide()
+        self.settings_dialog.ui.statusBar.setText('Settings Updated')
+        self.settings_dialog.update()
+        # self.settings_dialog.close()
 
     # Called at Start, Pass in UI Window for UI Setup
     def setup_environment(self):
