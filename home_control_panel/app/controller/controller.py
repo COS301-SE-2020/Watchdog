@@ -73,7 +73,7 @@ class CameraController(threading.Thread):
         if self.client is None or not self.client.connected:
             return self.connect()
 
-        if self.client is not None and self.client.connected:
+        if self.client is not None:
             self.client.pulse(True)
 
         return self.client.connected

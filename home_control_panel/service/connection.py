@@ -87,7 +87,7 @@ class Producer(Connection):
         self.pulse_check = False
 
     def pulse(self, available_cameras=False):
-        if self.pulse_check:
+        if self.pulse_check or not self.connected:
             self.reconnect()
         self.socket.emit('pulse', {'available_cameras': available_cameras})
         self.pulse_check = True
