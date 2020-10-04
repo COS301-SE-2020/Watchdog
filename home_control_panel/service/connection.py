@@ -66,7 +66,7 @@ class Connection:
         if self.connected:
             self.socket.disconnect()
         self.socket = socketio.Client(ssl_verify=False)
-        self.connect(SERVER_URL)
+        self.connect()
 
     @staticmethod
     def generate_id(user):
