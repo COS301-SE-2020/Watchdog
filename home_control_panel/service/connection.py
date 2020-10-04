@@ -120,5 +120,5 @@ class Producer(Connection):
                 retval, buffer = cv2.imencode('.jpg', frame_px)
                 frame = str(base64.b64encode(buffer))
                 self.socket.emit('produce-frame', {'camera_id': camera_id, 'frame': frame})
-                time.sleep(max((1 / 30) - (time.time() - self.timer), 0))
+                self.socket.sleep(max((1 / 30) - (time.time() - self.timer), 0))
                 self.timer = time.time()
