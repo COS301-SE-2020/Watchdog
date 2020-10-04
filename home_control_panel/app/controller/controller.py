@@ -71,6 +71,12 @@ class CameraController(threading.Thread):
             self.client.authorize()
         return True
 
+    def reconnect(self):
+        if services.User.get_instance().hcp_id is not None:
+            self.client = connection.Producer(services.User.get_instance().user_id, services.User.get_instance().hcp_id, self)
+        if self.client is not None:
+            self.client.authorize()
+
     def check_connection(self):
         if self.client is None or not self.client.connected:
             return self.connect()
