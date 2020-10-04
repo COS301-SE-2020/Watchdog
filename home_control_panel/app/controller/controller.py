@@ -9,6 +9,7 @@ from .location import Location
 from ...service import services
 from ...service import connection
 
+
 conf = json.loads(os.environ['config'])
 site_label = conf['settings']['site']
 
@@ -57,7 +58,7 @@ class CameraController(threading.Thread):
     def connect(self):
         if services.User.get_instance() is None:
             return False
-        if self.client is None:
+        if self.client is None and services.User.get_instance().hcp_id is not None:
             self.client = connection.Producer(services.User.get_instance().user_id, services.User.get_instance().hcp_id, self)
         if not self.client.connected:
             exp_wait = 1
@@ -74,7 +75,7 @@ class CameraController(threading.Thread):
             return self.connect()
 
         if self.client is not None and self.client.connected:
-            self.client.pulse()
+            self.client.pulse(True)
 
         return self.client.connected
 

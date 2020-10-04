@@ -86,20 +86,23 @@ class Camera(threading.Thread):
         if self.is_connected:
             self.connection.release()
             self.is_connected = False
+            self.connection = None
         return not self.is_connected
 
     # Update Camera Connection with new Frame and put in the stream
     def update(self):
-        if not self.is_connected:
+        if not self.is_connected or self.connection is None:
             self.connect()
+            return
         (grabbed, frame) = self.connection.read()
         if grabbed:
             self.stream.put(frame)
         else:
             self.disconnect()
+            self.connect()
 
     def check_connection(self):
-        if (not self.is_connected) | (not self.connection.isOpened()):
+        if not self.is_connected or self.connection is None or not self.connection.isOpened():
             self.connect()
         return self.is_connected
 
