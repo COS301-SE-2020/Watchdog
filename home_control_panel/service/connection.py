@@ -49,7 +49,6 @@ class Connection:
                         break
             else:
                 print('Reconnecting to Livestream Server...')
-                # reconnect
                 self.reconnect()
                 self.authorize()
 
@@ -66,8 +65,8 @@ class Connection:
     def reconnect(self):
         if self.connected:
             self.socket.disconnect()
-            self.socket = socketio.Client(ssl_verify=False)
-        self.connect()
+        self.socket = socketio.Client(ssl_verify=False)
+        self.connect(SERVER_URL)
 
     @staticmethod
     def generate_id(user):
