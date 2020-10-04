@@ -67,7 +67,8 @@ class CameraController(threading.Thread):
                 exp_wait += 1
                 if exp_wait > 6:
                     return False
-        self.client.authorize()
+        if self.client is not None:
+            self.client.authorize()
         return True
 
     def check_connection(self):
