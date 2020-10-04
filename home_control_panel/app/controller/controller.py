@@ -60,7 +60,7 @@ class CameraController(threading.Thread):
             return False
         if self.client is None and services.User.get_instance().hcp_id is not None:
             self.client = connection.Producer(services.User.get_instance().user_id, services.User.get_instance().hcp_id, self)
-        if not self.client.connected:
+        if self.client is not None and not self.client.connected:
             exp_wait = 1
             while not self.client.connect():
                 time.sleep(exp_wait ^ exp_wait)
