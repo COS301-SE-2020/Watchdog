@@ -7,18 +7,19 @@ def main():
     sys.exit(app.exec_())
 
 
-def setup():
-    if not os.path.exists('data'):
-        os.mkdir('data')
-    if not os.path.exists('data/temp'):
-        os.mkdir('data/temp')
-    if not os.path.exists('data/temp/video'):
-        os.mkdir('data/temp/video')
-    if not os.path.exists('data/temp/image'):
-        os.mkdir('data/temp/image')
-
-
-setup()
+# def setup():
+#     print('Setting up Paths...')
+#     if not os.path.exists('data'):
+#         os.mkdir('data')
+#     if not os.path.exists('data/temp'):
+#         os.mkdir('data/temp')
+#     if not os.path.exists('data/temp/video'):
+#         os.mkdir('data/temp/video')
+#     if not os.path.exists('data/temp/image'):
+#         os.mkdir('data/temp/image')
+#
+#
+# setup()
 
 
 if __name__ == "__main__":

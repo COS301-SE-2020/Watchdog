@@ -52,6 +52,7 @@ class CameraController(threading.Thread):
         for address, client in self.cameras.items():
             client.stop()
         self.client.socket.disconnect()
+        return True
 
     # Connect to Livestream Server
     def connect(self):
