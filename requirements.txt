@@ -6,12 +6,11 @@ pyinstaller==4.0
 python-socketio==4.6.0
 requests==2.24.0
 vidgear==0.1.8
-warrant==0.6.1
-urllib3==1.25.10
-nes_asyncio
+pycognito
+nest_asyncio
 aiortc
 
 # face detection libraries
 Pillow==7.2.0
 facenet-pytorch==2.4.1
-torch==1.6.0
+torch
