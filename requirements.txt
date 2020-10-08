@@ -8,6 +8,8 @@ requests==2.24.0
 vidgear==0.1.8
 warrant==0.6.1
 urllib3==1.25.10
+nes_asyncio
+aiortc
 
 # face detection libraries
 Pillow==7.2.0
