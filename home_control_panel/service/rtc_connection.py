@@ -1,11 +1,15 @@
 import asyncio
 import platform
 
+from . import config
 import socketio
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaPlayer
 
-URL = "http://127.0.0.1:8081"
+conf = config.configure()
+CLIENT_KEY = conf['services']['client']['key']
+URL = conf['services']['stream_url']
+FPS = conf['video']['frames_per_second']
 
 
 class RTCConnectionHandler:
@@ -48,7 +52,8 @@ class RTCConnectionHandler:
             options = {"framerate": "30"}
             # if platform.system() == "Darwin":
                 # player = MediaPlayer("default:none", format="avfoundation", options=options)
-            player = MediaPlayer("rtsp://192.168.0.196:8080/h264_ulaw.sdp") # , options=options)
+            print(f'fetching stream: {self.camera_address}')
+            player = MediaPlayer(self.camera_address) # , options=options)
             # else:
             #     player = MediaPlayer("/dev/video0", format="v4l2", options=options)
 
