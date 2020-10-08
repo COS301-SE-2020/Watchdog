@@ -11,8 +11,14 @@ from ...service import services
 from ...service import connection
 from ...service import rtc_connection
 
+import nest_asyncio
+nest_asyncio.apply()
+
 conf = json.loads(os.environ['config'])
 site_label = conf['settings']['site']
+
+EVENT_LOOP = asyncio.get_event_loop()
+asyncio.set_event_loop(EVENT_LOOP)
 
 
 # Camera Controller Class
@@ -82,11 +88,10 @@ class CameraController(threading.Thread):
             )
 
             def loop_in_thread(loop):
-                asyncio.set_event_loop(loop)
                 loop.run_until_complete(self.camera_producers[camera_id].start())
             # asyncio.run(self.camera_producers[camera_id].start())
 
-            threading.Thread(target=loop_in_thread, args=(asyncio.get_event_loop(),), daemon=True).start()
+            threading.Thread(target=loop_in_thread, args=(EVENT_LOOP,), daemon=True).start()
 
         return True
 
@@ -131,7 +136,7 @@ class CameraController(threading.Thread):
                 self.cameras[address] = client
                 self.locations[location_label].add_camera(client)
                 self.cameras[address].start()
-                self.connect([camera_id], [protocol+'://'+client.get_url()])
+                self.connect([camera_id], [protocol+'://'+str(client.get_url())])
                 return client
         return None
 
