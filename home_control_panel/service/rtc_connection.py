@@ -22,7 +22,21 @@ class RTCConnectionHandler:
         self.camera_address = camera_address
 
     async def start(self):
-        await self.socket.connect(URL)
+        status = False
+        retry = 5
+        # TODO: Make this exponential backoff time calculator
+        calculate_time = lambda attempt: 5
+        while not status and retry > 0:
+            await self.socket.sleep(calculate_time(retry))
+            try:
+                await self.socket.connect(URL)
+                status = True
+            except Exception as e:
+                print('Socket connection error...retrying')
+
+        if retry == 0:
+            print('Failed to connect')
+
         await self.register()
         await self.make_view_available()
         # while True:
