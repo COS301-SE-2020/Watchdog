@@ -531,47 +531,47 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
     def setup_environment(self):
         print('Loading Environment...')
         self.update_status("Environment: Getting Camera Setup...")
-        try:
-            locations = services.get_camera_setup()
-            if locations is not None:
-                for location, cameras in locations.items():
-                    self.update_status("Environment: Loading Locations...")
-                    controller.load_location(location)
-                    self.add_location(location)
-                    if cameras is not None:
-                        for camera_id, camera in cameras.items():
-                            self.update_status(f"Environment: Loading Camera {camera['name']}...")
-                            loaded_camera = controller.load_camera(
-                                location,
-                                camera_id,
-                                camera['name'],
-                                camera['address'],
-                                camera['port'],
-                                camera['path'],
-                                camera['protocol']
-                            )
-                            # Camera Failed to Connect, Delete from DB and Ask User to Fix Details
-                            if loaded_camera is None:
-                                self.update_status(
-                                    f"Environment: Camera {camera['name']} broken. Attempting Repair...")
-                                services.remove_camera(location, camera_id)
-                                self.repair_camera(location, camera_id, camera['name'], camera['address'],
-                                                   camera['port'], camera['path'], camera['protocol'])
-                            else:
-                                self.update_status(f"Environment: Camera {camera['name']} loaded.")
-                                self.add_camera(location, camera_id, camera['name'], camera['address'], camera['port'],
-                                                camera['path'], camera['protocol'])
-                                self.update_status(
-                                    f"Environment: Attaching Stream from Camera {camera['name']}....")
-                                self.attach_stream(loaded_camera.id, loaded_camera.stream)
-                                self.update_status(
-                                    f"Environment: Done Attaching Stream from Camera {camera['name']}....")
-                self.ui.statusbar.showMessage("Ready")
-                self.ui.progressBar.hide()
-        except Exception as e:
-            print('error occured!!')
-            self.ui.statusbar.showMessage("Environment Failed to load!!")
-            print(e)
+        # try:
+        locations = services.get_camera_setup()
+        if locations is not None:
+            for location, cameras in locations.items():
+                self.update_status("Environment: Loading Locations...")
+                controller.load_location(location)
+                self.add_location(location)
+                if cameras is not None:
+                    for camera_id, camera in cameras.items():
+                        self.update_status(f"Environment: Loading Camera {camera['name']}...")
+                        loaded_camera = controller.load_camera(
+                            location,
+                            camera_id,
+                            camera['name'],
+                            camera['address'],
+                            camera['port'],
+                            camera['path'],
+                            camera['protocol']
+                        )
+                        # Camera Failed to Connect, Delete from DB and Ask User to Fix Details
+                        if loaded_camera is None:
+                            self.update_status(
+                                f"Environment: Camera {camera['name']} broken. Attempting Repair...")
+                            services.remove_camera(location, camera_id)
+                            self.repair_camera(location, camera_id, camera['name'], camera['address'],
+                                               camera['port'], camera['path'], camera['protocol'])
+                        else:
+                            self.update_status(f"Environment: Camera {camera['name']} loaded.")
+                            self.add_camera(location, camera_id, camera['name'], camera['address'], camera['port'],
+                                            camera['path'], camera['protocol'])
+                            self.update_status(
+                                f"Environment: Attaching Stream from Camera {camera['name']}....")
+                            self.attach_stream(loaded_camera.id, loaded_camera.stream)
+                            self.update_status(
+                                f"Environment: Done Attaching Stream from Camera {camera['name']}....")
+            self.ui.statusbar.showMessage("Ready")
+            self.ui.progressBar.hide()
+        # except Exception as e:
+        #     print('error occured!!')
+        #     self.ui.statusbar.showMessage("Environment Failed to load!!")
+        #     print(e)
 
         self.ui.statusbar.showMessage("Ready")
         self.ui.progressBar.hide()
