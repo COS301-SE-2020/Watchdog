@@ -80,18 +80,19 @@ class CameraController(threading.Thread):
         #             return False
         # if self.client is not None:
         #     self.client.authorize()
-        for i, camera_id in enumerate(camera_ids):
-            self.camera_producers[camera_id] = rtc_connection.RTCConnectionHandler(
-                camera_id,
-                services.User.get_instance().user_id,
-                camera_addresses[i]
-            )
+        if camera_addresses is not None:
+            for i, camera_id in enumerate(camera_ids):
+                self.camera_producers[camera_id] = rtc_connection.RTCConnectionHandler(
+                    camera_id,
+                    services.User.get_instance().user_id,
+                    camera_addresses[i]
+                )
 
-            def loop_in_thread(loop):
-                loop.run_until_complete(self.camera_producers[camera_id].start())
-            # asyncio.run(self.camera_producers[camera_id].start())
+                def loop_in_thread(loop):
+                    loop.run_until_complete(self.camera_producers[camera_id].start())
+                # asyncio.run(self.camera_producers[camera_id].start())
 
-            threading.Thread(target=loop_in_thread, args=(EVENT_LOOP,), daemon=True).start()
+                threading.Thread(target=loop_in_thread, args=(EVENT_LOOP,), daemon=True).start()
 
         return True
 
