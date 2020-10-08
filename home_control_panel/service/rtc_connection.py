@@ -64,10 +64,17 @@ class RTCConnectionHandler:
 
             # open media source
             options = {"framerate": "30"}
-            # if platform.system() == "Darwin":
-                # player = MediaPlayer("default:none", format="avfoundation", options=options)
             print(f'fetching stream: {self.camera_address}')
-            player = MediaPlayer(self.camera_address) # , options=options)
+            player = None
+            if self.camera_address == '://0':
+                if platform.system() == 'Darwin':
+                    # Open webcam on OS X.
+                    player = MediaPlayer('default:none', format='avfoundation', options={'framerate': '30'})
+                else:
+                    player = MediaPlayer('/dev/video0', format='v4l2')
+
+            else:
+                player = MediaPlayer(self.camera_address) # , options=options)
             # else:
             #     player = MediaPlayer("/dev/video0", format="v4l2", options=options)
 
