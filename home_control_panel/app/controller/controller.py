@@ -131,7 +131,7 @@ class CameraController(threading.Thread):
                 self.cameras[address] = client
                 self.locations[location_label].add_camera(client)
                 self.cameras[address].start()
-                self.connect([camera_id], [client.get_url()])
+                self.connect([camera_id], [protocol+'://'+client.get_url()])
                 return client
         return None
 
