@@ -26,28 +26,32 @@ class RTCConnectionHandler:
         retry = 5
         # TODO: Make this exponential backoff time calculator
         calculate_time = lambda attempt: 5
+        # await self.socket.connect(URL)
         while not status and retry > 0:
             await self.socket.sleep(calculate_time(retry))
             try:
+                print('[rtc]: connecting to server...')
                 await self.socket.connect(URL)
                 status = True
             except Exception as e:
-                print('Socket connection error...retrying')
+                print('[rtc]: socket connection error...retrying')
 
         if retry == 0:
-            print('Failed to connect')
+            print('[rtc]: failed to connect')
 
         await self.register()
         await self.make_view_available()
-        # while True:
-        #     await self.socket.sleep(1)
-        # await self.socket.wait()
+
+        @self.socket.on('connect')
+        async def connect(params=None):
+            # TODO: Make this event register the user
+            print('[rtc]: connected to server.')
 
         @self.socket.on('offer')
         async def process_offer(params):
             if params['camera_id'] != self.camera_id:
                 return
-            print('RECEIVED OFFER...')
+            print('[rtc]: received offer...')
             # params = await request.json()
             offer = RTCSessionDescription(sdp=params['offer']["sdp"], type=params['offer']["type"])
 
@@ -57,14 +61,18 @@ class RTCConnectionHandler:
 
             @pc.on("iceconnectionstatechange")
             async def on_iceconnectionstatechange():
-                print("ICE connection state is %s" % pc.iceConnectionState)
+                print("[rtc]: ICE connection state is %s" % pc.iceConnectionState)
                 if pc.iceConnectionState == "failed":
                     await pc.close()
                     self.pcs.discard(pc)
+                    await self.socket.emit(event='ice-connection-failed', data={
+                        'camera_id': params['camera_id'],
+                        'token': params['token']
+                    })
 
             # open media source
             options = {"framerate": "30"}
-            print(f'fetching stream: {self.camera_address}')
+            print(f'[rtc]: fetching stream {self.camera_address}')
             player = None
             if self.camera_address == '://0':
                 if platform.system() == 'Darwin':
@@ -94,7 +102,7 @@ class RTCConnectionHandler:
             #         {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
             #     ),
             # )
-            print('SENDING ANSWER...')
+            print('[rtc]: sending answer...')
             await self.socket.emit('answer', {
                 'camera_id': params['camera_id'],
                 'token': params['token'],
@@ -103,12 +111,12 @@ class RTCConnectionHandler:
 
         @self.socket.on('registered')
         async def registered(data):
-            print(data)
+            print(f'[rtc]: {data}')
 
         @self.socket.on('disconnect')
         async def on_shutdown():
             # close peer connections
-            print(f'disconnecting {self.camera_id}')
+            print(f'[rtc]: disconnecting {self.camera_id}')
             coros = [pc.close() for pc in self.pcs]
             await asyncio.gather(*coros)
             self.pcs.clear()
@@ -116,15 +124,13 @@ class RTCConnectionHandler:
         await self.socket.wait()
 
     async def register(self):
-        print(f'Registering: {self.user_id}')
+        print(f'[rtc]: registering: {self.user_id}')
         await self.socket.emit('register', {
-            'user_id': self.user_id,
-            'client_type': 'producer',
-            'data': {}
+            'user_id': self.user_id
         })
 
     async def make_view_available(self):
-        print(f'Making view Available: {self.camera_id}')
+        print(f'[rtc]: making view Available: {self.camera_id}')
         await self.socket.emit('make-available', {
             'camera_id': self.camera_id,
             'camera': {}
