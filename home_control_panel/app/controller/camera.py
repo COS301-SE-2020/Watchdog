@@ -1,6 +1,5 @@
 import os
 import json
-import platform
 import threading
 from aiortc import MediaStreamTrack
 from aiortc.contrib.media import MediaPlayer
@@ -96,27 +95,20 @@ class Camera(threading.Thread):
     def connect(self):
         if self.player is None:
             try:
-                # options = {"framerate": "30", "video_size": "640x480"}
-                self.is_connected = True
-                url = self.get_url()
-                if url == 0:
-                    print('Connecting to Webcam...')
-                    if platform.system() == 'Darwin':
-                        self.player = MediaPlayer('default:none', format="avfoundation", options={"framerate": "30"})
-                    else:
-                        self.player = MediaPlayer("/dev/video0", format="v4l2")
+                options = {"framerate": "30"}
+                if self.address == 'default:none':
+                    self.player = MediaPlayer(self.address, format="avfoundation", options=options)
+                elif self.address == '/dev/video0':
+                    self.player = MediaPlayer(self.address, format="v4l2", options=options)
                 else:
-                    print("Connecting to IP Camera [" + str(self.get_url()) + "]")
-                    self.player = MediaPlayer(self.get_url(True), options={"framerate": "15", "video_size": "640x480"})
-
+                    self.player = MediaPlayer(self.get_url(True), options=options)
 
                 self.track = VideoStream(self.player.video)
                 print("Connected to IP Camera [" + str(self.get_url()) + "]")
-
-            except Exception as e:
+                self.is_connected = True
+            except Exception:
                 self.track = None
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
-                print(e)
                 self.is_connected = False
                 self.disconnect()
             

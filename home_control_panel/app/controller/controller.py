@@ -91,9 +91,12 @@ class CameraController(threading.Thread):
         print('... loading camera ...', location_label, camera_id, name, address, port, path, protocol)
         if location_label in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location_label)
+            client.start()
+            if not client.is_connected:
+                return None
+
             self.cameras[address] = client
             self.locations[location_label].add_camera(client)
-            self.cameras[address].start()
             self.connect()
             return client
         return None
@@ -111,15 +114,18 @@ class CameraController(threading.Thread):
         camera_id = 'c' + str(sha256((str(random.getrandbits(128))).encode('ascii')).hexdigest())
         if location_label in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location_label)
+            client.start()
+            if not client.is_connected:
+                return None
+                
             response = services.upload_camera(client.id, client.get_metadata())
             if response is not None and response.status_code != 200:
-                print('Warning: Camera not uploaded!')
+                print('Warning: Camera not uploaded!')            
 
             self.cameras[address] = client
             self.locations[location_label].add_camera(self.cameras[address])
-            self.cameras[address].start()
             self.connect()
-            return self.cameras[address]  # successfully added client
+            return client  # successfully added client
 
         print('Warning: Could not connect to camera', '[', camera_id, name, ']')
         return None
