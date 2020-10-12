@@ -13,13 +13,14 @@ FPS = conf['video']['frames_per_second']
 
 
 class RTCConnectionHandler:
-    def __init__(self, camera_id, user_id, camera_address):
+    def __init__(self, user_id, camera):
         self.pc = {}
         self.pcs = set()
         self.socket = socketio.AsyncClient(ssl_verify=False)
         self.user_id = user_id
-        self.camera_id = camera_id
-        self.camera_address = camera_address
+        self.camera = camera
+        self.camera_id = camera.id
+        self.camera_address = camera.get_url(True)
         self.is_connected = False
 
     async def start(self):
@@ -77,16 +78,16 @@ class RTCConnectionHandler:
 
             # open media source
             print(f'[rtc]: fetching stream {self.camera_address}')
-            player = None
-            if self.camera_address == '://0':
-                if platform.system() == 'Darwin':
-                    # Open webcam on OS X.
-                    player = MediaPlayer('default:none', format='avfoundation', options={'framerate': '30'})
-                else:
-                    player = MediaPlayer('/dev/video0', format='v4l2')
+            # player = None
+            # if self.camera_address == '://0':
+            #     if platform.system() == 'Darwin':
+            #         # Open webcam on OS X.
+            #         player = MediaPlayer('default:none', format='avfoundation', options={'framerate': '30'})
+            #     else:
+            #         player = MediaPlayer('/dev/video0', format='v4l2')
 
-            else:
-                player = MediaPlayer(self.camera_address)
+            # else:
+            player = self.camera.player
 
             await pc.setRemoteDescription(offer)
             for t in pc.getTransceivers():

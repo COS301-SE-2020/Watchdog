@@ -5,12 +5,27 @@ import threading
 from .stream.stream import Stream
 from ...service import connection
 from ...service import services
+from aiortc import MediaStreamTrack
+from aiortc.contrib.media import MediaPlayer
 
 conf = json.loads(os.environ['config'])
 PROTOCOLS = ['', 'rstp', 'http', 'https']
 FPS = conf['video']['frames_per_second']
 (RES_X, RES_Y) = (conf['video']['resolution']['width'], conf['video']['resolution']['height'])
 
+
+class VideoStream(MediaStreamTrack):
+    kind = "video"
+
+    def __init__(self, track):
+        super().__init__()  # don't forget this!
+        self.track = track
+        self.frame = None
+
+    async def recv(self):
+        print('receiving')
+        self.frame = await self.track.recv()
+        return self.frame
 
 # Camera connector
 class Camera(threading.Thread):
@@ -32,14 +47,16 @@ class Camera(threading.Thread):
         self.location = location
         # Live Boolean Spin Variable
         self.live = False
-        # Connection
-        self.connection = None
         # Connection for Outgoing broadcast
         self.stream_connection = None
         # Is IP Camera Connected
         self.is_connected = False
         # Stream Management Object
         self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
+        #
+        self.track = None
+        #
+        self.player = None
         # Connect to Camera
         self.connect()
 
@@ -60,9 +77,8 @@ class Camera(threading.Thread):
     # Activates Livestream for Stream Object by providing a connection
     def start_stream(self):
         self.stream_connection = connection.RTCConnectionHandler(
-            self.id,
             services.User.get_instance().user_id,
-            self.get_url(True)
+            self
         )
         return self.stream_connection
 
@@ -77,45 +93,40 @@ class Camera(threading.Thread):
 
     # Connect to IP Camera
     def connect(self):
-        # check not already connected
-        if self.connection is None or not self.connection.isOpened():
-            # Camera Stream Connection
-            self.connection = cv2.VideoCapture(self.get_url(True))
-            self.connection.set(cv2.CAP_PROP_FPS, FPS)
-            self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, RES_X)
-            self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, RES_Y)
-            if self.connection.isOpened():
+        if self.player is None:
+            try:
+                # options = {"framerate": "30", "video_size": "640x480"}
+                self.player = MediaPlayer(self.get_url(True))
+                self.track = VideoStream(self.player.video)
                 print("Connected to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = True
-            else:
+            except Exception:
+                self.track = None
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = False
-                # after a few tries, change protocol before retrying
         return self.is_connected
 
     # Disconnect from IP Camera
     def disconnect(self):
         # check connected
         if self.is_connected:
-            self.connection.release()
-            self.is_connected = False
             self.connection = None
+            self.is_connected = False
         return not self.is_connected
 
     # Update Camera Connection with new Frame and put in the stream
     def update(self):
-        if not self.is_connected or self.connection is None:
-            self.connect()
-            return
-        (grabbed, frame) = self.connection.read()
-        if grabbed:
-            self.stream.put(frame)
-        else:
-            self.disconnect()
+        if not self.is_connected or self.player is None:
             self.connect()
 
+        if self.track is not None:
+            if self.track.frame is not None:
+                self.stream.put(self.track.frame)
+        else:
+            self.disconnect()
+
     def check_connection(self):
-        if not self.is_connected or self.connection is None or not self.connection.isOpened():
+        if not self.is_connected or self.player is None:
             self.connect()
         return self.is_connected
 
