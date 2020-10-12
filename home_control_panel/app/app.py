@@ -100,6 +100,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.ui.actionView_Recordings.triggered.connect(self.trigger_view_recordings)
         self.ui.actionAdd_New_Location.triggered.connect(self.trigger_add_location)
         self.ui.actionPreferences.triggered.connect(self.trigger_show_settings)
+        self.ui.actionAdd_Webcam.triggered.connect(self.add_webcam)
 
         self.add_camera_dialog.ui.cancel.clicked.connect(self.__cancel_add_camera)
         self.add_location_dialog.ui.cancel.clicked.connect(self.__cancel_add_location)
@@ -162,6 +163,20 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
         self.settings_dialog.exec_()
         self.update_status('Updated Settings.')
+
+    def add_webcam(self):
+        import platform
+        camera = None
+        if platform.system() == 'Darwin':
+            camera = self.controller_events["add_camera"](" ", "Webcam", "default:none", "", "", "")
+        else:
+            camera = self.controller_events["add_camera"](" ", "Webcam", "/dev/video0", "", "", "")
+
+        if camera is None:
+            self.update_status("Failed to add Webcam!")
+        else:
+            self.add_camera("Computer", camera.id, "Webcam", "", "", "", "")
+            self.attach_stream(camera.id, camera.stream)
 
     # Internal UI Events
     def __login_event(self):
