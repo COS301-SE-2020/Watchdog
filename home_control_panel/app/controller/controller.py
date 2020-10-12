@@ -138,6 +138,7 @@ class CameraController(threading.Thread):
         print('... removing camera ...', camera_id)
         for address, camera in self.cameras.items():
             if camera.id == camera_id:
+                services.remove_camera(camera.location, camera_id)
                 self.locations[camera.location].remove_camera(camera_id)
                 self.cameras[address].stop()
                 del self.cameras[address]
