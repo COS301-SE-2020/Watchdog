@@ -25,6 +25,7 @@ class VideoStream(MediaStreamTrack):
 
     async def recv(self):
         self.frame = await self.track.recv()
+        return self.frame.to_ndarray(format="bgr24")
 
 
 # Camera connector
@@ -67,7 +68,7 @@ class Camera(threading.Thread):
         self.live = True
         # Update stream while live
         while(self.live):
-            self.update()
+            EVENT_LOOP.run_until_complete(self.update())
 
     # Stop thread
     def stop(self):
@@ -96,7 +97,8 @@ class Camera(threading.Thread):
         if self.player is None:
             try:
                 # options = {"framerate": "30", "video_size": "640x480"}
-                url = self.get_url(True)
+                self.is_connected = True
+                url = self.get_url()
                 if url == 0:
                     print('Connecting to Webcam...')
                     if platform.system() == 'Darwin':
@@ -104,42 +106,45 @@ class Camera(threading.Thread):
                     else:
                         self.player = MediaPlayer("/dev/video0", format="v4l2")
                 else:
-                    self.player = MediaPlayer(self.get_url(True))
+                    print("Connecting to IP Camera [" + str(self.get_url()) + "]")
+                    self.player = MediaPlayer(self.get_url(True), options={"framerate": "15", "video_size": "640x480"})
+
 
                 self.track = VideoStream(self.player.video)
                 print("Connected to IP Camera [" + str(self.get_url()) + "]")
-                self.is_connected = True
+
             except Exception as e:
                 self.track = None
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
                 print(e)
                 self.is_connected = False
+                self.disconnect()
+            
         return self.is_connected
 
     # Disconnect from IP Camera
     def disconnect(self):
         # check connected
+        self.player = None
+        self.track = None
         if self.is_connected:
-            self.connection = None
             self.is_connected = False
-        return not self.is_connected
+            return True
+        return False
 
     # Update Camera Connection with new Frame and put in the stream
-    def update(self):
-        if not self.is_connected or self.player is None:
+    async def update(self):
+        if not self.check_connection():
             self.connect()
-
-        if self.track is not None:
-            EVENT_LOOP.run_until_complete(self.track.recv())
-            if self.track.frame is not None:
-                self.stream.put(self.track.frame.to_ndarray(format="bgr24"))
-        else:
+        try:
+            self.stream.put(await self.track.recv())
+        except Exception:
             self.disconnect()
 
     def check_connection(self):
         if not self.is_connected or self.player is None:
-            self.connect()
-        return self.is_connected
+            False
+        return True
 
     # Return Camera URL
     def get_url(self, print_protocol=False):

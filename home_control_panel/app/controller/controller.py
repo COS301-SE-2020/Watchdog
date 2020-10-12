@@ -5,19 +5,19 @@ import time
 import random
 import threading
 from hashlib import sha256
+import nest_asyncio
+
+nest_asyncio.apply()
+EVENT_LOOP = asyncio.get_event_loop()
+asyncio.set_event_loop(EVENT_LOOP)
+
 from .location import Location
 from ...service import services
-
-import nest_asyncio
-nest_asyncio.apply()
+from .camera import Camera
 
 conf = json.loads(os.environ['config'])
 site_label = conf['settings']['site']
 
-EVENT_LOOP = asyncio.get_event_loop()
-asyncio.set_event_loop(EVENT_LOOP)
-
-from .camera import Camera
 
 # Camera Controller Class
 #   Manages all camera and location objects
@@ -37,8 +37,6 @@ class CameraController(threading.Thread):
 
     # Starts the controller
     def run(self):
-        if self.cameras.__len__() == 0:
-            print("There are currently no ip cameras detected...")
         self.live = True
         # Start Loaded Cameras
         for address, client in self.cameras.items():
@@ -78,60 +76,56 @@ class CameraController(threading.Thread):
         for address, camera in self.cameras.items():
             if not camera.check_stream():
                 camera.stop_stream()
-                print('Camera not connected!')
+                print('Warning: Camera not connected!')
                 return False
         return True
 
     # Loads in an Existing location
     def load_location(self, location_label):
-        print('LOADING LOCATION', location_label)
+        print('... loading location ...', location_label)
         if location_label not in self.locations:
             self.locations[location_label] = Location(location_label, self)
 
     # Loads in an Existing Camera
     def load_camera(self, location_label, camera_id, name, address, port, path, protocol):
-        print('LOADING CAMERA', location_label, camera_id, name, address, port, path, protocol)
+        print('... loading camera ...', location_label, camera_id, name, address, port, path, protocol)
         if location_label in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location_label)
-            if client.is_connected:
-                print("Loading camera " + str(client))
-                self.cameras[address] = client
-                self.locations[location_label].add_camera(client)
-                self.cameras[address].start()
-                self.connect()
-                return client
+            self.cameras[address] = client
+            self.locations[location_label].add_camera(client)
+            self.cameras[address].start()
+            self.connect()
+            return client
         return None
 
     # Adds a new Location
     def add_location(self, location_label):
-        print('ADDING LOCATION', location_label)
+        print('... adding location ...', location_label)
         if location_label not in self.locations:
             self.locations[location_label] = Location(location_label, self)
             # TODO: Added a service function for adding a location without cameras
 
     # Adds a new Camera and Inserts it into database
     def add_camera(self, location_label, name, address, port, path, protocol):
-        print('ADDING CAMERA', location_label, name, address, port, path, protocol)
+        print('... adding camera ...', location_label, name, address, port, path, protocol)
         camera_id = 'c' + str(sha256((str(random.getrandbits(128))).encode('ascii')).hexdigest())
         if location_label in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location_label)
-            print("Adding camera " + str(client))
-            if client.is_connected:
-                response = services.upload_camera(client.id, client.get_metadata())
-                if response is not None and response.status_code != 200:
-                    print('Warning: Camera not uploaded!')
+            response = services.upload_camera(client.id, client.get_metadata())
+            if response is not None and response.status_code != 200:
+                print('Warning: Camera not uploaded!')
 
-                self.cameras[address] = client
-                self.locations[location_label].add_camera(self.cameras[address])
-                self.cameras[address].start()
-                self.connect()
-                return self.cameras[address]  # successfully added client
-            else:
-                print('Warning: Could not connect to camera', '[', camera_id, name, ']')
+            self.cameras[address] = client
+            self.locations[location_label].add_camera(self.cameras[address])
+            self.cameras[address].start()
+            self.connect()
+            return self.cameras[address]  # successfully added client
+
+        print('Warning: Could not connect to camera', '[', camera_id, name, ']')
         return None
 
     def remove_location(self, location_label):
-        print('REMOVING LOCATION', location_label)
+        print('... removing location ...', location_label)
         if location_label in self.locations:
             camera_ids = self.locations[location_label].cameras.keys()
             for id in camera_ids:
@@ -141,7 +135,7 @@ class CameraController(threading.Thread):
         return False
 
     def remove_camera(self, camera_id):
-        print('REMOVING CAMERA', camera_id)
+        print('... removing camera ...', camera_id)
         for address, camera in self.cameras.items():
             if camera.id == camera_id:
                 self.locations[camera.location].remove_camera(camera_id)
