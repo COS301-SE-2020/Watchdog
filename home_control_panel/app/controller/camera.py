@@ -24,7 +24,6 @@ class VideoStream(MediaStreamTrack):
 
     async def recv(self):
         self.frame = await self.track.recv()
-        print(self.frame)
 
 
 # Camera connector
@@ -122,7 +121,7 @@ class Camera(threading.Thread):
         if self.track is not None:
             EVENT_LOOP.run_until_complete(self.track.recv())
             if self.track.frame is not None:
-                self.stream.put(self.track.frame)
+                self.stream.put(self.track.frame.to_ndarray(format="bgr24"))
         else:
             self.disconnect()
 

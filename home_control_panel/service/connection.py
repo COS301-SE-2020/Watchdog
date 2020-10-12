@@ -37,7 +37,9 @@ class RTCConnectionHandler:
                 status = True
             except Exception as e:
                 print('[rtc]: socket connection error...retrying')
-                print(e)
+                if str(e) == 'Client is not in a disconnected state':
+                    self.is_connected = True
+                    return
 
         if retry == 0:
             print('[rtc]: failed to connect')
