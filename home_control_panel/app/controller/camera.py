@@ -1,12 +1,12 @@
 import os
 import json
-import cv2
 import threading
+from aiortc import MediaStreamTrack
+from aiortc.contrib.media import MediaPlayer
 from .stream.stream import Stream
 from ...service import connection
 from ...service import services
-from aiortc import MediaStreamTrack
-from aiortc.contrib.media import MediaPlayer
+from .controller import EVENT_LOOP
 
 conf = json.loads(os.environ['config'])
 PROTOCOLS = ['', 'rstp', 'http', 'https']
@@ -18,14 +18,14 @@ class VideoStream(MediaStreamTrack):
     kind = "video"
 
     def __init__(self, track):
-        super().__init__()  # don't forget this!
+        super(MediaStreamTrack).__init__()  # don't forget this!
         self.track = track
         self.frame = None
 
     async def recv(self):
-        print('receiving')
         self.frame = await self.track.recv()
-        return self.frame
+        print(self.frame)
+
 
 # Camera connector
 class Camera(threading.Thread):
@@ -120,6 +120,7 @@ class Camera(threading.Thread):
             self.connect()
 
         if self.track is not None:
+            EVENT_LOOP.run_until_complete(self.track.recv())
             if self.track.frame is not None:
                 self.stream.put(self.track.frame)
         else:

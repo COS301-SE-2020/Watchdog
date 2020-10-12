@@ -5,10 +5,8 @@ import time
 import random
 import threading
 from hashlib import sha256
-from .camera import Camera
 from .location import Location
 from ...service import services
-from ...service import connection
 
 import nest_asyncio
 nest_asyncio.apply()
@@ -19,6 +17,7 @@ site_label = conf['settings']['site']
 EVENT_LOOP = asyncio.get_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
+from .camera import Camera
 
 # Camera Controller Class
 #   Manages all camera and location objects
@@ -126,7 +125,6 @@ class CameraController(threading.Thread):
                 self.locations[location_label].add_camera(self.cameras[address])
                 self.cameras[address].start()
                 self.connect()
-
                 return self.cameras[address]  # successfully added client
             else:
                 print('Warning: Could not connect to camera', '[', camera_id, name, ']')
