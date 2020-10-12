@@ -3,7 +3,8 @@ import json
 import cv2
 import threading
 from .stream.stream import Stream
-
+from ...service import connection
+from ...service import services
 
 conf = json.loads(os.environ['config'])
 PROTOCOLS = ['', 'rstp', 'http', 'https']
@@ -33,6 +34,8 @@ class Camera(threading.Thread):
         self.live = False
         # Connection
         self.connection = None
+        # Connection for Outgoing broadcast
+        self.stream_connection = None
         # Is IP Camera Connected
         self.is_connected = False
         # Stream Management Object
@@ -55,12 +58,22 @@ class Camera(threading.Thread):
         self.disconnect()
 
     # Activates Livestream for Stream Object by providing a connection
-    def start_stream(self, connect):
-        self.stream.stream_connection = connect
+    def start_stream(self):
+        self.stream_connection = connection.RTCConnectionHandler(
+            self.id,
+            services.User.get_instance().user_id,
+            self.get_url(True)
+        )
+        return self.stream_connection
 
     # Deactivates Livestream for Stream Object by removing connection
     def stop_stream(self):
-        self.stream.stream_connection = None
+        self.stream_connection = None
+
+    def check_stream(self):
+        if self.stream_connection is not None and self.stream_connection.is_connected:
+            return True
+        return False
 
     # Connect to IP Camera
     def connect(self):

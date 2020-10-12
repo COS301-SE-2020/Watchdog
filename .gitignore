@@ -21,6 +21,8 @@ home_control_panel/tests/__pycache__
 # Generated Content
 data/temp/image/*
 data/temp/video/*
+data/temp/frame/*
+data/temp/.hash
 # Other
 dist
 build

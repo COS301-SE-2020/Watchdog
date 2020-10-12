@@ -2,10 +2,10 @@ import os
 import time
 import json
 import threading
+import imageio
 from cv2 import (
-    VideoWriter,
-    VideoWriter_fourcc,
-    resize
+    resize,
+    imwrite
 )
 from .collector import (
     Tag,
@@ -93,74 +93,32 @@ class FrameCollector(threading.Thread):
         self.period_queue.append(frame)
 
     def flush(self):
-        tag = Tag.DEFAULT
-        cons_queue = []
-        frame_count = 0
         max_frames = recording_ratio * len(self.period_queue)
 
-        # Build Empty Frame Queue
-        for index in range(len(self.period_queue)):
-            cons_queue.append(None)
+        video = Video(self.camera_id, self.address, Tag.DEFAULT)
 
-        # Fill Queue with Frames Containg Faces
-        for index in range(len(self.alert_queue)):
-            if frame_count > max_frames:
+        for index in range(len(self.period_queue)):
+            if index > max_frames:
                 break
             if self.alert_queue[index] is not None:
-                tag = Tag.INTRUDER
-                if index > 0:
-                    cons_queue[index - 1] = self.period_queue[index - 1]
-                    frame_count += 1
-                cons_queue[index] = self.alert_queue[index]
-                frame_count += 1
-                if index < len(self.period_queue) - 2:
-                    cons_queue[index + 1] = self.period_queue[index + 1]
-                    frame_count += 1
+                video.tag = Tag.INTRUDER
+                video.add_frame(self.alert_queue[index])
+            elif self.move_queue[index] is not None:
+                video.add_frame(self.move_queue[index])
+                video.tag = Tag.MOVEMENT
+            elif self.period_queue[index] is not None:
+                video.add_frame(self.period_queue[index])
+                video.tag = Tag.PERIODIC
 
-        # Fill Queue with Frames Containg Movement
-        for index in range(len(self.move_queue)):
-            if frame_count > max_frames:
-                break
-            if cons_queue[index] is None and self.move_queue[index] is not None:
-                cons_queue[index] = self.move_queue[index]
-                frame_count += 1
-                if tag == Tag.DEFAULT:
-                    tag = Tag.MOVEMENT
-
-        # Fill Queue with Remaining Frames until Full
-        #   Filling is performed moving towards the centre, from the four quarter locations in the queue
-        size = int(len(self.period_queue) / 4)
-        for index in range(size):
-            if frame_count > max_frames:
-                break
-            if cons_queue[index] is None and self.period_queue[index] is not None:
-                cons_queue[index] = self.period_queue[index]
-                frame_count += 1
-            if cons_queue[index + size] is None and self.period_queue[index + size] is not None:
-                cons_queue[index + size] = self.period_queue[index + size]
-                frame_count += 1
-            alt_index = len(self.period_queue) - index - 1
-            if cons_queue[alt_index - size] is None and self.period_queue[alt_index - size] is not None:
-                cons_queue[alt_index - size] = self.period_queue[alt_index - size]
-                frame_count += 1
-            if cons_queue[alt_index] is None and self.period_queue[alt_index] is not None:
-                cons_queue[alt_index] = self.period_queue[alt_index]
-                frame_count += 1
-            if tag == Tag.DEFAULT:
-                tag = Tag.PERIODIC
-
-        video = Video(self.camera_id, self.address, tag)
-        video.set_frames(cons_queue)
         video.export()
 
-        self.alert_queue.clear()
-        self.move_queue.clear()
-        self.period_queue.clear()
+        self.clear()
+        return video
+
+    def clear(self):
         self.alert_queue = []
         self.move_queue = []
         self.period_queue = []
-        return video
-
 
 class Video:
     def __init__(self, camera_id, address, tag=Tag.DEFAULT):
@@ -173,14 +131,11 @@ class Video:
         self.dimensions = (RES_X, RES_Y)
         self.id = hash_id(self.time_start, self.address)
 
-    def resize(self, dimensions):
-        self.dimensions = (width, height) = dimensions
-        for index in range(len(self.frames)):
-            self.frames[index] = resize(self.frames[index], (width, height))
-
     def add_frame(self, frame):
         if frame is not None:
-            self.frames.append(frame)
+            frame_name = 'data/temp/frame/{}.jpg'.format(str(self.id) + str(len(self.frames)))
+            self.frames.append(frame_name)
+            imwrite(frame_name, resize(frame, (self.dimensions[0], self.dimensions[1])))
         self.time_end = time_now()
 
     def set_frames(self, frames):
@@ -189,22 +144,17 @@ class Video:
         self.time_end = time_now()
 
     def export(self):
-        if self.tag == Tag.DEFAULT:
-            return
-        if len(self.frames) > 0:
+        if self.tag != Tag.DEFAULT and len(self.frames) > 0:
             ext = '.mp4'
-            name = 'data/temp/video/' + str(self.id) + ext
-            (width, height) = self.dimensions
-            (w, h) = (width, height)
-            self.resize((w, h))
-
-            file = VideoWriter(name, VideoWriter_fourcc(*'mp4v'), fps, (w, h), True)
+            name = ('./data/temp/video/{}' + ext).format(str(self.id))
 
             print("Exporting Video [" + name + "]")
+            writer = imageio.get_writer(name, fps=fps)
             for index in range(len(self.frames)):
                 if self.frames[index] is not None:
-                    file.write(self.frames[index])
-            file.release()
+                    writer.append_data(imageio.imread(self.frames[index]))
+                    os.remove(self.frames[index])
+            writer.close()
 
             if self.tag == Tag.PERIODIC:
                 tag_label = 'periodic'

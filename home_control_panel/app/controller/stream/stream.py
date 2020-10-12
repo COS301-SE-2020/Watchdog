@@ -43,7 +43,6 @@ class Stream:
         self.camera_id = camera_id
         self.address = address
         self.stream_view = None
-        self.stream_connection = None
         self.current_frame = None
         # Collectors
         self.image_collector = ImageCollector(self.camera_id, self.address)
@@ -92,9 +91,6 @@ class Stream:
         # Update UI Component
         if self.stream_view is not None:
             self.stream_view.update_frame(cvtColor(self.current_frame, COLOR_BGR2RGB))
-        # Update Online Livestream
-        if self.stream_connection is not None:
-            self.stream_connection.produce(self.camera_id, self.current_frame)
 
     # Detects Persons Face in Frame
     def detect_person(self):

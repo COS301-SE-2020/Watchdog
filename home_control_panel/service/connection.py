@@ -1,124 +1,134 @@
-import cv2
-import time
-import base64
-import urllib3
-import random
+import asyncio
+import platform
 import socketio
+from aiortc import RTCPeerConnection, RTCSessionDescription
+from aiortc.contrib.media import MediaPlayer
 from . import config
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 conf = config.configure()
 CLIENT_KEY = conf['services']['client']['key']
-SERVER_URL = conf['services']['stream_url']
+URL = conf['services']['stream_url']
 FPS = conf['video']['frames_per_second']
 
 
-# Front-End Client Asbtract Class
-class Connection:
-    def __init__(self, user_id):
-        self.id = self.generate_id(self)
+class RTCConnectionHandler:
+    def __init__(self, camera_id, user_id, camera_address):
+        self.pc = {}
+        self.pcs = set()
+        self.socket = socketio.AsyncClient(ssl_verify=False)
         self.user_id = user_id
-        self.connected = False
-        self.socket = socketio.Client(ssl_verify=False)
-        self.connect()
+        self.camera_id = camera_id
+        self.camera_address = camera_address
+        self.is_connected = False
 
-        # Data : { user_id : string, camera_list : string }
-        @self.socket.on('activate-broadcast')
-        def activate_broadcast(data):
-            print('activating broadcast ... ' + str(data))
-            self.activate(data['camera_list'])
+    async def start(self):
+        status = False
+        retry = 5
+        # TODO: Make this exponential backoff time calculator
+        calculate_time = lambda attempt: 5
+        self.is_connected = True
+        while not status and retry > 0:
+            await self.socket.sleep(calculate_time(retry))
+            try:
+                print('[rtc]: connecting to server...')
+                await self.socket.connect(URL)
+                status = True
+            except Exception as e:
+                print('[rtc]: socket connection error...retrying')
+                print(e)
 
-        # Data : { user_id : string, camera_list : string }
-        @self.socket.on('deactivate-broadcast')
-        def deactivate_broadcast(data):
-            print('deactivating broadcast ... ' + str(data))
-            self.deactivate()
+        if retry == 0:
+            print('[rtc]: failed to connect')
+            self.is_connected = False
+            return
 
-        @self.socket.on('available-views')
-        def available_views(data):
-            self.pulse_check = False
-            # Check that this producer is present
-            producers = data['producers']
-            print(producers)
-            if self.producer_id in producers:
-                # check camera list
-                for camera_id in self.cameras:
-                    if camera_id not in producers[self.producer_id]:
-                        self.authorize()
-                        break
+        await self.register()
+        await self.make_view_available()
+
+        @self.socket.on('connect')
+        async def connect(params=None):
+            # TODO: Make this event register the user
+            print('[rtc]: connected to server.')
+            self.is_connected = True
+
+        @self.socket.on('offer')
+        async def process_offer(params):
+            if params['camera_id'] != self.camera_id:
+                return
+            print('[rtc]: received offer...')
+            # params = await request.json()
+            offer = RTCSessionDescription(sdp=params['offer']["sdp"], type=params['offer']["type"])
+
+            pc = RTCPeerConnection()
+            self.pc[params['camera_id']] = pc
+            self.pcs.add(self.pc[params['camera_id']])
+
+            @pc.on("iceconnectionstatechange")
+            async def on_iceconnectionstatechange():
+                print("[rtc]: ICE connection state is %s" % pc.iceConnectionState)
+                if pc.iceConnectionState == "failed":
+                    await pc.close()
+                    self.pcs.discard(pc)
+                    await self.socket.emit(event='ice-connection-failed', data={
+                        'camera_id': params['camera_id'],
+                        'token': params['token']
+                    })
+
+            # open media source
+            print(f'[rtc]: fetching stream {self.camera_address}')
+            player = None
+            if self.camera_address == '://0':
+                if platform.system() == 'Darwin':
+                    # Open webcam on OS X.
+                    player = MediaPlayer('default:none', format='avfoundation', options={'framerate': '30'})
+                else:
+                    player = MediaPlayer('/dev/video0', format='v4l2')
+
             else:
-                print('Reconnecting to Livestream Server...')
-                self.reconnect()
-                self.authorize()
+                player = MediaPlayer(self.camera_address)
 
-    def connect(self):
-        try:
-            self.socket.connect(SERVER_URL)
-            self.connected = True
-        except socketio.exceptions.ConnectionError:
-            print("Failed to connect to stream server")
-            self.socket = socketio.Client(ssl_verify=False)
-            self.connected = False
-        return self.connected
+            await pc.setRemoteDescription(offer)
+            for t in pc.getTransceivers():
+                if t.kind == "audio" and player.audio:
+                    pc.addTrack(player.audio)
+                elif t.kind == "video" and player.video:
+                    pc.addTrack(player.video)
 
-    def reconnect(self):
-        if self.connected:
-            self.socket.disconnect()
-        self.socket = socketio.Client(ssl_verify=False)
-        self.connect()
+            answer = await pc.createAnswer()
+            await pc.setLocalDescription(answer)
 
-    @staticmethod
-    def generate_id(user):
-        id = 'u' + str(random.getrandbits(128))
-        return id
-
-
-# Front-End Producer Client
-class Producer(Connection):
-    def __init__(self, user_id, producer_id, controller):
-        super(Producer, self).__init__(user_id)
-        self.active = False
-        self.controller = controller
-        self.producer_id = producer_id
-        self.cameras = []
-        self.timer = time.time()
-        self.pulse_check = False
-
-    def pulse(self, available_cameras=False):
-        if self.pulse_check or not self.connected:
-            self.reconnect()
-        self.socket.emit('pulse', {'available_cameras': available_cameras})
-        self.pulse_check = True
-
-    def authorize(self):
-        self.cameras = self.controller.get_camera_ids()
-        if self.connected and self.producer_id is not None:
-            print('Cameras:', self.controller.get_camera_ids())
-            self.socket.emit('authorize', {
-                'user_id': self.user_id,
-                'client_type': 'producer',
-                'producer_id': self.producer_id,
-                'available_cameras': self.controller.get_camera_ids(),
-                'client_key': CLIENT_KEY
+            print('[rtc]: sending answer...')
+            await self.socket.emit('answer', {
+                'camera_id': params['camera_id'],
+                'token': params['token'],
+                'answer': {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
             })
 
-    # Start HCP Client Producer
-    def activate(self, camera_list):
-        self.active = True
-        self.controller.start_streams(camera_list)
+        @self.socket.on('registered')
+        async def registered(data):
+            print(f'[rtc]: {data}')
 
-    # Stop HCP Client Producer
-    def deactivate(self):
-        self.active = False
-        self.controller.stop_streams()
+        @self.socket.on('disconnect')
+        async def on_shutdown():
+            self.is_connected = False
+            # close peer connections
+            print(f'[rtc]: disconnecting {self.camera_id}')
+            coros = [pc.close() for pc in self.pcs]
+            await asyncio.gather(*coros)
+            self.pcs.clear()
 
-    # Send frame through to Server
-    def produce(self, camera_id, frame_px):
-        if self.connected:
-            if self.active and camera_id in self.controller.get_camera_ids():
-                retval, buffer = cv2.imencode('.jpg', frame_px)
-                frame = str(base64.b64encode(buffer))
-                self.socket.emit('produce-frame', {'camera_id': camera_id, 'frame': frame})
-                self.socket.sleep(max((1 / 30) - (time.time() - self.timer), 0))
-                self.timer = time.time()
+        await self.socket.wait()
+
+    async def register(self):
+        print(f'[rtc]: registering: {self.user_id}')
+        await self.socket.emit('register', {
+            'user_id': self.user_id
+        })
+
+    async def make_view_available(self):
+        print(f'[rtc]: making view Available: {self.camera_id}')
+        await self.socket.emit('make-available', {
+            'camera_id': self.camera_id,
+            'camera': {}
+        })
