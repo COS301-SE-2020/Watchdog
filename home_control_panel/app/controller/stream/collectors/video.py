@@ -123,19 +123,21 @@ class FrameCollector(threading.Thread):
 class Video:
     def __init__(self, camera_id, address, tag=Tag.DEFAULT):
         self.camera_id = camera_id
-        self.frames = []
+        self.address = address
         self.tag = tag
+        self.dimensions = (RES_X, RES_Y)
         self.time_start = time_now()
         self.time_end = time_now()
-        self.address = address
-        self.dimensions = (RES_X, RES_Y)
+        self.frames = []
         self.id = hash_id(self.time_start, self.address)
+        for filename in os.listdir('./data/temp/frame'):
+            os.remove(filename)
 
     def add_frame(self, frame):
         if frame is not None:
             frame_name = 'data/temp/frame/{}.jpg'.format(str(self.id) + str(len(self.frames)))
             self.frames.append(frame_name)
-            imwrite(frame_name, resize(frame, (self.dimensions[0], self.dimensions[1])))
+            imwrite(frame_name, frame)
         self.time_end = time_now()
 
     def set_frames(self, frames):
@@ -149,7 +151,7 @@ class Video:
             name = ('./data/temp/video/{}' + ext).format(str(self.id))
 
             print("Exporting Video [" + name + "]")
-            writer = imageio.get_writer(name, fps=fps)
+            writer = imageio.get_writer(name, fps=fps, macro_block_size=0)
             for index in range(len(self.frames)):
                 if self.frames[index] is not None:
                     writer.append_data(imageio.imread(self.frames[index]))

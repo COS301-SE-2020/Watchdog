@@ -27,9 +27,7 @@ from .collectors.collector import (
 )
 from ....service.detection import FastMTCNN
 
-
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
 
 # Stream
 #   In-Out Frame Processing Pipe
