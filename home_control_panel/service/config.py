@@ -12,6 +12,8 @@ def setup():
         os.mkdir('data/temp/video')
     if not os.path.exists('data/temp/image'):
         os.mkdir('data/temp/image')
+    if not os.path.exists('data/temp/frame'):
+        os.mkdir('data/temp/frame')
 
 
 setup()
