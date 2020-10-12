@@ -68,6 +68,12 @@ class FrameCollector(threading.Thread):
         self.period_queue = []
         self.live = False
 
+        try:
+            for filename in os.listdir('./data/temp/frame'):
+                os.remove(filename)
+        except Exception:
+            pass
+
     def run(self):
         self.live = True
         while(self.live):
@@ -130,8 +136,6 @@ class Video:
         self.time_end = time_now()
         self.frames = []
         self.id = hash_id(self.time_start, self.address)
-        for filename in os.listdir('./data/temp/frame'):
-            os.remove(filename)
 
     def add_frame(self, frame):
         if frame is not None:
