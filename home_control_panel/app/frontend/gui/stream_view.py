@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QWidget
 
 
 class Ui_StreamView(QWidget):
-    def setupUi(self, StreamView):
+    def setupUi(self, StreamView, app):
         StreamView.setObjectName("StreamView")
         StreamView.resize(489, 479)
         StreamView.setMinimumSize(QtCore.QSize(243, 262))
@@ -39,17 +39,19 @@ class Ui_StreamView(QWidget):
         self.groupBox.setObjectName("groupBox")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.groupBox)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        self.detectedLabel = QtWidgets.QLabel(self.groupBox)
-        self.detectedLabel.setMaximumSize(QtCore.QSize(16777215, 16))
-        self.detectedLabel.setObjectName("detectedLabel")
-        self.gridLayout_2.addWidget(self.detectedLabel, 0, 1, 1, 1)
+        # self.detectedLabel = QtWidgets.QLabel(self.groupBox)
+        # self.detectedLabel.setMaximumSize(QtCore.QSize(16777215, 16))
+        # self.detectedLabel.setObjectName("detectedLabel")
+        # self.gridLayout_2.addWidget(self.detectedLabel, 0, 1, 1, 1)
         self.removeStream = QtWidgets.QPushButton(self.groupBox)
         self.removeStream.setObjectName("removeStream")
         self.gridLayout_2.addWidget(self.removeStream, 2, 1, 1, 1)
-        self.pauseStream = QtWidgets.QPushButton(self.groupBox)
-        self.pauseStream.setObjectName("pauseStream")
-        self.gridLayout_2.addWidget(self.pauseStream, 1, 1, 1, 1)
+        # self.pauseStream = QtWidgets.QPushButton(self.groupBox)
+        # self.pauseStream.setObjectName("Refresh")
+        # self.gridLayout_2.addWidget(self.pauseStream, 1, 1, 1, 1)
         self.gridLayout.addWidget(self.groupBox, 5, 0, 1, 1)
+
+        self.app = app
 
         self.retranslateUi(StreamView)
         QtCore.QMetaObject.connectSlotsByName(StreamView)
@@ -60,9 +62,9 @@ class Ui_StreamView(QWidget):
         self.stream_view.setText(_translate("StreamView", "Camera Stream Unavailable"))
         self.cameraName.setText(_translate("StreamView", "Unknown Camera"))
         self.location.setText(_translate("StreamView", "Unknown Location"))
-        self.detectedLabel.setText(_translate("StreamView", "º"))
+        # self.detectedLabel.setText(_translate("StreamView", "º"))
         self.removeStream.setText(_translate("StreamView", "Remove"))
-        self.pauseStream.setText(_translate("StreamView", "Pause Stream"))
+        # self.pauseStream.setText(_translate("StreamView", "Refresh"))
         self.location.setText(_translate("StreamView", "Unknown Location"))
 
     def update_frame(self, frame):
@@ -71,3 +73,4 @@ class Ui_StreamView(QWidget):
             bpl = bpc * width
             self.stream_view.setPixmap(QPixmap.fromImage(QImage(frame.data, width, height, bpl, QImage.Format_RGB888)))
             self.update()
+            self.app.processEvents()

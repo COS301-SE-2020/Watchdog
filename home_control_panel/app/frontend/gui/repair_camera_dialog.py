@@ -25,7 +25,7 @@ class Ui_RepairCamera(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.label_5 = QtWidgets.QLabel(RepairCamera)
         font = QtGui.QFont()
-        font.setPointSize(28)
+        font.setPointSize(18)
         self.label_5.setFont(font)
         self.label_5.setStyleSheet("")
         self.label_5.setAlignment(QtCore.Qt.AlignCenter)

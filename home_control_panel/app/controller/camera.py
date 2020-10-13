@@ -97,18 +97,22 @@ class Camera(threading.Thread):
             try:
                 options = {"framerate": "30"}
                 if self.address == 'default:none':
+                    print('Connecting to MacOS webcam...')
                     self.player = MediaPlayer(self.address, format="avfoundation", options=options)
                 elif self.address == '/dev/video0':
+                    print('Connecting to webcam...')
                     self.player = MediaPlayer(self.address, format="v4l2", options=options)
                 else:
+                    print(f"Connecting to {self.address}...")
                     self.player = MediaPlayer(self.get_url(True), options=options)
 
                 self.track = VideoStream(self.player.video)
                 print("Connected to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = True
-            except Exception:
+            except Exception as e:
                 self.track = None
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
+                print(e)
                 self.is_connected = False
                 self.disconnect()
             

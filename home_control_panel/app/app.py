@@ -1,5 +1,6 @@
 import os
 import sys
+import getpass
 from copy import deepcopy
 
 from PyQt5 import QtWidgets, QtCore
@@ -18,9 +19,14 @@ from ..service.settings import Settings
 from .controller.controller import CameraController
 
 
+webcam_addresses = ['default:none', '/dev/video0']
+
+
 class ControlPanel(QtWidgets.QMainWindow, Interface):
     def __init__(self, controller_events: dict):
         super().__init__(controller_events=controller_events)
+        # self.show()
+        self.has_webcam = False
         self.loggedIn = False
 
         self.camera_elements_row = 0
@@ -35,7 +41,6 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.progressBar.hide()
 
         # Login Dialog ========================================
         self.login_dialog = QtWidgets.QDialog()
@@ -110,7 +115,9 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.repair_camera_dialog.ui.cancel.clicked.connect(self.__exit_repair_camera_dialog)
 
         # Start Controller ==============================
+        self.controller_events["set_context_manager"](self.update_status)
         self.controller_events["start"]()
+        self.loading(False)
 
     # Dialog Triggers
     def trigger_view_recordings(self, callback=None):
@@ -123,10 +130,16 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         if len(self.locations) == 0:
             self.trigger_add_location()
 
+        num_cams = len(self.camera_elements)
         self.add_camera_dialog.ui.locationInput.clear()
         self.add_camera_dialog.ui.locationInput.addItems(self.locations)
         self.add_camera_dialog.exec_()
-        self.update_status('Added New Camera.')
+
+        new_cams = len(self.camera_elements)
+        # if the number fo cameras now is bigger then before:
+        if new_cams > num_cams:
+            self.update_status('Added New Camera.')
+
         if callback:
             callback()
 
@@ -164,30 +177,49 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.settings_dialog.exec_()
         self.update_status('Updated Settings.')
 
+    # Internal UI Events
     def add_webcam(self):
         import platform
+        self.loading(True)
+        if self.has_webcam:
+            self.update_status("Webcam Already Added...Skipping.")
+            self.loading(False)
+            return
+
         camera = None
+        location_label = getpass.getuser()
+        if location_label not in self.locations:
+            self.controller_events['add_location'](location_label)
+
         if platform.system() == 'Darwin':
-            camera = self.controller_events["add_camera"](" ", "Webcam", "default:none", "", "", "")
+            self.update_status("Setting up MacOS Webcam...")
+            camera = self.controller_events["add_camera"](f"{location_label}", "Webcam", "default:none", "", "", "")
         else:
-            camera = self.controller_events["add_camera"](" ", "Webcam", "/dev/video0", "", "", "")
+            self.update_status("Setting up Webcam...")
+            camera = self.controller_events["add_camera"](f"{location_label}", "Webcam", "/dev/video0", "", "", "")
 
         if camera is None:
             self.update_status("Failed to add Webcam!")
         else:
-            self.add_camera("Computer", camera.id, "Webcam", "", "", "", "")
+            self.add_camera(f"{location_label}", camera.id, "Webcam", "", "", "", "")
             self.attach_stream(camera.id, camera.stream)
+            self.update_status("Webcam added Successfully.")
 
-    # Internal UI Events
+        self.has_webcam = True
+        self.loading(False)
+
     def __login_event(self):
         self.login_dialog.ui.statusBar.setText("Logging in...")
         self.login_dialog.ui.progressBar.show()
+        flush_events()
 
         username = self.login_dialog.ui.usernameInput.text()
         password = self.login_dialog.ui.passwordInput.text()
 
         self.login_dialog.ui.usernameInput.setDisabled(True)
         self.login_dialog.ui.passwordInput.setDisabled(True)
+
+        flush_events()
 
         fine = True
 
@@ -200,24 +232,32 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
             self.login_dialog.ui.passwordInput.setStyleSheet('border: 1px solid red;')
 
         if fine:
+            self.login_dialog.ui.statusBar.setText('Authenticating with AWS Cognito...')
+            flush_events()
             self.loggedIn = self.controller_events["login"](username, password)
 
             # If logged in exit login dialog
             if self.loggedIn:
                 self.login_dialog.ui.statusBar.setText("Success!")
+                flush_events()
                 self.login_dialog.close()
             else:
                 self.login_dialog.ui.statusBar.setText('Login Failed. Please Check Credentials...')
         else:
             self.login_dialog.ui.statusBar.setText('Please fill in all required fields.')
 
+        flush_events()
+
         self.login_dialog.ui.usernameInput.setDisabled(False)
         self.login_dialog.ui.passwordInput.setDisabled(False)
         self.login_dialog.ui.progressBar.hide()
 
+        flush_events()
+
     def __add_camera_event(self):
         self.add_camera_dialog.ui.statusBar.setText(f"Adding Camera {self.add_camera_dialog.ui.nameInput.text()}...")
         self.add_camera_dialog.ui.progressBar.show()
+        flush_events()
         location_label = str(self.add_camera_dialog.ui.locationInput.currentText())
         name = self.add_camera_dialog.ui.nameInput.text()
         protocol = self.add_camera_dialog.ui.protocolInput.text()
@@ -259,11 +299,15 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         #     self.add_camera_dialog.ui.portInput.setStyleSheet('border: 1px solid red;')
 
         if fine:
+            self.add_camera_dialog.ui.statusBar.setText("Setting things up...")
+            flush_events()
             camera = self.controller_events["add_camera"](location_label, name, ip, port, path, protocol)
 
             if camera is None:
                 self.add_camera_dialog.ui.statusBar.setText("Failed to add Camera!")
+                self.update_status(f"Failed to add Camera {name}.")
                 self.add_camera_dialog.ui.statusBar.setStyleSheet('color: red;')
+                flush_events()
             else:
                 self.add_camera(location_label, camera.id, name, ip, port, path, protocol)
                 self.attach_stream(camera.id, camera.stream)
@@ -276,6 +320,8 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.add_camera_dialog.ui.portInput.setDisabled(False)
 
         self.add_camera_dialog.ui.progressBar.hide()
+        self.__cancel_add_camera()
+        flush_events()
 
     def __add_location_event(self):
         self.add_location_dialog.ui.progressBar.show()
@@ -292,6 +338,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
         self.add_location_dialog.ui.locationInput.setDisabled(False)
         self.add_location_dialog.ui.progressBar.hide()
+        self.__cancel_add_location()
 
     def __cancel_add_camera(self):
         self.add_camera_dialog.ui.locationInput.setText("")
@@ -423,16 +470,16 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.login_dialog.exec_()
         if self.loggedIn:
             self.show()
-            self.ui.progressBar.show()
-            self.update()
             self.update_status("Start Environment Loadup...", None)
-            # sleep(5)
             self.setup_environment()
         else:
             self.close()
             sys.exit(0)
 
     def add_camera(self, location_label, camera_id, name, address, port, path, protocol, callback=None):
+        # Prevent webcam from getting added twice
+        if address in webcam_addresses:
+            self.has_webcam = True
         self.camera_elements[camera_id] = {
             "location_label": location_label,
             "name": name,
@@ -463,14 +510,14 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
         # Add StreamView Element
         stream = Ui_StreamView()
-        stream.setupUi(stream)
+        stream.setupUi(stream, app)
         stream.camera_id = camera_id
         stream.location.setText(location_label)
         stream.cameraName.setText(name)
 
         # Connect dynamic events
         stream.removeStream.clicked.connect(lambda: self.remove_camera(stream.camera_id))
-        stream.pauseStream.clicked.connect(lambda: self.pause_stream(stream.camera_id))
+        # stream.pauseStream.clicked.connect(lambda: self.pause_stream(stream.camera_id))
         self.camera_elements[camera_id]['stream_view'] = stream
         stream.setMinimumSize(150, 150)
         self.ui.cameras.addWidget(stream, self.camera_elements_row, self.camera_elements_column)
@@ -513,20 +560,31 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         else:
             self.ui.statusbar.showMessage(message, display_for_milliseconds)
         self.update()
+        app.processEvents()
 
     def remove_camera(self, camera_id, callback=None):
-        # TODO: We need to basically call controller["remove_camera"] and then __remove_camera (like bellow) on success @Jordan
-        self.__remove_camera(camera_id)
+        self.loading(True)
+        self.update_status(f"Removing Camera: {self.camera_elements[camera_id]['name']}")
+        #FIXME: Causes a bug when re-adding for some reason
+        success = self.controller_events['remove_camera'](camera_id)
+        if success:
+            self.__remove_camera(camera_id)
+            if self.camera_elements[camera_id]['address'] in webcam_addresses:
+                self.has_webcam = False
+            self.update_status(f'Camera: {self.camera_elements[camera_id]["name"]} Successfully removed.')
+        else:
+            self.update_status(f'Failed to remove Camera: {self.camera_elements[camera_id]["name"]}!')
+        self.loading(False)
 
     def pause_stream(self, camera_id):
         # TODO: Please connect this to controller @Jordan
         pass
 
-    def detected_face_on(self, camera_id):
-        self.camera_elements[camera_id]['stream_view'].detectedLabel.setStyle('color: red;')
-
-    def detected_face_off(self, camera_id):
-        self.camera_elements[camera_id]['stream_view'].detectedLabel.setStyle('color: green;')
+    # def detected_face_on(self, camera_id):
+    #     self.camera_elements[camera_id]['stream_view'].detectedLabel.setStyle('color: red;')
+    #
+    # def detected_face_off(self, camera_id):
+    #     self.camera_elements[camera_id]['stream_view'].detectedLabel.setStyle('color: green;')
 
     def update_settings(self):
         self.settings_dialog.ui.progressBar.show()
@@ -611,9 +669,23 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         else:
             print('Shutting down gracefully.\nGOOD BYE')
 
+    def loading(self, isLoading=True):
+        if isLoading:
+            self.ui.progressBar.show()
+            self.update()
+            app.processEvents()
+        else:
+            self.ui.progressBar.hide()
+            self.update()
+            app.processEvents()
+
 
 def log(obj=None):
     print(obj)
+
+
+def flush_events():
+    app.processEvents()
 
 
 app = QtWidgets.QApplication([])
@@ -624,6 +696,7 @@ application = ControlPanel(
     controller_events={
         "start": lambda: controller.start(),
         "stop": lambda: controller.stop(),
+        "set_context_manager": lambda manager: controller.set_context_manager(manager),
         "login": lambda username, password: services.login(username, password),
         "logout": lambda x: print("Controller: Logging out..."),
         "add_camera": lambda location, name, address, port, path, protocol: controller.add_camera(location, name,
