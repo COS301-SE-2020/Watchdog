@@ -341,7 +341,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.__cancel_add_location()
 
     def __cancel_add_camera(self):
-        self.add_camera_dialog.ui.locationInput.setText("")
+        # self.add_camera_dialog.ui.locationInput.setText("")
         self.add_camera_dialog.ui.nameInput.setText("")
         self.add_camera_dialog.ui.protocolInput.setText("rtsp")
         self.add_camera_dialog.ui.ipAddressInput.setText("")
