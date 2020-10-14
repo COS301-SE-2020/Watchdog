@@ -25,7 +25,7 @@ class Ui_AddLocation(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.label_2 = QtWidgets.QLabel(AddLocation)
         font = QtGui.QFont()
-        font.setPointSize(28)
+        font.setPointSize(18)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
         self.verticalLayout.addWidget(self.label_2)
