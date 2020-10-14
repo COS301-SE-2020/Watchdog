@@ -609,12 +609,12 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         if locations is not None:
             for location, cameras in locations.items():
                 self.update_status("Environment: Loading Locations...")
-                controller.load_location(location)
+                self.controller_events["load_location"](location)
                 self.add_location(location)
                 if cameras is not None:
                     for camera_id, camera in cameras.items():
                         self.update_status(f"Environment: Loading Camera {camera['name']}...")
-                        loaded_camera = controller.load_camera(
+                        loaded_camera = self.controller_events["load_camera"](
                             location,
                             camera_id,
                             camera['name'],
@@ -702,8 +702,12 @@ application = ControlPanel(
         "add_camera": lambda location, name, address, port, path, protocol: controller.add_camera(location, name,
                                                                                                   address, port, path,
                                                                                                   protocol),
+        "load_camera": lambda location, id, name, address, port, path, protocol: controller.load_camera(location, id, name,
+                                                                                                        address, port, path,
+                                                                                                        protocol),
         "remove_camera": lambda id: controller.remove_camera(id),
         "add_location": lambda name: controller.add_location(name),
+        "load_location": lambda name: controller.load_location(name),
         "remove_location": lambda id: controller.remove_location(id)
     }
 )

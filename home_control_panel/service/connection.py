@@ -28,15 +28,16 @@ class RTCConnectionHandler:
         retry = 5
         # TODO: Make this exponential backoff time calculator
         calculate_time = lambda attempt: 5
-        self.is_connected = True
         while not status and retry > 0:
             await self.socket.sleep(calculate_time(retry))
             try:
                 print('[rtc]: connecting to server...')
                 await self.socket.connect(URL)
+                self.is_connected = True
                 status = True
             except Exception as e:
                 print('[rtc]: socket connection error...retrying')
+                print(e)
                 if str(e) == 'Client is not in a disconnected state':
                     self.is_connected = True
                     return
