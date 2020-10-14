@@ -1,6 +1,7 @@
 import os
 import sys
 import getpass
+from time import sleep
 from copy import deepcopy
 
 from PyQt5 import QtWidgets, QtCore
@@ -551,7 +552,15 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
         self.ui.locations.topLevelItem(rowcount).setText(0, location_label)
 
     def attach_stream(self, camera_id, stream_object):
+        print(f'Attaching Stream for Camera: {camera_id}')
+        self.update_status(f"Attching Stream for Camera: {self.camera_elements[camera_id]['name']}")
         stream_view = self.camera_elements[camera_id]['stream_view']
+        counter = 5
+        while stream_object is None and counter > 0:
+            print("Camera doesn't exist yet. Waiting....")
+            sleep(5)
+            stream_view = self.camera_elements[camera_id]['stream_view']
+            counter -= 1
         stream_object.set_view(stream_view)  # this will now automatically call : stream_view.update(curr
 
     def update_status(self, message: str, display_for_milliseconds=5000):
