@@ -1,15 +1,13 @@
 import os
 import json
-import asyncio
 import threading
 from aiortc import MediaStreamTrack
 from aiortc.contrib.media import MediaPlayer
 from .stream.stream import Stream
 from ...service import connection
 from ...service import services
-import nest_asyncio
+from .controller import EVENT_LOOP
 
-nest_asyncio.apply()
 conf = json.loads(os.environ['config'])
 PROTOCOLS = ['', 'rstp', 'http', 'https']
 FPS = conf['video']['frames_per_second']
@@ -59,28 +57,21 @@ class Camera(threading.Thread):
         self.track = None
         #
         self.player = None
+        # Connect to Camera
+        self.connect()
 
     # Start thread
     def run(self):
         print("Starting Camera Client " + str(self))
+        # Set to Live
         self.live = True
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self.connect()
-
-        def loop_in_thread(loop):
-            loop.run_until_complete(self.initialize())
-
-        threading.Thread(target=loop_in_thread, args=(loop,), daemon=True).start()
-
-    async def initialize(self):
+        # Update stream while live
         while(self.live):
-            await self.update()
+            EVENT_LOOP.run_until_complete(self.update())
 
     # Stop thread
     def stop(self):
         self.live = False
-        self.stop_stream()
         self.disconnect()
 
     # Activates Livestream for Stream Object by providing a connection
@@ -98,34 +89,18 @@ class Camera(threading.Thread):
     def check_stream(self):
         if self.stream_connection is not None and self.stream_connection.is_connected:
             return True
-        self.stream_connection = None
         return False
 
     # Connect to IP Camera
     def connect(self):
-        if self.player is None:
-            try:
-                options = {"framerate": "30"}
-                if self.address == 'default:none':
-                    print('Connecting to MacOS webcam...')
-                    self.player = MediaPlayer(self.address, format="avfoundation", options=options)
-                elif self.address == '/dev/video0':
-                    print('Connecting to webcam...')
-                    self.player = MediaPlayer(self.address, format="v4l2", options=options)
-                else:
-                    print(f"Connecting to {self.address}...")
-                    self.player = MediaPlayer(self.get_url(True), options=options)
-
-                self.track = VideoStream(self.player.video)
-                print("Connected to IP Camera [" + str(self.get_url()) + "]")
-                self.is_connected = True
-            except Exception as e:
-                self.track = None
-                print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
-                print(e)
-                self.is_connected = False
-                self.disconnect()
-
+        try:
+            self.is_connected = True
+            print("Connecting to IP Camera [" + str(self.get_url()) + "]")
+            self.player = MediaPlayer(self.get_url(True), options={"framerate": "15", "video_size": "640x480"})
+            self.track = VideoStream(self.player.video)
+        except Exception:
+            print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
+            self.disconnect()
         return self.is_connected
 
     # Disconnect from IP Camera
