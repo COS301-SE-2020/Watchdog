@@ -69,7 +69,7 @@ class CameraController(threading.Thread):
         for address, camera in self.cameras.items():
             if not camera.check_stream():
                 self.cman(f'Starting Camera: {camera.name}')
-                stream = camera.start_stream()
+                stream = camera.start_stream()  # creates the RTC client for the camera
                 await stream.start()
         return True
 
