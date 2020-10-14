@@ -4,19 +4,19 @@ import json
 import time
 import random
 import threading
-from hashlib import sha256
 import nest_asyncio
-
-nest_asyncio.apply()
-EVENT_LOOP = asyncio.get_event_loop()
-asyncio.set_event_loop(EVENT_LOOP)
-
+from hashlib import sha256
 from .location import Location
 from ...service import services
 from .camera import Camera
 
+nest_asyncio.apply()
+EVENT_LOOP = asyncio.new_event_loop()
+asyncio.set_event_loop(EVENT_LOOP)
+
 conf = json.loads(os.environ['config'])
 site_label = conf['settings']['site']
+time_out = conf['settings']['timeout']
 
 
 # Camera Controller Class
@@ -34,17 +34,13 @@ class CameraController(threading.Thread):
         self.locations = {}
         # Client
         self.client = None
-
         # Context manager: Tp give updates to the main application (default is the python print):
         self.cman = print
 
     # Starts the controller
     def run(self):
+        asyncio.set_event_loop(EVENT_LOOP)
         self.live = True
-        # Start Loaded Cameras
-        for address, client in self.cameras.items():
-            client.start()
-        self.connect()
         # Start Client Controllers Stream Connection Management
         while(self.live):
             if not self.check_connection():
@@ -56,25 +52,25 @@ class CameraController(threading.Thread):
         self.live = False
         for address, client in self.cameras.items():
             client.stop()
-        return True
 
     # Connect to Livestream Server
     def connect(self):
         self.cman('Connecting to Livestream Server...')
+        if services.User.get_instance() is not None:
+            def loop_in_thread(loop):
+                loop.run_until_complete(self.start_streams())
+            threading.Thread(target=loop_in_thread, args=(EVENT_LOOP,), daemon=True).start()
+
+    async def start_streams(self):
         if services.User.get_instance() is None:
             self.cman('[Error]: User not logged in.')
             return False
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         for address, camera in self.cameras.items():
             if not camera.check_stream():
                 self.cman(f'Starting Camera: {camera.name}')
-                stream = camera.start_stream()
-
-                def loop_in_thread(loop):
-                    loop.run_until_complete(stream.start())
-                threading.Thread(target=loop_in_thread, args=(EVENT_LOOP,), daemon=True).start()
+                stream = camera.start_stream()  # creates the RTC client for the camera
+                await stream.start()
         return True
 
     # checks all rtc connections are up
@@ -82,8 +78,6 @@ class CameraController(threading.Thread):
         for address, camera in self.cameras.items():
             if not camera.check_stream():
                 camera.stop_stream()
-                print('Warning: Camera not connected!')
-                self.cman(f'Warning: Camera {camera.name} is not connected!')
                 return False
         return True
 
@@ -93,6 +87,7 @@ class CameraController(threading.Thread):
         self.cman(f'Loading Location {location_label}...')
         if location_label not in self.locations:
             self.locations[location_label] = Location(location_label, self)
+        return self.locations[location_label]
 
     # Loads in an Existing Camera
     def load_camera(self, location_label, camera_id, name, address, port, path, protocol):
@@ -101,14 +96,22 @@ class CameraController(threading.Thread):
         if location_label in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location_label)
             client.start()
+
+            time_now = time.time()
+            time_end = time_now + time_out
+            while not client.is_connected and time_now < time_end:
+                time_now = time.time()
+
             if not client.is_connected:
+                print('Error: Not Connected')
                 self.cman(f'[Error]: Camera {location_label}:{name} not connected!')
+                client.stop()
                 return None
 
             self.cameras[address] = client
             self.locations[location_label].add_camera(client)
             self.connect()
-            return client
+            return self.cameras[address]
         return None
 
     # Adds a new Location
@@ -127,11 +130,17 @@ class CameraController(threading.Thread):
         if location_label in self.locations and address not in self.cameras:
             client = Camera(camera_id, protocol, name, address, port, path, location_label)
             client.start()
+
+            time_now = time.time()
+            time_end = time_now + time_out
+            while not client.is_connected and time_now < time_end:
+                time_now = time.time()
+
             if not client.is_connected:
-                print(f"Camera {name} is not connecting.")
-                self.cman(f'[Error]: Camera {location_label}:{name} not connecting!')
+                self.cman(f'[Error]: Camera {location_label}:{name} not connected!')
+                client.stop()
                 return None
-                
+        
             response = services.upload_camera(client.id, client.get_metadata())
             if response is not None and response.status_code != 200:
                 self.cman(f'[Warning]: Camera {location_label}:{name} not uploaded!')
@@ -159,7 +168,7 @@ class CameraController(threading.Thread):
 
     def remove_camera(self, camera_id):
         print('... removing camera ...', camera_id)
-        self.cman(f'Removing camera...')
+        # self.cman(f'Removing camera...')
         for address, camera in self.cameras.items():
             if camera.id == camera_id:
                 services.remove_camera(camera.location, camera_id)
