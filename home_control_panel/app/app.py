@@ -602,9 +602,7 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
 
     # Called at Start, Pass in UI Window for UI Setup
     def setup_environment(self):
-        print('Loading Environment...')
         self.update_status("Environment: Getting Camera Setup...")
-        # try:
         locations = services.get_camera_setup()
         if locations is not None:
             for location, cameras in locations.items():
@@ -632,23 +630,15 @@ class ControlPanel(QtWidgets.QMainWindow, Interface):
                                                camera['port'], camera['path'], camera['protocol'])
                         else:
                             self.update_status(f"Environment: Camera {camera['name']} loaded.")
-                            self.add_camera(location, camera_id, camera['name'], camera['address'], camera['port'],
-                                            camera['path'], camera['protocol'])
-                            self.update_status(
-                                f"Environment: Attaching Stream from Camera {camera['name']}....")
+                            self.add_camera(location, camera_id, camera['name'], camera['address'], camera['port'], camera['path'], camera['protocol'])
+                            self.update_status(f"Environment: Attaching Stream from Camera {camera['name']}....")
                             self.attach_stream(loaded_camera.id, loaded_camera.stream)
-                            self.update_status(
-                                f"Environment: Done Attaching Stream from Camera {camera['name']}....")
+                            self.update_status(f"Environment: Done Attaching Stream from Camera {camera['name']}....")
             self.ui.statusbar.showMessage("Ready")
             self.ui.progressBar.hide()
-        # except Exception as e:
-        #     print('error occured!!')
-        #     self.ui.statusbar.showMessage("Environment Failed to load!!")
-        #     print(e)
 
         self.ui.statusbar.showMessage("Ready")
         self.ui.progressBar.hide()
-        return False
 
     def closeEvent(self, a0):
         flag = 5
@@ -699,12 +689,8 @@ application = ControlPanel(
         "set_context_manager": lambda manager: controller.set_context_manager(manager),
         "login": lambda username, password: services.login(username, password),
         "logout": lambda x: print("Controller: Logging out..."),
-        "add_camera": lambda location, name, address, port, path, protocol: controller.add_camera(location, name,
-                                                                                                  address, port, path,
-                                                                                                  protocol),
-        "load_camera": lambda location, id, name, address, port, path, protocol: controller.load_camera(location, id, name,
-                                                                                                        address, port, path,
-                                                                                                        protocol),
+        "add_camera": lambda location, name, address, port, path, protocol: controller.add_camera(location, name, address, port, path, protocol),
+        "load_camera": lambda location, id, name, address, port, path, protocol: controller.load_camera(location, id, name, address, port, path, protocol),
         "remove_camera": lambda id: controller.remove_camera(id),
         "add_location": lambda name: controller.add_location(name),
         "load_location": lambda name: controller.load_location(name),
