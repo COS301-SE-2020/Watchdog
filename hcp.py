@@ -6,7 +6,6 @@ if __name__ == "__main__":
     print("Running Home Control Panel")
     main()
 
-
 # Translate asset paths to useable format for PyInstaller
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):

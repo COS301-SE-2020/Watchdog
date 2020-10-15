@@ -72,7 +72,6 @@ def upload_camera(camera_id, metadata):
         },
         headers={'Authorization': token}
     )
-    # print(str(response.text))
     return response
 
 
@@ -87,13 +86,6 @@ def upload_to_s3(path_to_resource, file_name, tag, camera_id, timestamp=None):
         timestamp = str(datetime.datetime.now().timestamp())
     path = f"{path_to_resource}/{file_name}"
     possible_tags = ['detected', 'periodic', 'movement', 'intruder']
-
-    if tag == 'detected':
-        with open("data/.logs", "a") as log_file:
-            log_file.write(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ': Person Detected\n')
-    elif tag == 'intruder':
-        with open("data/.logs", "a") as log_file:
-            log_file.write(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + ': Intruder Detected\n')
 
     if os.path.exists(path):
         if tag in possible_tags:
@@ -194,22 +186,3 @@ def get_camera_setup():
             except KeyError:
                 pass
             return response
-
-
-def remove_location(location):
-    api_endpoint = BASE_URL + '/sites'
-    user = User.get_instance()
-    if user is None:
-        print(
-            f"\033[31mCould not remove {location} because you have not authenticated a valid user!")
-        return 400
-    token = user.get_token()
-    response = requests.delete(
-        url=api_endpoint,
-        params={
-            "site_id": user.hcp_id,
-            "location": location
-        },
-        headers={'Authorization': token}
-    )
-    return response

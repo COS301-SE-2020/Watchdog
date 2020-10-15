@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>945</width>
+    <height>757</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>945</width>
+    <height>757</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Watchdog - Control Panel</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="2">
+     <widget class="QScrollArea" name="scrollArea">
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>649</width>
+         <height>634</height>
+        </rect>
+       </property>
+       <layout class="QGridLayout" name="cameras">
+        <item row="0" column="0">
+         <widget class="QLabel" name="promptLabel">
+          <property name="text">
+           <string>To add a camera go to Cameras &gt; Add New in the Menu above</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="QProgressBar" name="progressBar">
+      <property name="maximum">
+       <number>0</number>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+      <property name="textVisible">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="3">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>:/images/assets/smallLogo.png</pixmap>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="1">
+     <widget class="QTreeWidget" name="locations">
+      <property name="maximumSize">
+       <size>
+        <width>250</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <column>
+       <property name="text">
+        <string>Locations</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>945</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuCameras">
+    <property name="title">
+     <string>Cameras</string>
+    </property>
+    <addaction name="actionAdd_New"/>
+    <addaction name="actionAdd_Webcam"/>
+   </widget>
+   <widget class="QMenu" name="menuRecordings">
+    <property name="title">
+     <string>Recordings</string>
+    </property>
+    <addaction name="actionView_Recordings"/>
+   </widget>
+   <widget class="QMenu" name="menuLocations">
+    <property name="title">
+     <string>Locations</string>
+    </property>
+    <addaction name="actionAdd_New_Location"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuCameras"/>
+   <addaction name="menuLocations"/>
+   <addaction name="menuRecordings"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionAdd_New_Camera">
+   <property name="text">
+    <string>Add New Camera</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionAdd_New">
+   <property name="text">
+    <string>Add New</string>
+   </property>
+  </action>
+  <action name="actionAdd_Webcam">
+   <property name="text">
+    <string>Add Webcam</string>
+   </property>
+  </action>
+  <action name="actionView_Recordings">
+   <property name="text">
+    <string>View Recordings</string>
+   </property>
+  </action>
+  <action name="actionAdd_New_Location">
+   <property name="text">
+    <string>Add New Location</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

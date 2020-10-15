@@ -7,7 +7,7 @@ Test functions for integration with the API
 """
 
 # Debug user valid hard coded values for testing
-username = 'testNew'
+username = 'debug'
 password = 'Test@123'
 camera_id = "cad489214e688d3d4643b5a1b474f0b39455904737e7749a16cebe7d0b82063c5"
 
@@ -41,7 +41,6 @@ def test_upload_camera():
     is_valid = initialize_user()
 
     metadata = {
-        "name": "Tester",
         "address": '127.0.0.1',
         "port": '5000',
         "location": 'My Backyard',
@@ -70,7 +69,7 @@ def test_upload_video():
 def test_upload_image():
     is_valid = initialize_user()
 
-    response = upload_to_s3(path_to_resource='data/sample', file_name='elbert.jpg', tag='detected', camera_id=camera_id)
+    response = upload_to_s3(path_to_resource='data', file_name='IMG_5047.JPG', tag='detected', camera_id=camera_id)
 
     assert is_valid == True
     assert response == 200
@@ -98,7 +97,6 @@ def test_remove_camera():
     location = 'Testing Bedroom'
     # upload dummy camera to be deleted
     metadata = {
-        "name": "Tester",
         "address": '0.0.0.0',
         "port": '25',
         "location": location,
@@ -112,30 +110,6 @@ def test_remove_camera():
     print("dummy camera upload response:\n"+str(upload_camera_response.text))
     response = remove_camera(location=location, camera_id=cam_id)
     print("-----------------\ndelete dummy camera upload response:\n"+str(response.text))
-    # check that the dummy camera was successfully inserted
-    assert upload_camera_response.status_code == 200
-    # check that the
-    assert response.status_code == 200
-
-
-def test_remove_location():
-    is_valid = initialize_user()
-    location = 'Tester Bedroom'
-    # upload dummy camera to be deleted
-    metadata = {
-        "name": "Tester",
-        "address": '0.0.0.0',
-        "port": '25',
-        "location": location,
-        "protocol": 'http',
-        'path': ''
-    }
-
-    # upload camera in order to create the location in the database
-    cam_id = "t" + sha256((str(datetime.datetime.now().timestamp())).encode('ascii')).hexdigest()
-    upload_camera_response = upload_camera(camera_id=cam_id, metadata=metadata)
-    response = remove_location(location=location)
-    print("-----------------\ndelete dummy location upload response:\n" + str(response.text))
     # check that the dummy camera was successfully inserted
     assert upload_camera_response.status_code == 200
     # check that the

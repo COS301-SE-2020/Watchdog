@@ -1,9 +1,12 @@
 import os
 import json
-import cv2
 import threading
+from aiortc import MediaStreamTrack
+from aiortc.contrib.media import MediaPlayer
 from .stream.stream import Stream
-
+from ...service import connection
+from ...service import services
+from .controller import EVENT_LOOP
 
 conf = json.loads(os.environ['config'])
 PROTOCOLS = ['', 'rstp', 'http', 'https']
@@ -11,99 +14,133 @@ FPS = conf['video']['frames_per_second']
 (RES_X, RES_Y) = (conf['video']['resolution']['width'], conf['video']['resolution']['height'])
 
 
+class VideoStream(MediaStreamTrack):
+    kind = "video"
+
+    def __init__(self, track):
+        super(MediaStreamTrack).__init__()  # don't forget this!
+        self.track = track
+        self.frame = None
+
+    async def recv(self):
+        self.frame = await self.track.recv()
+        return self.frame.to_ndarray(format="bgr24")
+
+
 # Camera connector
 class Camera(threading.Thread):
     def __init__(self, id, protocol='', name='', address='', port='', path='', location=''):
         threading.Thread.__init__(self)
+        # Given camera id
         self.id = id
-        # Camera Physical Location
-        self.location = location
         # Camera Name
         self.name = name
-        # Camera IP Address
-        self.address = address
         # Camera Address Port
         self.port = port
-        # Camera Address Path (if necessary)
+        # Camera Address Path
         self.path = path
+        # Camera IP Address
+        self.address = address
         # Camera Connection Protocol
         self.protocol = protocol
+        # Camera Physical Location
+        self.location = location
         # Live Boolean Spin Variable
         self.live = False
+        # Connection for Outgoing broadcast
+        self.stream_connection = None
         # Is IP Camera Connected
         self.is_connected = False
-        # Stream View GUI Object
-        self.stream_view = None
         # Stream Management Object
         self.stream = Stream(self.id, self.address, (RES_X, RES_Y))
+        #
+        self.track = None
+        #
+        self.player = None
         # Connect to Camera
         self.connect()
 
     # Start thread
     def run(self):
         print("Starting Camera Client " + str(self))
-        # Spin until stream has been defined
-        while self.stream is None:
-            self.live = False
-        # Update stream while live
+        # Set to Live
         self.live = True
+        # Update stream while live
         while(self.live):
-            self.update()
-        # Disconnect after the stream has been stopped
-        self.disconnect()
-
-    # Update Camera Connection
-    def update(self):
-        if(not self.is_connected):
-            self.connect()
-        (grabbed, frame) = self.connection.read()
-        if grabbed:
-            self.stream.put(frame)
-        else:
-            self.check_connection()
+            EVENT_LOOP.run_until_complete(self.update())
 
     # Stop thread
     def stop(self):
         self.live = False
         self.disconnect()
 
-    def start_stream(self, connect):
-        self.stream.stream_connection = connect
+    # Activates Livestream for Stream Object by providing a connection
+    def start_stream(self):
+        self.stream_connection = connection.RTCConnectionHandler(
+            services.User.get_instance().user_id,
+            self
+        )
+        return self.stream_connection
 
+    # Deactivates Livestream for Stream Object by removing connection
     def stop_stream(self):
-        self.stream.stream_connection = None
+        self.stream_connection = None
+
+    def check_stream(self):
+        if self.stream_connection is not None and self.stream_connection.is_connected:
+            return True
+        return False
 
     # Connect to IP Camera
     def connect(self):
-        # check not already connected
-        if not self.is_connected:
-            # Camera Stream Connection
-            self.connection = cv2.VideoCapture(self.get_url(True))
-            self.connection.set(cv2.CAP_PROP_FPS, FPS)
-            self.connection.set(cv2.CAP_PROP_FRAME_WIDTH, RES_X)
-            self.connection.set(cv2.CAP_PROP_FRAME_HEIGHT, RES_Y)
-            if self.connection.isOpened():
+        if self.player is None:
+            try:
+                options = {"framerate": "30"}
+                if self.address == 'default:none':
+                    print('Connecting to MacOS webcam...')
+                    self.player = MediaPlayer(self.address, format="avfoundation", options=options)
+                elif self.address == '/dev/video0':
+                    print('Connecting to webcam...')
+                    self.player = MediaPlayer(self.address, format="v4l2", options=options)
+                else:
+                    print(f"Connecting to {self.address}...")
+                    self.player = MediaPlayer(self.get_url(True), options=options)
+
+                self.track = VideoStream(self.player.video)
                 print("Connected to IP Camera [" + str(self.get_url()) + "]")
                 self.is_connected = True
-            else:
+            except Exception as e:
+                self.track = None
                 print("Failed to connect to IP Camera [" + str(self.get_url()) + "]")
+                print(e)
                 self.is_connected = False
-                self.live = False
-                # after a few tries, change protocol before retrying
+                self.disconnect()
+            
         return self.is_connected
 
     # Disconnect from IP Camera
     def disconnect(self):
         # check connected
+        self.player = None
+        self.track = None
         if self.is_connected:
-            self.connection.release()
             self.is_connected = False
-        return not self.is_connected
+            return True
+        return False
+
+    # Update Camera Connection with new Frame and put in the stream
+    async def update(self):
+        if not self.check_connection():
+            self.connect()
+        try:
+            self.stream.put(await self.track.recv())
+        except Exception:
+            self.disconnect()
 
     def check_connection(self):
-        if (not self.is_connected) | (not self.connection.isOpened()):
-            self.is_connected = False
-        return self.is_connected
+        if not self.is_connected or self.player is None:
+            False
+        return True
 
     # Return Camera URL
     def get_url(self, print_protocol=False):
@@ -121,11 +158,11 @@ class Camera(threading.Thread):
 
     def get_metadata(self):
         return {
+            "location": self.location,
             "name": self.name,
             "address": self.address,
             "port": self.port,
             "path": self.path,
-            "location": self.location,
             "protocol": self.protocol
         }
 

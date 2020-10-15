@@ -1,9 +1,8 @@
+import torch
 from numpy import array
 from imutils import grab_contours
 from types import SimpleNamespace
 from cv2 import (
-    CascadeClassifier,
-    drawContours,
     accumulateWeighted,
     findContours,
     contourArea,
@@ -12,14 +11,13 @@ from cv2 import (
     threshold,
     dilate,
     erode,
-    rectangle,
     absdiff,
     resize,
-    data,
-    COLOR_BGR2GRAY,
     THRESH_BINARY,
     RETR_EXTERNAL,
-    CHAIN_APPROX_SIMPLE
+    CHAIN_APPROX_SIMPLE,
+    COLOR_BGR2GRAY,
+    COLOR_BGR2RGB
 )
 from .collectors.video import FrameCollector
 from .collectors.image import ImageCollector
@@ -27,6 +25,9 @@ from .collectors.collector import (
     Tag,
     time_now
 )
+from ....service.detection import FastMTCNN
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Stream
 #   In-Out Frame Processing Pipe
@@ -38,191 +39,92 @@ class Stream:
     def __init__(self, camera_id, address, dimensions):
         self.size(dimensions[0], dimensions[1])
         self.camera_id = camera_id
-        self.current_frame = None
         self.address = address
-        self.stack = []
-        self.stream_connection = None
-        # Stream View
-        self.stream_views = []
-        # Config for Periodic Video
-        self.config = SimpleNamespace()
-        self.config.frames_per_second = 30.0  # seconds
-        self.config.clip_length = 10000  # milliseconds
-        self.config.gap_length = 20000  # milliseconds
-        self.config.start_time = time_now()
-        self.config.stop_time = time_now() + self.config.clip_length
-        # Feedback to be Outputted to Frame
-        self.feedback = SimpleNamespace()
-        self.feedback.contours = None
-        self.feedback.faces = None
-        self.feedback.irides = None
-        self.feedback.bodies = None
-        # Checks
+        self.stream_view = None
+        self.current_frame = None
+        # Collectors
+        self.image_collector = ImageCollector(self.camera_id, self.address)
+        self.frame_collector = FrameCollector(self.camera_id, self.address)
+        # Indicators for Analysis
+        self.indicators = SimpleNamespace()
+        self.indicators.ceil = 100.0
+        self.indicators.weight = 0.3
+        self.indicators.average = None
+        self.indicators.fast_mtcnn = FastMTCNN(
+            stride=4,
+            min_confidence=90,
+            resize=1,
+            margin=14,
+            factor=0.6,
+            keep_all=True,
+            device=device
+        )
+        # Trigger Checks
         self.triggers = SimpleNamespace()
         self.triggers.is_movement = False
         self.triggers.is_person = False
-        self.triggers.movement_timer = time_now() + 1500
-        # Indicators for Analysis
-        self.indicators = SimpleNamespace()
-        self.indicators.average = None
-        self.indicators.weight = 0.1
-        self.indicators.ceil = 1.0
-        self.indicators.face_cascade = CascadeClassifier(data.haarcascades + 'haarcascade_frontalface_default.xml')
-        self.indicators.iris_cascade = CascadeClassifier(data.haarcascades + 'haarcascade_eye.xml')
-        self.indicators.body_cascade = CascadeClassifier(data.haarcascades + 'haarcascade_upperbody.xml')
-        # Collectors
-        self.image_collector = ImageCollector(self.address)
-        self.frame_collector = FrameCollector(self.address)
-        self.frame_collector.camera_id = self.camera_id
-        self.image_collector.camera_id = self.camera_id
+        self.triggers.movement_buffer = 1500
+        self.triggers.movement_timer = time_now() + self.triggers.movement_buffer
+        # Start Collectors
         self.image_collector.start()
         self.frame_collector.start()
 
-    # 0 : Add frame to stream
-    #   i : If movement_detected
-    #       i : If face_detected
-    #           i : Add Frame to ImageCollector
-    #   ii : Push to Stack
-    # 1 : Output Feedback to Frame
-    # 2 : Export Stack to Video
-    #   i : Check timing parameters are triggered
-    #   ii : Pop frames from stack
-    #   iii : Construct video from frames
-    #   iv : Upload video to S3 bucket
-    # - : Export Frame Collectors Images (concurrently managed)
-    #   i : Flush Frame Collector
-    #   ii : Retrieve Images
-    #   iii : Upload images to S3 bucket
-    #   iv : Make call to API Gateway to trigger DetectIntruder lambda function on given images
+    # Add frame to stream
     def put(self, frame):
         now = time_now()
-        self.triggers.is_movement = False
-        self.triggers.is_person = False
-
         self.current_frame = resize(frame, (self.width, self.height))
-
         # Check if there was any Recent Movement
         if now <= self.triggers.movement_timer:
             # Detect Face in Current Frame
             if self.detect_person():
-                self.triggers.is_person = True
-                # await self.feedback_person()
                 self.frame_collector.collect(frame, Tag.DETECTED)
                 self.image_collector.collect(frame)
-            elif self.detect_movement:
+            elif self.triggers.is_movement:
                 self.frame_collector.collect(frame, Tag.MOVEMENT)
-            # await self.feedback_movement()
         else:
             self.frame_collector.collect(frame, Tag.PERIODIC)
             # Detect Movement in Current Frame
             if self.detect_movement():
-                self.triggers.is_movement = True
-                self.triggers.movement_timer = now + 1500
+                self.triggers.movement_timer = now + self.triggers.movement_buffer
+        # Update UI Component
+        if self.stream_view is not None:
+            self.stream_view.update_frame(cvtColor(self.current_frame, COLOR_BGR2RGB))
 
-        # Within Clip Record Timeframe
-        if self.config.start_time < now:
-            self.stack.append(self.current_frame)
-            # Past Clip Record Timeframe
-            if self.config.stop_time < now:
-                self.config.start_time = self.config.stop_time + self.config.gap_length
-                self.config.stop_time = self.config.start_time + self.config.clip_length
-
-        if self.stream_connection is not None:
-            self.stream_connection.produce(self.camera_id, self.current_frame)
+    # Detects Persons Face in Frame
+    def detect_person(self):
+        self.triggers.is_person = self.indicators.fast_mtcnn(self.current_frame)
+        return self.triggers.is_person
 
     # Detects Movement in Frame
-    #   Returns True if Movement
-    #   Fills Feedback Buffer for Movement
     def detect_movement(self):
         if self.indicators.average is None:
             self.indicators.average = array(self.current_frame, float)
-        accumulateWeighted(
-            self.current_frame,
-            self.indicators.average,
-            self.indicators.weight
-        )
-        difference = cvtColor(absdiff(
-            self.current_frame,
-            convertScaleAbs(self.indicators.average)
-        ), COLOR_BGR2GRAY)
-        thresh = erode(
-            dilate(
-                threshold(difference, 70, 255, THRESH_BINARY)[1],
-                None,
-                iterations=2
-            ), None, iterations=1
-        )
-        self.feedback.contours = grab_contours(
-            findContours(
-                thresh,
-                RETR_EXTERNAL,
-                CHAIN_APPROX_SIMPLE
-            )
-        )
+        # Update Moving Average
+        accumulateWeighted(self.current_frame, self.indicators.average, self.indicators.weight)
+        difference = cvtColor(absdiff(self.current_frame, convertScaleAbs(self.indicators.average)), COLOR_BGR2GRAY)
+        thresh = erode(dilate(threshold(difference, 70, 255, THRESH_BINARY)[1], None, iterations=1), None, iterations=1)
+        # Build Contours
+        contours = grab_contours(findContours(thresh, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE))
         current_surface_area = 0.0
-        for contour in self.feedback.contours:
+        for contour in contours:
             current_surface_area += contourArea(contour)
-
+        # Set Trigger
+        mult = 0.95
+        self.triggers.is_movement = False
         if current_surface_area > self.indicators.ceil:
-            self.indicators.ceil *= 1.05
-            return True
-        self.indicators.ceil *= 0.95
-        return False
+            mult = 1.05
+            self.triggers.is_movement = True
+        self.indicators.ceil = max(self.indicators.ceil * mult, 80.0)
+        return self.triggers.is_movement
 
-    # Detects Persons Face in Frame
-    #   Returns True if Face Present
-    #   Fills Feedback Buffer for Faces
-    def detect_person(self):
-        grey = cvtColor(self.current_frame, COLOR_BGR2GRAY)
+    # Set UI Stream View Component
+    def set_view(self, view):
+        self.stream_view = view
 
-        self.feedback.faces = self.indicators.face_cascade.detectMultiScale(
-            grey,
-            scaleFactor=1.1,
-            minNeighbors=4,
-            minSize=(int(self.width * 0.01), int(self.height * 0.01))  # square must be 10% of screens size
-        )
+    # Remove UI Stream View Component
+    def clear_view(self):
+        self.stream_view = None
 
-        for (x, y, w, h) in self.feedback.faces:
-            self.feedback.irides = self.indicators.iris_cascade.detectMultiScale(
-                grey[y:y+h, x:x+w],
-                scaleFactor=1.3,
-                minNeighbors=4,
-                minSize=(int(self.width * 0.002), int(self.height * 0.002))
-            )
-
-        if len(self.feedback.faces) < 1 or len(self.feedback.irides) < 2:
-            return False
-
-            # HUMAN BODY DETECTION (TOO MUCH LATENCY)
-            # self.feedback.faces = []
-            # self.feedback.irides = []
-            # self.feedback.bodies = self.indicators.body_cascade.detectMultiScale(
-            #     grey,
-            #     scaleFactor=1.05,
-            #     minNeighbors=8,
-            #     minSize=(int(self.width * 0.1), int(self.height * 0.1))  # square must be 10% of screens size
-            # )
-            # return len(self.feedback.bodies) > 0
-
-        return True
-
-    # Draws Movement Feedback to Frame
-    async def feedback_movement(self):
-        drawContours(self.current_frame, self.feedback.contours, -1, (0, 255, 0), 1)
-
-    # Draws Persons Face Feedback to Frame
-    async def feedback_person(self):
-        if len(self.feedback.faces) > 0:
-            for (x, y, w, h) in self.feedback.faces:
-                rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 1)
-                for (ex, ey, ew, eh) in self.feedback.irides:
-                    if ey + (eh / 2) < y + (h / 2):
-                        rectangle(self.current_frame[y:y+h, x:x+w], (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
-
-        # HUMAN BODY DETECTION (TOO MUCH LATENCY)
-        # elif len(self.feedback.bodies) > 0:
-        #     for (x, y, w, h) in self.feedback.bodies:
-        #         rectangle(self.current_frame, (x, y), (x+w, y+h), (255, 0, 0), 1)
-
+    # Resize Stream Dimensions
     def size(self, width, height):
         (self.width, self.height) = (int(width), int(height))
