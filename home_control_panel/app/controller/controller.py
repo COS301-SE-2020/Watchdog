@@ -75,12 +75,13 @@ class CameraController(threading.Thread):
 
     # checks all rtc connections are up
     def check_connection(self):
+        success = True
         for address, camera in self.cameras.items():
             if not camera.check_stream():
                 camera.stop_stream()
                 print('Warning: Camera not connected!')
-                return False
-        return True
+                success = False
+        return success
 
     # Loads in an Existing location
     def load_location(self, location_label):
