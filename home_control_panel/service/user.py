@@ -2,7 +2,7 @@ import os
 import sys
 import json
 import traceback
-from warrant import AWSSRP, Cognito
+from pycognito import AWSSRP, Cognito
 from datetime import datetime, timedelta
 
 

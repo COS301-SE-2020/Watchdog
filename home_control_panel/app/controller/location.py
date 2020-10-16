@@ -1,4 +1,5 @@
 
+# Location Container Class
 class Location:
     def __init__(self, location, controller):
         self.label = location
@@ -6,7 +7,10 @@ class Location:
         self.cameras = {}
 
     def add_camera(self, camera):
-        self.cameras[camera.address] = camera
+        self.cameras[camera.id] = camera
+
+    def remove_camera(self, camera_id):
+        del self.cameras[camera_id]
 
     def get_metadata(self):
         camera_list = ''
