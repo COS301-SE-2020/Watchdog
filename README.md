@@ -12,6 +12,11 @@ Home break-ins was rated the [number one crime]( http://www.statssa.gov.za/publi
 
 Watchdog set out to increase the number of reports to the police by providing the home owner with real-time notifications of tangible evidence of when possible intruders have been identified in their IP camera feed.
 
+### Demo Video:
+
+- [Final Video](https://drive.google.com/file/d/15BOKbUff2tXljDJHYg8ci3lUo8_TI62d/view?usp=sharing)
+- [Historical Videos (Demos 1 - 4)](https://drive.google.com/drive/folders/1TFAV01fuNiOemhhsoZSnsPsCSRcAZkSn?usp=sharing)
+
 ### Documentation
 
 * [Software Requirements Specification](https://drive.google.com/file/d/1D6Jx3BDj6xvC9bDXCHUg7lry4IerSvTl/view)
