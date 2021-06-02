@@ -7,7 +7,7 @@ python-socketio==4.6.0
 requests==2.24.0
 vidgear==0.1.8
 pycognito==0.1.4
-urllib3==1.25.10
+urllib3==1.26.5
 
 # face detection libraries
 Pillow==7.2.0
