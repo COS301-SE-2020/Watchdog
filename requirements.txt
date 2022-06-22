@@ -1,5 +1,5 @@
 imutils==0.5.3
-numpy==1.19.2
+numpy==1.22.0
 opencv-python-headless==4.4.0.42
 PyQt5==5.15.1
 pyinstaller==4.0
